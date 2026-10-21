@@ -160,14 +160,6 @@ Struttura:
 | `iudex/desktop.py` | finestra nativa (extra `desktop`) |
 | `iudex/static/` | interfaccia e pagine informative (HTML, CSS, JavaScript senza dipendenze) |
 
-## Privacy
-
-Le sentenze contengono nomi e, talvolta, dati sensibili: nel 2024 il Garante per la
-protezione dei dati personali ha ammonito la Corte per la presenza, nei testi pubblicati,
-di dati sanitari e di vittime di reati (provvedimento n. 435 del 9 maggio 2024). Iudex
-conserva in locale solo le sentenze che l'utente apre e non costruisce indici per nome di
-persona. Non usarlo per cercare persone.
-
 ## Licenza
 
 MIT. I testi delle sentenze sono della Corte Suprema di Cassazione e restano soggetti
