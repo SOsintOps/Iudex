@@ -29,6 +29,7 @@ salvate, preferiti e una cache dei testi già aperti.
 | Logo e nome | tornano alla pagina iniziale |
 | Ricerca | riquadro di ricerca, filtri, risultati, pannello di lettura |
 | Cronologia | le ricerche fatte, con il numero di risultati e il collegamento per rifarle |
+| Diario | l'archivio personale permanente: per giorno, le ricerche e le sentenze aperte da ciascuna, con il testo conservato |
 | Ricerche salvate | le interrogazioni conservate, con il controllo delle novità su richiesta |
 | Preferiti | i singoli provvedimenti segnati, con le note |
 | Stato | versione, richieste fatte al server, cache, orari del tema scuro, registro delle chiamate |
@@ -99,6 +100,22 @@ decisione, P.Q.M.); in alto estremi, date, magistrati, ECLI e materia.
 - **Chiudi** (anche `Esc`); `Alt+→` / `Alt+←` passano al provvedimento successivo o
   precedente senza chiudere.
 
+## Diario
+
+L'archivio personale, che nessun pulsante svuota. Per giorno: le ricerche (ora, parole,
+filtri, provvedimenti, pagina) e sotto ciascuna le sentenze aperte da quei risultati. La
+stessa sentenza aperta in giorni diversi da ricerche diverse compare sotto ognuna.
+
+- Delle ricerche resta solo la traccia; delle sentenze **aperte** la risposta intera del
+  server, testo compreso, una volta sola per sentenza: si riaprono dal diario anche senza
+  rete e anche dopo che il provvedimento è uscito dall'archivio pubblico.
+- Nel pannello di lettura: «Aperta *N* volte», data della prima apertura, ricerche di
+  provenienza cliccabili.
+- Export: *Diario JSONL*, *Diario CSV* (tutte le voci); *Sentenze consultate (zip)* con
+  `<id>.json` (risposta del server, tutti i campi) e `<id>.txt` (solo testo in paragrafi).
+- I testi contengono nomi, date di nascita e fatti di causa in chiaro: restano in
+  `dati/iudex.sqlite` e da nessun'altra parte. Trattalo come un fascicolo.
+
 ## Cronologia, ricerche salvate, preferiti
 
 - **Cronologia**: data e ora, testo e filtri, risultati, ordinamento, per pagina; *Apri*
@@ -110,9 +127,11 @@ decisione, P.Q.M.); in alto estremi, date, magistrati, ECLI e materia.
 
 ## Stato
 
-Richieste fatte al server e intervallo minimo (2 s); testi e risposte in cache e percorso
-dell'archivio, con *Svuota cache ricerche* e *Svuota testi in cache* (i preferiti restano);
-orari del tema scuro automatico; registro delle ultime chiamate con esito e durata.
+Richieste fatte al server e intervallo minimo (2 s); testi e risposte in cache, voci del
+diario e sentenze consultate, percorso dell'archivio, con *Svuota cache ricerche* e *Svuota
+testi in cache* (preferiti e diario restano) e *Copia di sicurezza* (copia pulita del
+database in `dati/iudex-AAAAMMGG-HHMMSS.sqlite`); orari del tema scuro automatico; registro
+delle ultime chiamate con esito e durata.
 
 ## Tastiera
 

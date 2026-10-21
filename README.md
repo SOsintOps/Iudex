@@ -33,6 +33,10 @@ una cronologia, i preferiti, l'esportazione e una cache locale dei testi già ap
 - **Cronologia**, **ricerche salvate** con **controllo delle novità** su richiesta,
   **preferiti con note**; ogni ricerca ha un indirizzo ricaricabile
   (`http://127.0.0.1:8765/#testo=…&kind=snciv&anno=2026`).
+- **Diario**: archivio personale permanente, per giorno, delle ricerche e delle sentenze
+  aperte da ciascuna; delle sentenze aperte conserva la risposta intera del server, testo
+  compreso, e le riapre anche senza rete. Export in JSONL, CSV e zip; copia di sicurezza
+  del database.
 - **Esportazione** della pagina di risultati o dei primi 50/100 risultati in CSV, JSON o
   Markdown, e della singola sentenza in Markdown o JSON, con la citazione pronta da copiare.
 - **Colonne ridimensionabili** trascinando le maniglie (pannelli e tabelle), tema chiaro e
@@ -171,8 +175,8 @@ Struttura:
 |--------|---------|
 | `iudex/query.py` | costruzione delle query Solr secondo la sintassi del sito (implementazione propria); riferimenti normativi |
 | `iudex/client.py` | client HTTP con i limiti di cortesia e il contesto TLS |
-| `iudex/cache.py` | SQLite: cronologia, ricerche salvate, preferiti, testi, cache |
-| `iudex/export.py` | CSV, JSON, Markdown; ricostruzione dei paragrafi |
+| `iudex/cache.py` | SQLite: cronologia, ricerche salvate, preferiti, testi, cache, diario e sentenze consultate |
+| `iudex/export.py` | CSV, JSON, Markdown, JSONL, zip; ricostruzione dei paragrafi |
 | `iudex/app.py` | server FastAPI, API JSON, protezione delle API |
 | `iudex/mcp_server.py` | server MCP (extra `mcp`) |
 | `iudex/desktop.py` | finestra nativa (extra `desktop`) |

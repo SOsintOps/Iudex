@@ -66,6 +66,8 @@
       <dd>La scheda principale: riquadro di ricerca, filtri, risultati e pannello di lettura.</dd>
       <dt>Cronologia</dt>
       <dd>Le ricerche fatte, in ordine di tempo, con il numero di risultati e il collegamento per rifarle.</dd>
+      <dt>Diario</dt>
+      <dd>L'archivio personale permanente: giorno per giorno, le ricerche e le sentenze aperte da ciascuna, con il testo conservato.</dd>
       <dt>Ricerche salvate</dt>
       <dd>Le interrogazioni che hai deciso di conservare, con il controllo delle novità su richiesta.</dd>
       <dt>Preferiti</dt>
@@ -159,6 +161,23 @@
     <h2 id="cronologia">Cronologia</h2>
     <p>Ogni ricerca finisce qui con data e ora, testo e filtri, numero di risultati, ordinamento e risultati per pagina. <b>Apri</b> la rifà (dalla cache se è recente); <b>Elimina</b> toglie la singola voce; <b>Svuota</b> cancella tutta la cronologia. La cronologia è solo tua: resta nel file SQLite nella cartella <code>dati</code>.</p>
 
+    <h2 id="diario">Diario</h2>
+    <p>Il diario è l'archivio personale di Iudex e, a differenza della cronologia e della cache, non si svuota mai da un pulsante. Per ogni giorno elenca le ricerche fatte (ora, parole, filtri, numero di provvedimenti, pagina) e, sotto ciascuna, le sentenze che hai aperto da quei risultati. La stessa sentenza aperta in giorni diversi, da ricerche diverse, compare sotto ognuna: il diario risponde sia a «che cosa ho letto il 17» sia a «da quali ricerche è saltata fuori questa ordinanza».</p>
+    <dl>
+      <dt>Che cosa conserva</dt>
+      <dd>Delle ricerche solo la traccia (parole, filtri, quanti risultati): cercare un nome comune non archivia decine di sentenze inutili. Delle sentenze <b>aperte</b> conserva invece la risposta intera del server della Corte, testo compreso, una volta sola per sentenza: le riapri dal diario anche senza rete e anche quando il provvedimento sarà uscito dalla finestra dei cinque anni dell'archivio pubblico.</dd>
+      <dt>Giorno</dt>
+      <dd>Il menu in alto sceglie il giorno; accanto a ogni data il numero di ricerche e di sentenze aperte.</dd>
+      <dt>Nel pannello di lettura</dt>
+      <dd>Sotto gli estremi, «Aperta <i>N</i> volte» con la data della prima apertura e le ricerche da cui l'hai aperta, cliccabili.</dd>
+      <dt>Diario JSONL, Diario CSV</dt>
+      <dd>Scaricano tutte le voci del diario, una per riga, con data e ora, parole, filtri, risultati e gli estremi delle sentenze aperte.</dd>
+      <dt>Sentenze consultate (zip)</dt>
+      <dd>Un archivio con due file per ogni sentenza aperta: <code>&lt;id&gt;.json</code>, la risposta del server con tutti i campi, e <code>&lt;id&gt;.txt</code>, il solo testo in paragrafi.</dd>
+      <dt>Dati personali</dt>
+      <dd>I testi delle sentenze contengono nomi, date di nascita e fatti di causa in chiaro: il diario li conserva sul tuo disco, nel file <code>dati/iudex.sqlite</code>, e da nessun'altra parte. Trattalo come un fascicolo.</dd>
+    </dl>
+
     <h2 id="salvate">Ricerche salvate</h2>
     <p>Una ricerca salvata è un'<i>interrogazione</i> da ripetere, non un elenco di risultati. La tabella riporta quando l'hai salvata, il nome, l'ultimo controllo, i provvedimenti trovati allora e le novità.</p>
     <dl>
@@ -178,7 +197,9 @@
       <dt>Richieste al server</dt>
       <dd>Quante chiamate Iudex ha fatto alla Corte da quando è partito, e l'intervallo minimo fra due chiamate (2 secondi per impostazione predefinita).</dd>
       <dt>Cache locale</dt>
-      <dd>Quanti testi e quante risposte di ricerca sono conservati, e dove sta l'archivio. <b>Svuota cache ricerche</b> cancella le risposte (valgono comunque un'ora); <b>Svuota testi in cache</b> cancella i testi aperti, non i preferiti.</dd>
+      <dd>Quanti testi e quante risposte di ricerca sono conservati, e dove sta l'archivio. <b>Svuota cache ricerche</b> cancella le risposte (valgono comunque un'ora); <b>Svuota testi in cache</b> cancella i testi aperti, non i preferiti né il diario.</dd>
+      <dt>Copia di sicurezza</dt>
+      <dd>Scrive una copia pulita dell'intero archivio (diario e sentenze consultate compresi) in <code>dati/iudex-AAAAMMGG-HHMMSS.sqlite</code>; si apre con qualunque programma per SQLite.</dd>
       <dt>Tema scuro automatico</dt>
       <dd>L'ora di inizio e di fine del tema scuro, secondo l'ora del computer.</dd>
       <dt>Registro</dt>

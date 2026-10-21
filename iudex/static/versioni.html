@@ -31,6 +31,7 @@
 
 <main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v050">0.5.0 — 21 ottobre 2026</a>
     <a href="#v040">0.4.0 — 21 ottobre 2026</a>
     <a href="#v031">0.3.1 — 21 ottobre 2026</a>
     <a href="#v030">0.3.0 — 21 ottobre 2026</a>
@@ -41,6 +42,21 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v050">0.5.0 <span class="data">— 21 ottobre 2026</span></h2>
+    <h3>Diario delle consultazioni</h3>
+    <ul>
+      <li>Scheda <b>Diario</b>: archivio personale permanente, per giorno, delle ricerche fatte e delle sentenze aperte da ciascuna. La stessa sentenza aperta in giorni diversi da ricerche diverse compare sotto ognuna.</li>
+      <li>Delle sentenze aperte Iudex conserva la <b>risposta intera del server</b>, testo compreso, una volta sola per sentenza; dei risultati non aperti solo il conteggio. Nessun pulsante della cache tocca il diario.</li>
+      <li>Nel pannello di lettura: «Aperta <i>N</i> volte», prima apertura e ricerche di provenienza cliccabili.</li>
+      <li>Export del diario in <b>JSONL</b> e <b>CSV</b>; delle sentenze consultate in <b>zip</b> (risposta del server e solo testo); <b>Copia di sicurezza</b> del database nella scheda Stato.</li>
+    </ul>
+    <h3>Correzioni</h3>
+    <ul>
+      <li>Ricerca per estremi di un'ordinanza (<code>ord. 5/2023</code>): la clausola sul tipo era senza parentesi e restituiva tutte le ordinanze interlocutorie.</li>
+      <li>Nessun collegamento al PDF per i provvedimenti «in fase di oscuramento», come sul sito.</li>
+      <li>Avvio della sessione verso il server dentro il lock; controllo dell'header <code>Host</code>; lista delle sigle tenuta in memoria.</li>
+    </ul>
 
     <h2 id="v040">0.4.0 <span class="data">— 21 ottobre 2026</span></h2>
     <h3>Interfaccia</h3>

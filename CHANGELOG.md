@@ -1,5 +1,34 @@
 # Registro delle modifiche
 
+## 0.5.0 — 2026-10-21
+
+### Diario delle consultazioni
+- Scheda **Diario**: archivio personale permanente, per giorno, delle ricerche fatte
+  (parole, filtri, risultati, pagina) e delle sentenze aperte da ciascuna. La stessa
+  sentenza aperta in giorni diversi da ricerche diverse compare sotto ognuna (tabella
+  `diario`, una riga per azione).
+- Delle sentenze aperte Iudex conserva la **risposta intera del server**, testo compreso,
+  una volta sola per sentenza (tabella `consultate`, JSON compresso con zlib); dei risultati
+  non aperti solo il conteggio. Una sentenza già in cache ma mai consultata viene richiesta
+  una volta per avere il grezzo. Nessun pulsante della cache tocca le due tabelle.
+- Nel pannello di lettura: «Aperta *N* volte», prima apertura e ricerche di provenienza
+  cliccabili (`/api/sentenza/{id}?da=<permalink>`).
+- API: `GET /api/diario` (per giorno o per sentenza), `GET /api/diario/giorni`,
+  `GET /api/consultate`, `GET /api/consultate/{id}/grezzo`, `GET /api/export/diario`
+  (JSONL, CSV), `GET /api/export/consultate` (zip con `<id>.json` e `<id>.txt`),
+  `POST /api/backup` (`VACUUM INTO dati/iudex-AAAAMMGG-HHMMSS.sqlite`).
+- Guida, domande frequenti e README aggiornati; i testi conservati contengono dati
+  personali in chiaro e restano solo in `dati/`.
+
+### Correzioni
+- `query.py`: parentesi attorno alle due clausole `tipoprov` delle ordinanze; senza,
+  `ord. 5/2023` restituiva tutte le ordinanze interlocutorie (in Solr `AND` lega più forte
+  di `OR`).
+- Nessun collegamento al PDF per i provvedimenti «in fase di oscuramento», come sul sito.
+- `client.py`: il `GET` iniziale della pagina avviene dentro il lock (`_invia` +
+  `_richiesta`); `app.py`: controllo dell'header `Host` contro il DNS rebinding, lista
+  delle sigle in memoria; `mcp_server.py`: host e porta dalle impostazioni.
+
 ## 0.4.0 — 2026-10-21
 
 ### Interfaccia

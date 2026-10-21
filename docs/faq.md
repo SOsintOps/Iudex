@@ -11,7 +11,8 @@ massime ufficiali né i provvedimenti anteriori: quelli sono in ItalgiureWeb, ri
 operatori.
 
 **Iudex copia la banca dati?** No. Ogni ricerca interroga il server della Corte nel momento
-in cui la fai. In locale restano solo le risposte recenti (un'ora) e i testi che hai aperto.
+in cui la fai. In locale restano le risposte recenti (un'ora), i testi che hai aperto e il
+diario delle tue consultazioni.
 
 **Di chi sono i testi?** Della Corte Suprema di Cassazione, che li pubblica per la
 consultazione. Il PDF si apre sempre dal sito ufficiale.
@@ -67,6 +68,12 @@ più due.
 
 Tutto in `dati/iudex.sqlite` (percorso nella scheda Stato); preferenze di aspetto nel
 browser. Svuotamento dalla scheda Stato; per azzerare, chiudi Iudex ed elimina il file.
+
+**Iudex salva le mie ricerche?** Sì, nel Diario: ogni ricerca (parole, filtri, risultati) e
+ogni sentenza aperta, con la ricerca di provenienza. Delle sentenze aperte conserva la
+risposta intera del server, testo compreso; dei risultati non aperti solo il conteggio. Il
+diario non si svuota con i pulsanti della cache; si esporta in JSONL, CSV o zip, e *Copia di
+sicurezza* salva il database intero.
 
 **Colonne:** trascina le linee fra i pannelli o fra le intestazioni delle tabelle; doppio
 clic ripristina; da tastiera, fuoco sulla maniglia e frecce.

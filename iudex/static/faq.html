@@ -46,7 +46,7 @@
       <dt>Che cosa contiene SentenzeWeb?</dt>
       <dd>Le sentenze, le ordinanze e i decreti civili e penali della Corte di Cassazione pubblicati negli ultimi anni: al 21 ottobre 2026 circa 422.000 provvedimenti dal 2021. È una finestra scorrevole di circa cinque anni: i provvedimenti più vecchi escono dall'archivio. Non contiene le massime ufficiali del Massimario né i provvedimenti anteriori: quelli sono in ItalgiureWeb, il servizio riservato agli operatori.</dd>
       <dt>Iudex copia la banca dati?</dt>
-      <dd>No. Ogni ricerca interroga il server della Corte nel momento in cui la fai. In locale restano solo le risposte recenti (per un'ora) e i testi che hai aperto.</dd>
+      <dd>No. Ogni ricerca interroga il server della Corte nel momento in cui la fai. In locale restano le risposte recenti (per un'ora), i testi che hai aperto e il diario delle tue consultazioni.</dd>
       <dt>Di chi sono i testi?</dt>
       <dd>Della Corte Suprema di Cassazione, che li pubblica per la consultazione. Iudex li mostra e li esporta per uso personale; il PDF si apre sempre dal sito ufficiale.</dd>
       <dt>Perché non cercare per nome di persona?</dt>
@@ -89,8 +89,10 @@
     <dl>
       <dt>Dove stanno cronologia, preferiti e cache?</dt>
       <dd>In un unico file SQLite, <code>dati/iudex.sqlite</code> nella cartella di Iudex (il percorso esatto è nella scheda Stato). Le preferenze di aspetto (tema, densità, carattere, larghezze delle colonne) stanno nel browser.</dd>
+      <dt>Iudex salva le mie ricerche?</dt>
+      <dd>Sì, nel <a href="/guida.html#diario">Diario</a>: ogni ricerca (parole, filtri, quanti risultati) e ogni sentenza aperta, con la ricerca da cui l'hai aperta. Delle sentenze aperte conserva anche la risposta intera del server, testo compreso; dei risultati non aperti nulla oltre il conteggio. Il diario non si svuota con i pulsanti della cache e si esporta in JSONL, CSV o zip.</dd>
       <dt>Come cancello tutto?</dt>
-      <dd>Dalla scheda Stato: "Svuota cache ricerche" e "Svuota testi in cache"; cronologia e preferiti si svuotano dalle rispettive schede. Per azzerare davvero, chiudi Iudex ed elimina il file <code>dati/iudex.sqlite</code>.</dd>
+      <dd>Dalla scheda Stato: "Svuota cache ricerche" e "Svuota testi in cache"; cronologia e preferiti si svuotano dalle rispettive schede. Il diario non ha un pulsante: per azzerare davvero, chiudi Iudex ed elimina il file <code>dati/iudex.sqlite</code> (prima, se vuoi, "Copia di sicurezza" nella scheda Stato).</dd>
       <dt>Posso cambiare la larghezza delle colonne?</dt>
       <dd>Sì: trascina la linea fra i filtri e i risultati, quella fra i risultati e il testo, o le linee fra le intestazioni delle tabelle di cronologia, ricerche salvate e preferiti. Un doppio clic ripristina la larghezza predefinita; con la tastiera, porta il fuoco sulla maniglia e usa le frecce.</dd>
     </dl>
