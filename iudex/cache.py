@@ -1,4 +1,5 @@
-"""Archivio locale SQLite: cronologia, ricerche salvate, preferiti, sentenze lette, cache."""
+"""Archivio locale SQLite: cronologia, ricerche salvate, preferiti, sentenze lette, cache,
+diario delle consultazioni e sentenze consultate (archivio personale permanente)."""
 
 from __future__ import annotations
 
@@ -6,6 +7,7 @@ import json
 import sqlite3
 import threading
 import time
+import zlib
 from pathlib import Path
 
 SCHEMA = """
@@ -52,7 +54,36 @@ CREATE TABLE IF NOT EXISTS estremi (
     quando REAL NOT NULL,
     contenuto TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS diario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quando REAL NOT NULL,
+    tipo TEXT NOT NULL,
+    testo TEXT,
+    riferimenti TEXT,
+    filtri TEXT,
+    ordinamento TEXT,
+    pagina INTEGER,
+    permalink TEXT,
+    id_sentenza TEXT,
+    trovati INTEGER
+);
+CREATE INDEX IF NOT EXISTS diario_sentenza ON diario (id_sentenza);
+CREATE TABLE IF NOT EXISTS consultate (
+    id_sentenza TEXT PRIMARY KEY,
+    prima_volta REAL NOT NULL,
+    ultima_volta REAL NOT NULL,
+    volte INTEGER NOT NULL,
+    documento TEXT NOT NULL,
+    grezzo BLOB NOT NULL
+);
 """
+
+# Il diario e le sentenze consultate sono l'archivio personale: una riga del diario per ogni
+# ricerca e per ogni apertura di una sentenza (anche la stessa, in giorni diversi, da ricerche
+# diverse); in ``consultate`` ogni sentenza aperta sta una volta sola, con la risposta intera
+# del server compressa. Nessuna delle due tabelle viene svuotata dai pulsanti della cache.
+
+GIORNO_SQL = "strftime('%Y-%m-%d', quando, 'unixepoch', 'localtime')"
 
 # Colonne aggiunte dopo la 0.1.0: vengono create se mancano (migrazione leggera).
 COLONNE_AGGIUNTE = {
@@ -283,3 +314,161 @@ class Archivio:
         with self._lock:
             righe = self._conn.execute("SELECT id_sentenza FROM preferiti").fetchall()
         return {r["id_sentenza"] for r in righe}
+
+    # --- diario delle consultazioni (permanente) -----------------------------------------
+
+    def annota_ricerca(
+        self,
+        *,
+        testo: str | None,
+        riferimenti: str | None,
+        filtri: dict,
+        ordinamento: str,
+        pagina: int,
+        permalink: str,
+        trovati: int,
+    ) -> None:
+        with self._lock, self._conn:
+            self._conn.execute(
+                "INSERT INTO diario (quando, tipo, testo, riferimenti, filtri, ordinamento,"
+                " pagina, permalink, trovati) VALUES (?, 'ricerca', ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    time.time(),
+                    testo,
+                    riferimenti,
+                    json.dumps(filtri, ensure_ascii=False),
+                    ordinamento,
+                    pagina,
+                    permalink,
+                    trovati,
+                ),
+            )
+
+    def annota_sentenza(self, id_sentenza: str, permalink: str | None) -> None:
+        """Un'apertura della sentenza; ``permalink`` è la ricerca da cui è stata aperta."""
+        with self._lock, self._conn:
+            self._conn.execute(
+                "INSERT INTO diario (quando, tipo, permalink, id_sentenza)"
+                " VALUES (?, 'sentenza', ?, ?)",
+                (time.time(), permalink or None, id_sentenza),
+            )
+
+    def diario(
+        self, giorno: str | None = None, id_sentenza: str | None = None, limite: int = 500
+    ) -> list[dict]:
+        """Voci in ordine cronologico inverso, per giorno (``AAAA-MM-GG``) o per sentenza."""
+        condizioni, valori = [], []
+        if giorno:
+            condizioni.append(f"{GIORNO_SQL} = ?")
+            valori.append(giorno)
+        if id_sentenza:
+            condizioni.append("diario.id_sentenza = ?")
+            valori.append(id_sentenza)
+        dove = (" WHERE " + " AND ".join(condizioni)) if condizioni else ""
+        with self._lock:
+            righe = self._conn.execute(
+                f"SELECT diario.*, {GIORNO_SQL} AS giorno, consultate.documento AS documento"
+                " FROM diario LEFT JOIN consultate USING (id_sentenza)"
+                f"{dove} ORDER BY quando DESC, id DESC LIMIT ?",
+                (*valori, limite),
+            ).fetchall()
+        return [self._voce_diario(r) for r in righe]
+
+    @staticmethod
+    def _voce_diario(riga: sqlite3.Row) -> dict:
+        d = dict(riga)
+        d["filtri"] = json.loads(d["filtri"]) if d.get("filtri") else {}
+        d["documento"] = json.loads(d["documento"]) if d.get("documento") else None
+        return d
+
+    def giorni_diario(self) -> list[dict]:
+        """``[{giorno, ricerche, sentenze}]`` dal più recente."""
+        with self._lock:
+            righe = self._conn.execute(
+                f"SELECT {GIORNO_SQL} AS giorno,"
+                " SUM(tipo = 'ricerca') AS ricerche, SUM(tipo = 'sentenza') AS sentenze"
+                " FROM diario GROUP BY giorno ORDER BY giorno DESC"
+            ).fetchall()
+        return [dict(r) for r in righe]
+
+    def conta_diario(self) -> int:
+        with self._lock:
+            return self._conn.execute("SELECT COUNT(*) FROM diario").fetchone()[0]
+
+    # --- sentenze consultate (permanenti, risposta intera del server) --------------------
+
+    def tocca_consultata(self, id_sentenza: str) -> bool:
+        """Segna un'altra apertura; False se la sentenza non è ancora fra le consultate."""
+        with self._lock, self._conn:
+            cur = self._conn.execute(
+                "UPDATE consultate SET ultima_volta = ?, volte = volte + 1 WHERE id_sentenza = ?",
+                (time.time(), id_sentenza),
+            )
+            return cur.rowcount > 0
+
+    def scrivi_consultata(self, id_sentenza: str, documento: dict, grezzo: dict) -> None:
+        """Prima apertura: documento normalizzato e risposta del server compressa."""
+        adesso = time.time()
+        blob = zlib.compress(json.dumps(grezzo, ensure_ascii=False).encode("utf-8"), 6)
+        with self._lock, self._conn:
+            self._conn.execute(
+                "INSERT INTO consultate (id_sentenza, prima_volta, ultima_volta, volte,"
+                " documento, grezzo) VALUES (?, ?, ?, 1, ?, ?)"
+                " ON CONFLICT(id_sentenza) DO UPDATE SET ultima_volta = excluded.ultima_volta,"
+                " volte = volte + 1, documento = excluded.documento, grezzo = excluded.grezzo",
+                (id_sentenza, adesso, adesso, json.dumps(documento, ensure_ascii=False), blob),
+            )
+
+    def consultata(self, id_sentenza: str) -> dict | None:
+        with self._lock:
+            riga = self._conn.execute(
+                "SELECT id_sentenza, prima_volta, ultima_volta, volte, documento"
+                " FROM consultate WHERE id_sentenza = ?",
+                (id_sentenza,),
+            ).fetchone()
+        return dict(riga, documento=json.loads(riga["documento"])) if riga else None
+
+    def consultate(self) -> list[dict]:
+        with self._lock:
+            righe = self._conn.execute(
+                "SELECT id_sentenza, prima_volta, ultima_volta, volte, documento"
+                " FROM consultate ORDER BY ultima_volta DESC"
+            ).fetchall()
+        return [dict(r, documento=json.loads(r["documento"])) for r in righe]
+
+    def grezzo_consultata(self, id_sentenza: str) -> dict | None:
+        with self._lock:
+            riga = self._conn.execute(
+                "SELECT grezzo FROM consultate WHERE id_sentenza = ?", (id_sentenza,)
+            ).fetchone()
+        if not riga:
+            return None
+        return json.loads(zlib.decompress(riga["grezzo"]).decode("utf-8"))
+
+    def grezzi_consultate(self):
+        """Coppie ``(id_sentenza, grezzo)`` di tutte le consultate, una alla volta."""
+        with self._lock:
+            ids = [
+                r["id_sentenza"]
+                for r in self._conn.execute(
+                    "SELECT id_sentenza FROM consultate ORDER BY prima_volta"
+                ).fetchall()
+            ]
+        for id_sentenza in ids:
+            grezzo = self.grezzo_consultata(id_sentenza)
+            if grezzo is not None:
+                yield id_sentenza, grezzo
+
+    def conta_consultate(self) -> int:
+        with self._lock:
+            return self._conn.execute("SELECT COUNT(*) FROM consultate").fetchone()[0]
+
+    # --- copia di sicurezza --------------------------------------------------------------
+
+    def copia_di_sicurezza(self, destinazione: Path) -> Path:
+        """Copia pulita del database (``VACUUM INTO``), senza il file WAL."""
+        destinazione = Path(destinazione)
+        destinazione.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            self._conn.execute("VACUUM INTO ?", (str(destinazione),))
+        return destinazione

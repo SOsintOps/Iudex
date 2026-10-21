@@ -249,8 +249,9 @@ async def cerca(
 ) -> dict:
     filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia)
     risposta = await _esegui_ricerca(request, testo, rif, filtri, ordina, pagina, righe)
+    archivio: Archivio = request.app.state.archivio
     if pagina == 1:
-        request.app.state.archivio.registra_ricerca(
+        archivio.registra_ricerca(
             testo=testo,
             riferimenti=rif,
             filtri=filtri,
@@ -259,7 +260,21 @@ async def cerca(
             trovati=risposta["trovati"],
             permalink=_permalink(testo, rif, filtri, risposta["ordinamento"], risposta["righe"], 1),
         )
+    _annota_ricerca(archivio, risposta)
     return risposta
+
+
+def _annota_ricerca(archivio: Archivio, risposta: dict) -> None:
+    """Ogni esecuzione di una ricerca è una voce del diario, anche se servita dalla cache."""
+    archivio.annota_ricerca(
+        testo=risposta["testo"],
+        riferimenti=risposta["riferimenti"],
+        filtri=risposta["filtri"],
+        ordinamento=risposta["ordinamento"],
+        pagina=risposta["pagina"],
+        permalink=risposta["permalink"],
+        trovati=risposta["trovati"],
+    )
 
 
 # --- sentenza ------------------------------------------------------------------------------
@@ -272,13 +287,27 @@ def _testo_unito(valore) -> str | None:
 
 
 async def _carica_sentenza(
-    request: Request, id_sentenza: str, hl_q: str | None = None
+    request: Request,
+    id_sentenza: str,
+    hl_q: str | None = None,
+    *,
+    consultazione: str | None = None,
+    annota: bool = False,
 ) -> tuple[dict, str | None, str | None, bool]:
-    """Restituisce (documento, testo, testo evidenziato dal server o None, dalla cache)."""
+    """Restituisce (documento, testo, testo evidenziato dal server o None, dalla cache).
+
+    Con ``annota`` l'apertura finisce nel diario (``consultazione`` è il permalink della
+    ricerca di provenienza) e la sentenza fra le consultate: la prima volta serve la risposta
+    intera del server, quindi la chiamata di dettaglio si fa anche se il testo è già in cache.
+    """
     archivio: Archivio = request.app.state.archivio
     chiave_hl = json.dumps(["hl", id_sentenza, hl_q]) if hl_q else None
+    gia_consultata = True
+    if annota:
+        archivio.annota_sentenza(id_sentenza, consultazione)
+        gia_consultata = archivio.tocca_consultata(id_sentenza)
     salvata = archivio.leggi_sentenza(id_sentenza)
-    if salvata:
+    if salvata and gia_consultata:
         marcato = None
         if chiave_hl:
             voce = archivio.leggi_risposta(chiave_hl, impostazioni.ttl_ricerche)
@@ -298,6 +327,8 @@ async def _carica_sentenza(
     rnc = {chiave[4:]: valore for chiave, valore in grezzo.items() if chiave.startswith("rnc-")}
     documento["riferimenti_normativi"] = formatta_riferimenti(rnc)
     archivio.scrivi_sentenza(id_sentenza, documento, testo)
+    if annota and not gia_consultata:
+        archivio.scrivi_consultata(id_sentenza, documento, grezzo)
     marcato = None
     if chiave_hl:
         marcato = _testo_unito(dati.get("highlighting", {}).get(id_sentenza, {}).get("ocr"))
@@ -307,12 +338,16 @@ async def _carica_sentenza(
 
 
 @app.get("/api/sentenza/{id_sentenza}")
-async def sentenza(request: Request, id_sentenza: str, evidenzia: str | None = None) -> dict:
+async def sentenza(
+    request: Request, id_sentenza: str, evidenzia: str | None = None, da: str | None = None
+) -> dict:
+    """``da`` è il permalink della ricerca da cui la sentenza viene aperta (per il diario)."""
+    archivio: Archivio = request.app.state.archivio
     documento, testo, marcato, dalla_cache = await _carica_sentenza(
-        request, id_sentenza, evidenzia or None
+        request, id_sentenza, evidenzia or None, consultazione=da or None, annota=True
     )
     documento = dict(documento)
-    documento["preferito"] = id_sentenza in request.app.state.archivio.id_preferiti()
+    documento["preferito"] = id_sentenza in archivio.id_preferiti()
     # Le sentenze salvate dalla 0.1.0 hanno i riferimenti ancora come liste grezze.
     if isinstance(documento.get("riferimenti_normativi"), dict):
         documento["riferimenti_normativi"] = formatta_riferimenti(
@@ -320,12 +355,22 @@ async def sentenza(request: Request, id_sentenza: str, evidenzia: str | None = N
         )
     testo_paragrafato, posizione = export.paragrafa(testo)
     marcato_paragrafato = export.paragrafa(marcato)[0] if marcato else None
+    consultata = archivio.consultata(id_sentenza) or {}
     return {
         "documento": documento,
         "testo": testo_paragrafato,
         "testo_evidenziato": marcato_paragrafato,
         "posizione_pqm": posizione,
         "dalla_cache": dalla_cache,
+        "consultazione": {
+            "volte": consultata.get("volte", 0),
+            "prima_volta": consultata.get("prima_volta"),
+            "ultima_volta": consultata.get("ultima_volta"),
+            "aperture": [
+                {k: v for k, v in voce.items() if k != "documento"}
+                for voce in archivio.diario(id_sentenza=id_sentenza, limite=100)
+            ],
+        },
     }
 
 
@@ -432,6 +477,7 @@ async def controlla_salvata(request: Request, id_salvata: int) -> dict:
     prima_volta = precedenti is None
     nuovi = [] if prima_volta else [d for d in risposta["documenti"] if d["id"] not in precedenti]
     archivio.aggiorna_controllo(id_salvata, risposta["trovati"], ids, len(nuovi))
+    _annota_ricerca(archivio, risposta)
     return {
         "prima_volta": prima_volta,
         "trovati": risposta["trovati"],
@@ -471,14 +517,80 @@ async def rimuovi_preferito(request: Request, id_sentenza: str) -> dict:
     return {"ok": True}
 
 
+# --- diario e sentenze consultate -----------------------------------------------------------
+
+
+@app.get("/api/diario")
+async def diario(
+    request: Request,
+    giorno: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    sentenza: str | None = None,
+    limite: int = Query(500, ge=1, le=5000),
+) -> list[dict]:
+    return request.app.state.archivio.diario(giorno, sentenza or None, limite)
+
+
+@app.get("/api/diario/giorni")
+async def giorni_diario(request: Request) -> list[dict]:
+    return request.app.state.archivio.giorni_diario()
+
+
+@app.get("/api/consultate")
+async def consultate(request: Request) -> list[dict]:
+    return request.app.state.archivio.consultate()
+
+
+@app.get("/api/consultate/{id_sentenza}/grezzo")
+async def grezzo_consultata(request: Request, id_sentenza: str) -> dict:
+    grezzo = request.app.state.archivio.grezzo_consultata(id_sentenza)
+    if grezzo is None:
+        raise HTTPException(404, "sentenza non consultata")
+    return grezzo
+
+
+@app.post("/api/backup")
+async def copia_di_sicurezza(request: Request) -> dict:
+    marca = time.strftime("%Y%m%d-%H%M%S")
+    destinazione = impostazioni.cartella_dati / f"iudex-{marca}.sqlite"
+    percorso = request.app.state.archivio.copia_di_sicurezza(destinazione)
+    return {"ok": True, "percorso": str(percorso)}
+
+
 # --- esportazione --------------------------------------------------------------------------
 
 
-def _allegato(contenuto: str, nome: str, tipo: str) -> Response:
+def _allegato(contenuto: str | bytes, nome: str, tipo: str) -> Response:
+    if isinstance(contenuto, str):
+        contenuto = contenuto.encode("utf-8")
+        tipo = f"{tipo}; charset=utf-8"
     return Response(
-        content=contenuto.encode("utf-8"),
-        media_type=f"{tipo}; charset=utf-8",
+        content=contenuto,
+        media_type=tipo,
         headers={"Content-Disposition": f'attachment; filename="{nome}"'},
+    )
+
+
+@app.get("/api/export/diario")
+async def esporta_diario(
+    request: Request, formato: str = Query("jsonl", pattern="^(jsonl|csv)$")
+) -> Response:
+    voci = request.app.state.archivio.diario(limite=5000)
+    marca = time.strftime("%Y%m%d-%H%M%S")
+    if formato == "csv":
+        return _allegato(export.diario_csv(voci), f"iudex-diario-{marca}.csv", "text/csv")
+    return _allegato(
+        export.diario_jsonl(voci), f"iudex-diario-{marca}.jsonl", "application/jsonl"
+    )
+
+
+@app.get("/api/export/consultate")
+async def esporta_consultate(request: Request) -> Response:
+    archivio: Archivio = request.app.state.archivio
+    marca = time.strftime("%Y%m%d-%H%M%S")
+    return _allegato(
+        export.consultate_zip(archivio.grezzi_consultate()),
+        f"iudex-consultate-{marca}.zip",
+        "application/zip",
     )
 
 
@@ -562,6 +674,8 @@ async def stato(request: Request) -> dict:
         "intervallo_minimo_s": impostazioni.intervallo_minimo,
         "sentenze_in_cache": archivio.conta_sentenze(),
         "risposte_in_cache": archivio.conta_risposte(),
+        "voci_diario": archivio.conta_diario(),
+        "sentenze_consultate": archivio.conta_consultate(),
         "percorso_dati": str(impostazioni.percorso_db),
         "registro": [
             {

@@ -1,5 +1,8 @@
 """Le API rispondono solo con l'header dell'interfaccia e orchestrano client e cache."""
 
+import io
+import zipfile
+
 import httpx
 import pytest
 import respx
@@ -159,6 +162,61 @@ def test_salvate_controllo_novita(client):
     assert rotta.call_count == 2
     salvata = c.get("/api/salvate", headers=H).json()[0]
     assert salvata["nuovi"] == 1 and salvata["trovati"] == 3
+
+
+def test_diario_registra_ricerche_e_aperture(client):
+    c, mock = client
+    doc = _doc(7)
+    ricerca = mock.post(URL_SOLR + "?app.query").mock(
+        return_value=httpx.Response(200, json=_risposta([doc], trovati=1))
+    )
+    dettaglio = mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([doc])))
+    # Due ricerche (la seconda dalla cache): due voci senza grezzo.
+    c.get("/api/cerca", params={"testo": "mobbing"}, headers=H)
+    c.get("/api/cerca", params={"testo": "mobbing"}, headers=H)
+    assert ricerca.call_count == 1
+    voci = c.get("/api/diario", headers=H).json()
+    assert [v["tipo"] for v in voci] == ["ricerca", "ricerca"]
+    assert voci[0]["permalink"] == "testo=mobbing" and voci[0]["trovati"] == 1
+    assert c.get("/api/stato", headers=H).json()["sentenze_consultate"] == 0
+    # Prima apertura: una chiamata di dettaglio, grezzo salvato.
+    r = c.get(f"/api/sentenza/{doc['id']}", params={"da": "testo=mobbing"}, headers=H).json()
+    assert r["consultazione"]["volte"] == 1 and dettaglio.call_count == 1
+    assert r["consultazione"]["aperture"][0]["permalink"] == "testo=mobbing"
+    grezzo = c.get(f"/api/consultate/{doc['id']}/grezzo", headers=H).json()
+    assert grezzo["rnc-sp"] == ["LS"] and grezzo["ocr"] == doc["ocr"]
+    # Seconda apertura da un'altra ricerca: voce nuova, nessuna chiamata.
+    r2 = c.get(f"/api/sentenza/{doc['id']}", params={"da": "testo=x"}, headers=H).json()
+    assert r2["consultazione"]["volte"] == 2 and dettaglio.call_count == 1
+    assert [a["permalink"] for a in r2["consultazione"]["aperture"]] == ["testo=x", "testo=mobbing"]
+    per_sentenza = c.get("/api/diario", params={"sentenza": doc["id"]}, headers=H).json()
+    assert len(per_sentenza) == 2 and per_sentenza[0]["documento"]["numero"] == "26007"
+    giorni = c.get("/api/diario/giorni", headers=H).json()
+    assert giorni[0]["ricerche"] == 2 and giorni[0]["sentenze"] == 2
+    assert c.get("/api/diario", params={"giorno": giorni[0]["giorno"]}, headers=H).json()
+    assert c.get("/api/consultate", headers=H).json()[0]["volte"] == 2
+    # Sentenza già in cache ma mai consultata: una chiamata per avere il grezzo, poi basta.
+    altro = _doc(8)
+    dettaglio.mock(return_value=httpx.Response(200, json=_risposta([altro])))
+    c.get(f"/api/export/sentenza/{altro['id']}", headers=H)
+    assert dettaglio.call_count == 2  # l'export non è una consultazione
+    assert len(c.get("/api/diario", headers=H).json()) == 4
+    c.get(f"/api/sentenza/{altro['id']}", headers=H)
+    assert dettaglio.call_count == 3
+    c.get(f"/api/sentenza/{altro['id']}", headers=H)
+    assert dettaglio.call_count == 3
+    assert c.get("/api/consultate/zzz/grezzo", headers=H).status_code == 404
+    # Export e copia di sicurezza.
+    jsonl = c.get("/api/export/diario", headers=H)
+    assert jsonl.status_code == 200 and len(jsonl.text.strip().splitlines()) == 6
+    csv_ = c.get("/api/export/diario", params={"formato": "csv"}, headers=H).text
+    assert csv_.splitlines()[0].startswith("id;quando;giorno;tipo") and "Cass. civ." in csv_
+    zip_ = c.get("/api/export/consultate", headers=H)
+    assert zip_.headers["content-type"] == "application/zip" and zip_.content[:2] == b"PK"
+    nomi = zipfile.ZipFile(io.BytesIO(zip_.content)).namelist()
+    assert f"{doc['id']}.json" in nomi and f"{altro['id']}.txt" in nomi
+    backup = c.post("/api/backup", headers=H).json()
+    assert backup["ok"] and backup["percorso"].endswith(".sqlite")
 
 
 def test_preferiti_con_nota_e_svuota_cache(client):

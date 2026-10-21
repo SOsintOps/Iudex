@@ -1,4 +1,4 @@
-"""Esportazione di risultati e sentenze in CSV, JSON e Markdown."""
+"""Esportazione di risultati, sentenze, diario e sentenze consultate."""
 
 from __future__ import annotations
 
@@ -6,6 +6,8 @@ import csv
 import io
 import json
 import re
+import time
+import zipfile
 
 COLONNE = (
     "id",
@@ -141,3 +143,73 @@ def sentenza_markdown(doc: dict, testo: str | None) -> str:
 def sentenza_json(doc: dict, testo: str | None) -> str:
     dati = {**doc, "testo": _senza_tag(testo) if testo else None}
     return json.dumps(dati, ensure_ascii=False, indent=1)
+
+
+# --- diario e sentenze consultate ----------------------------------------------------------
+
+COLONNE_DIARIO = (
+    "id",
+    "quando",
+    "giorno",
+    "tipo",
+    "testo",
+    "riferimenti",
+    "filtri",
+    "ordinamento",
+    "pagina",
+    "trovati",
+    "permalink",
+    "id_sentenza",
+    "estremi",
+)
+
+
+def _ora_locale(quando: float | None) -> str:
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(quando)) if quando else ""
+
+
+def _estremi_voce(voce: dict) -> str:
+    doc = voce.get("documento")
+    return estremi_brevi(doc) if doc else ""
+
+
+def diario_jsonl(voci: list[dict]) -> str:
+    """Una riga JSON per voce, dalla più vecchia alla più recente."""
+    righe = []
+    for voce in reversed(voci):
+        d = {k: v for k, v in voce.items() if k != "documento"}
+        d["quando_locale"] = _ora_locale(voce.get("quando"))
+        d["estremi"] = _estremi_voce(voce) or None
+        righe.append(json.dumps(d, ensure_ascii=False))
+    return "\n".join(righe) + ("\n" if righe else "")
+
+
+def diario_csv(voci: list[dict]) -> str:
+    buffer = io.StringIO()
+    scrittore = csv.writer(buffer, delimiter=";", lineterminator="\n")
+    scrittore.writerow(COLONNE_DIARIO)
+    for voce in reversed(voci):
+        riga = dict(voce)
+        riga["quando"] = _ora_locale(voce.get("quando"))
+        riga["filtri"] = json.dumps(voce.get("filtri") or {}, ensure_ascii=False)
+        riga["estremi"] = _estremi_voce(voce)
+        scrittore.writerow(["" if riga.get(c) is None else riga.get(c) for c in COLONNE_DIARIO])
+    return buffer.getvalue()
+
+
+def _testo_grezzo(grezzo: dict) -> str:
+    valore = grezzo.get("ocrfull") or grezzo.get("testoocr") or grezzo.get("ocr") or ""
+    if isinstance(valore, list):
+        valore = "\n".join(str(v) for v in valore)
+    return paragrafa(_senza_tag(str(valore)))[0]
+
+
+def consultate_zip(coppie) -> bytes:
+    """Archivio zip con, per ogni sentenza consultata, ``<id>.json`` (risposta intera del
+    server) e ``<id>.txt`` (solo il testo, con i paragrafi ricostruiti)."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for id_sentenza, grezzo in coppie:
+            zf.writestr(f"{id_sentenza}.json", json.dumps(grezzo, ensure_ascii=False, indent=1))
+            zf.writestr(f"{id_sentenza}.txt", _testo_grezzo(grezzo))
+    return buffer.getvalue()
