@@ -14,7 +14,7 @@
 - Riordino secondo le convenzioni di GitHub: avviatori in `scripts/`, logo originale e
   script di generazione in `assets/logo/`, `CONTRIBUTING.md`, `SECURITY.md`,
   `.editorconfig`, `.gitattributes`, integrazione continua (ruff + pytest su Python 3.11 e
-  3.13) e modelli per segnalazioni e pull request in `.github/`.
+  3.13), Dependabot mensile e modelli per segnalazioni e pull request in `.github/`.
 - `docs/analisi-sito.md`: sezione sulle chiamate e pagine del sito che Iudex non usa
   (permalink `detail.html`, telemetria `app.document`, requisitoria, precedenti collegati,
   liste dei filtri con `facet.prefix`, suggerimenti con `kind:"key"`, provvedimenti in

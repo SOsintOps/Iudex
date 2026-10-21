@@ -41,7 +41,7 @@ Su Linux e macOS: `.venv/bin/python`. Serve Python 3.11 o successivo.
 | `docs/` | analisi del sito, domande frequenti, guida, software simili, immagini del README |
 | `assets/logo/` | logo originale e script che genera logo, marchio e favicon |
 | `scripts/` | avviatori per Windows |
-| `.github/` | integrazione continua e modelli per segnalazioni e pull request |
+| `.github/` | integrazione continua, Dependabot, modelli per segnalazioni e pull request |
 
 ## Pull request
 
