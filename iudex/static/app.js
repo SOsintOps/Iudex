@@ -152,7 +152,7 @@
     return p;
   }
 
-  const SCHEDE = ["risultati", "cronologia", "salvate", "preferiti", "stato"];
+  const SCHEDE = ["risultati", "cronologia", "diario", "salvate", "preferiti", "stato"];
 
   function leggiHash() {
     const h = location.hash.replace(/^#/, "");
@@ -331,7 +331,7 @@
     }).join("");
   }
 
-  async function apriFascicolo(id) {
+  async function apriFascicolo(id, daiRisultati) {
     stato.idAperto = id;
     $$(".voce").forEach((v) => v.classList.toggle("aperta", v.dataset.id === id));
     const f = $("#fascicolo");
@@ -344,7 +344,11 @@
     $("#vai-pqm").hidden = true;
     try {
       const hl = stato.risposta && stato.risposta.evidenzia && stato.risposta.evidenzia !== "nomatch" ? stato.risposta.evidenzia : "";
-      const d = await api("/api/sentenza/" + encodeURIComponent(id) + (hl ? "?evidenzia=" + encodeURIComponent(hl) : ""));
+      const p = new URLSearchParams();
+      if (hl) p.set("evidenzia", hl);
+      // La ricerca di provenienza, per il diario: solo quando la sentenza è aperta dai risultati.
+      if (daiRisultati && stato.risposta && stato.risposta.permalink) p.set("da", stato.risposta.permalink);
+      const d = await api("/api/sentenza/" + encodeURIComponent(id) + (p.toString() ? "?" + p.toString() : ""));
       const doc = d.documento;
       $("#fascicolo-estremi").innerHTML = `
         <span class="sezione">${escapa(doc.archivio)}${doc.sezione ? " · Sez. " + escapa(doc.sezione) : ""}</span>
@@ -355,7 +359,8 @@
           ${doc.ecli ? `<span class="ecli">${escapa(doc.ecli)}</span>` : ""}
           ${doc.materia && doc.materia.length ? `<span class="materia-voce">${escapa(doc.materia.join(", "))}</span>` : ""}
           ${d.dalla_cache ? "<span>dalla cache locale</span>" : ""}
-        </div>`;
+        </div>
+        ${consultazioneHtml(d.consultazione)}`;
       const pdf = $("#fascicolo-pdf");
       if (doc.pdf) { pdf.hidden = false; pdf.href = doc.pdf; } else { pdf.hidden = true; }
       $("#copia-citazione").dataset.citazione = citazione(doc);
@@ -385,6 +390,31 @@
     }
   }
 
+  function descriviPermalink(permalink) {
+    if (!permalink) return "";
+    const p = new URLSearchParams(permalink);
+    const v = { testo: p.get("testo"), riferimenti: p.get("rif"), filtri: {} };
+    CAMPI_FACET.forEach((c) => { const x = p.get(c); if (x) v.filtri[c] = x.split(SEPARATORI[c] || ","); });
+    const ordina = p.get("ordina");
+    return descriviVoce(v) + (ordina && ordina !== "pubblicazione" ? ` (per ${ordina})` : "");
+  }
+
+  function consultazioneHtml(c) {
+    if (!c || !c.volte) return "";
+    // Le ricerche di provenienza, una volta ciascuna, dalla più recente.
+    const viste = new Set();
+    const ricerche = [];
+    (c.aperture || []).forEach((a) => {
+      if (!a.permalink || viste.has(a.permalink)) return;
+      viste.add(a.permalink);
+      ricerche.push(a);
+    });
+    const da = ricerche.slice(0, 4).map((a) =>
+      `<a href="#${escapa(a.permalink)}" title="Riapri la ricerca">${escapa(descriviPermalink(a.permalink))}</a> <span class="quando">(${quando(a.quando)})</span>`).join(", ");
+    const volte = c.volte === 1 ? "Prima apertura" : `Aperta <b>${c.volte}</b> volte, la prima ${quando(c.prima_volta)}`;
+    return `<div class="consultazione">${volte}${da ? " · da: " + da : ""}${ricerche.length > 4 ? ` e altre ${ricerche.length - 4}` : ""} · <a href="#diario" class="vai-diario">Diario</a></div>`;
+  }
+
   function chiudiFascicolo() {
     $("#fascicolo").hidden = true;
     $("#maniglia-fascicolo").hidden = true;
@@ -398,7 +428,7 @@
     const ids = stato.risposta.documenti.map((d) => d.id);
     const i = ids.indexOf(stato.idAperto) + delta;
     if (i < 0 || i >= ids.length) return;
-    apriFascicolo(ids[i]);
+    apriFascicolo(ids[i], true);
     const voce = $$(".voce")[i];
     if (voce) voce.scrollIntoView({ block: "nearest" });
   }
@@ -463,13 +493,14 @@
   function mostraScheda(nome) {
     stato.scheda = nome;
     $$(".scheda").forEach((b) => b.classList.toggle("attiva", b.dataset.scheda === nome));
-    ["risultati", "cronologia", "salvate", "preferiti", "stato"].forEach((n) => { $("#pannello-" + n).hidden = n !== nome; });
+    SCHEDE.forEach((n) => { $("#pannello-" + n).hidden = n !== nome; });
     const conFiltri = nome === "risultati";
     $("#filtri").hidden = !conFiltri;
     $("#maniglia-filtri").hidden = !conFiltri;
     $("#corpo").classList.toggle("senza-filtri", !conFiltri);
     if (!conFiltri && !$("#fascicolo").hidden) chiudiFascicolo();
     if (nome === "cronologia") caricaCronologia();
+    if (nome === "diario") caricaDiario();
     if (nome === "salvate") caricaSalvate();
     if (nome === "preferiti") caricaPreferiti();
     if (nome === "stato") caricaStato();
@@ -496,6 +527,57 @@
         <td>${v.righe}</td>
         <td class="azioni-td"><a class="discreto" href="#${escapa(v.permalink)}">Apri</a><button type="button" class="discreto elimina-ricerca" data-id="${v.id}">Elimina</button></td>
       </tr>`).join("");
+  }
+
+  function oraBreve(ts) {
+    return ts ? new Date(ts * 1000).toLocaleTimeString("it-IT", { timeStyle: "short" }) : "";
+  }
+
+  async function caricaDiario() {
+    const sel = $("#diario-giorno");
+    const giorni = await api("/api/diario/giorni");
+    const corpo = $("#diario-corpo");
+    if (!giorni.length) {
+      sel.innerHTML = "";
+      corpo.innerHTML = '<p class="vuota">Il diario è vuoto: si riempie con la prima ricerca.</p>';
+      return;
+    }
+    const scelto = giorni.some((g) => g.giorno === sel.value) ? sel.value : giorni[0].giorno;
+    sel.innerHTML = giorni.map((g) => `<option value="${g.giorno}" ${g.giorno === scelto ? "selected" : ""}>${dataIt(g.giorno)} · ${g.ricerche} ricerche, ${g.sentenze} sentenze</option>`).join("");
+    const voci = await api("/api/diario?giorno=" + encodeURIComponent(scelto) + "&limite=2000");
+    corpo.innerHTML = disegnaDiario(voci);
+  }
+
+  function disegnaDiario(voci) {
+    // Dal più vecchio al più recente: ogni apertura si aggancia all'ultima ricerca con lo stesso permalink.
+    const blocchi = [];
+    const perPermalink = new Map();
+    let sciolte = null;
+    voci.slice().reverse().forEach((v) => {
+      if (v.tipo === "ricerca") {
+        const b = { ricerca: v, aperture: [] };
+        blocchi.push(b);
+        perPermalink.set(v.permalink, b);
+        return;
+      }
+      const b = v.permalink ? perPermalink.get(v.permalink) : null;
+      if (b) { b.aperture.push(v); return; }
+      if (!sciolte) { sciolte = { ricerca: null, aperture: [] }; blocchi.push(sciolte); }
+      sciolte.aperture.push(v);
+    });
+    const apertura = (a) => {
+      const e = a.documento || {};
+      const estremi = e.numero ? estremiDoc(e) : escapa(a.id_sentenza);
+      return `<li><span class="quando">${oraBreve(a.quando)}</span> <a href="#" class="apri-diario" data-id="${escapa(a.id_sentenza)}">${estremi}</a>${e.data_deposito ? ` <span class="dettaglio">dep. ${dataIt(e.data_deposito)}</span>` : ""}</li>`;
+    };
+    return blocchi.reverse().map((b) => {
+      const r = b.ricerca;
+      const testa = r
+        ? `<div class="diario-ricerca"><span class="quando">${oraBreve(r.quando)}</span> <a class="titolo" href="#${escapa(r.permalink)}">${escapa(descriviVoce(r))}</a> <span class="dettaglio">${numero(r.trovati)} provvedimenti${r.pagina > 1 ? `, pagina ${r.pagina}` : ""}${r.ordinamento && r.ordinamento !== "pubblicazione" ? `, per ${escapa(r.ordinamento)}` : ""}</span></div>`
+        : '<div class="diario-ricerca"><span class="dettaglio">Aperte senza una ricerca (dai preferiti, dal diario o da un indirizzo)</span></div>';
+      const lista = b.aperture.length ? `<ul class="diario-aperture">${b.aperture.map(apertura).join("")}</ul>` : "";
+      return `<div class="diario-blocco">${testa}${lista}</div>`;
+    }).join("");
   }
 
   async function caricaSalvate() {
@@ -537,6 +619,7 @@
       <p>Iudex ${escapa(s.versione)} · richieste al server della Corte in questa sessione: <b>${s.chiamate_remote}</b> ·
          intervallo minimo fra richieste: ${s.intervallo_minimo_s} s</p>
       <p>Cache locale: <b>${s.sentenze_in_cache}</b> testi di sentenze, <b>${s.risposte_in_cache}</b> risposte di ricerca · archivio: <code>${escapa(s.percorso_dati)}</code></p>
+      <p>Diario: <b>${numero(s.voci_diario)}</b> voci, <b>${numero(s.sentenze_consultate)}</b> sentenze consultate con il testo conservato (non vengono toccate dai pulsanti della cache).</p>
       <div class="orari"><span class="etichetta">Tema scuro automatico</span>
         dalle <input id="tema-inizio" class="input-field" type="number" min="0" max="23" value="${orari.inizio}"> alle
         <input id="tema-fine" class="input-field" type="number" min="0" max="23" value="${orari.fine}">
@@ -746,13 +829,13 @@
       commutaPreferito(doc.id, estremiPerPreferito(doc), doc.preferito).catch((err) => messaggio(err.message));
       return;
     }
-    if (e.target.closest(".apri") || e.target.closest(".estremi")) apriFascicolo(voce.dataset.id);
+    if (e.target.closest(".apri") || e.target.closest(".estremi")) apriFascicolo(voce.dataset.id, true);
   });
 
   $("#risultati").addEventListener("keydown", (e) => {
     if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("estremi")) {
       e.preventDefault();
-      apriFascicolo(e.target.closest(".voce").dataset.id);
+      apriFascicolo(e.target.closest(".voce").dataset.id, true);
     }
   });
 
@@ -887,6 +970,31 @@
     } catch (err) { messaggio("Nota non salvata: " + err.message); }
   });
 
+  function esitoStato(testo) {
+    const m = $("#stato-esito");
+    m.hidden = !testo;
+    m.textContent = testo || "";
+  }
+
+  $("#diario-giorno").addEventListener("change", caricaDiario);
+  $("#diario-corpo").addEventListener("click", (e) => {
+    const a = e.target.closest(".apri-diario");
+    if (!a) return;
+    e.preventDefault();
+    mostraScheda("risultati");
+    $("#benvenuto").hidden = true;
+    apriFascicolo(a.dataset.id);
+  });
+  $$(".esporta-diario").forEach((b) => b.addEventListener("click", () => scarica("/api/export/diario?formato=" + b.dataset.formato).catch((err) => messaggio("Esportazione non riuscita: " + err.message))));
+  $("#esporta-consultate").addEventListener("click", () => scarica("/api/export/consultate").catch((err) => messaggio("Esportazione non riuscita: " + err.message)));
+  $("#copia-sicurezza").addEventListener("click", async (e) => {
+    e.currentTarget.disabled = true;
+    try {
+      const r = await api("/api/backup", { method: "POST" });
+      esitoStato(`Copia di sicurezza salvata in ${r.percorso}`);
+    } catch (err) { esitoStato("Copia non riuscita: " + err.message); } finally { $("#copia-sicurezza").disabled = false; }
+  });
+
   $("#svuota-cache").addEventListener("click", async () => { const r = await api("/api/cache", { method: "DELETE" }); caricaStato(); messaggio(`Cache delle ricerche svuotata (${r.rimosse} voci).`); });
   $("#svuota-testi").addEventListener("click", async () => { const r = await api("/api/cache/sentenze", { method: "DELETE" }); caricaStato(); aggiornaPie(); messaggio(`Testi in cache rimossi (${r.rimosse}).`); });
 
@@ -921,7 +1029,7 @@
     if (stato.scheda === "risultati" && stato.risposta) {
       if (e.key === "j") { spostaFuoco(1); return; }
       if (e.key === "k") { spostaFuoco(-1); return; }
-      if (e.key === "Enter" && stato.rigaFuoco >= 0) { apriFascicolo(stato.risposta.documenti[stato.rigaFuoco].id); return; }
+      if (e.key === "Enter" && stato.rigaFuoco >= 0) { apriFascicolo(stato.risposta.documenti[stato.rigaFuoco].id, true); return; }
     }
     if (!$("#fascicolo").hidden) {
       if (e.key === "n") vaiAHit(stato.hitCorrente + 1);

@@ -570,6 +570,25 @@ em.hit, mark { font-style: normal; background: var(--evidenziatore); color: inhe
 .fascicolo-estremi { font-size: 1.05rem; line-height: 1.3; font-weight: 600; }
 .fascicolo-estremi .sezione { text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary-color); font-size: 0.8rem; margin-right: 8px; }
 .fascicolo-estremi .meta { margin-top: 4px; font-weight: 400; }
+.fascicolo-estremi .consultazione { margin-top: 4px; font-weight: 400; font-size: 0.8rem; color: var(--neutral-color); }
+.fascicolo-estremi .consultazione a { color: var(--primary-color); text-decoration: none; }
+.fascicolo-estremi .consultazione a:hover { text-decoration: underline; }
+.fascicolo-estremi .consultazione .quando { font-variant-numeric: tabular-nums; }
+
+.diario-nota { margin: 10px 0 0; font-size: 0.85rem; color: var(--neutral-color); max-width: 70em; }
+.diario { padding-top: 10px; font-size: 0.9rem; }
+.diario .vuota { color: var(--neutral-color); font-style: italic; }
+.diario-blocco { padding: 8px 0 8px 10px; border-left: 3px solid var(--accento-chiaro); margin-bottom: 10px; }
+.diario-blocco:hover { border-left-color: var(--primary-color); }
+.diario-ricerca .quando, .diario-aperture .quando { color: var(--testo-3); font-size: 0.8rem; font-variant-numeric: tabular-nums; margin-right: 6px; }
+.diario-ricerca .titolo { font-weight: 600; color: inherit; text-decoration: none; }
+.diario-ricerca .titolo:hover { color: var(--primary-color); }
+.diario-ricerca .dettaglio, .diario-aperture .dettaglio { color: var(--neutral-color); font-size: 0.8rem; margin-left: 6px; }
+.diario-aperture { list-style: none; margin: 6px 0 0; padding: 0 0 0 18px; }
+.diario-aperture li { padding: 2px 0; }
+.diario-aperture li::before { content: "↳ "; color: var(--neutral-color); }
+.diario-aperture .apri-diario { color: inherit; text-decoration: none; font-weight: 600; }
+.diario-aperture .apri-diario:hover { color: var(--primary-color); }
 
 .fascicolo-azioni { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0 18px 10px; border-bottom: 1px solid var(--bordo); }
 .fascicolo-azioni .discreto { font-size: 0.85rem; padding: 0.4rem 0.7rem; }

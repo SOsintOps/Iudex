@@ -17,6 +17,7 @@
     <li class="marchio"><a href="/" title="Iudex: torna all'inizio"><img class="marchio-img chiaro" src="/static/marchio.png" alt="" width="44" height="44"><img class="marchio-img scuro" src="/static/marchio-scuro.png" alt="" width="44" height="44"><span class="nome">Iudex</span></a></li>
     <li class="scheda attiva" data-scheda="risultati" tabindex="0">Ricerca</li>
     <li class="scheda" data-scheda="cronologia" tabindex="0">Cronologia</li>
+    <li class="scheda" data-scheda="diario" tabindex="0">Diario</li>
     <li class="scheda" data-scheda="salvate" tabindex="0">Ricerche salvate</li>
     <li class="scheda" data-scheda="preferiti" tabindex="0">Preferiti</li>
     <li class="scheda" data-scheda="stato" tabindex="0">Stato</li>
@@ -133,6 +134,21 @@
     </table>
   </section>
 
+  <section class="pannello" id="pannello-diario" hidden>
+    <div class="barra"><div class="sommario">Diario delle consultazioni</div>
+      <div class="strumenti">
+        <label class="etichetta" for="diario-giorno">Giorno</label>
+        <select id="diario-giorno" class="selettore"></select>
+        <span class="separatore"></span>
+        <label class="etichetta">Esporta</label>
+        <button type="button" class="discreto esporta-diario" data-formato="jsonl">Diario JSONL</button>
+        <button type="button" class="discreto esporta-diario" data-formato="csv">Diario CSV</button>
+        <button type="button" id="esporta-consultate" class="discreto">Sentenze consultate (zip)</button>
+      </div></div>
+    <p class="dettaglio diario-nota">Ogni ricerca e ogni apertura di una sentenza restano qui per sempre, con la ricerca da cui la sentenza è stata aperta. Delle sentenze aperte Iudex conserva la risposta intera del server, testo compreso; dei risultati non aperti solo il conteggio.</p>
+    <div id="diario-corpo" class="diario"></div>
+  </section>
+
   <section class="pannello" id="pannello-salvate" hidden>
     <div class="barra"><div class="sommario">Ricerche salvate</div>
       <div class="strumenti"><span class="etichetta">Il controllo delle novità fa una richiesta al server per ricerca, solo quando lo chiedi.</span></div></div>
@@ -156,7 +172,10 @@
       <div class="strumenti">
         <button type="button" id="svuota-cache" class="discreto">Svuota cache ricerche</button>
         <button type="button" id="svuota-testi" class="discreto">Svuota testi in cache</button>
+        <span class="separatore"></span>
+        <button type="button" id="copia-sicurezza" class="discreto" title="Copia pulita del database in dati/">Copia di sicurezza</button>
       </div></div>
+    <div id="stato-esito" class="messaggio" hidden></div>
     <div id="stato" class="stato"></div>
   </section>
 
