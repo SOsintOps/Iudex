@@ -1,6 +1,6 @@
 # Registro delle modifiche
 
-## 0.3.1 — 2026-10-21
+## 0.4.0 — 2026-10-21
 
 ### Interfaccia
 - Il menu **Informazioni** si chiama **Help** e contiene due pagine nuove: la **Guida
@@ -27,6 +27,8 @@
   frase); i caratteri speciali sono protetti anche con gli operatori (`a:b OR c`); gli
   estremi accettano `Cass. civ.` davanti, il tipo in fondo (`n. 99 del 2025 sent.`) e il
   trattino (`123-2024`).
+
+## 0.3.1 — 2026-10-21
 
 ### Grafica
 - **Logo** di Iudex (bilancia con corona d'alloro e circuiti) nel README, con sfondo
