@@ -1,6 +1,6 @@
 [project]
 name = "iudex"
-version = "0.1.0"
+version = "0.2.0"
 description = "Interfaccia locale per interrogare SentenzeWeb, la banca dati pubblica delle sentenze della Corte Suprema di Cassazione"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,9 +14,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["ruff", "pytest", "pytest-asyncio", "respx"]
+mcp = ["mcp>=1.2"]
+desktop = ["pywebview>=5"]
 
 [project.scripts]
 iudex = "iudex.__main__:main"
+iudex-finestra = "iudex.desktop:main"
+iudex-mcp = "iudex.mcp_server:main"
 
 [build-system]
 requires = ["setuptools>=68"]

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iudex · Versioni</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%237A1F2E'/%3E%3Ctext x='16' y='23' font-family='Palatino Linotype,Georgia,serif' font-size='20' text-anchor='middle' fill='%23F7F6F2'%3EI%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+<script>try{var t=localStorage.getItem("iudex.tema");if(t)document.documentElement.dataset.tema=t.replace(/"/g,"");else if(matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.dataset.tema="scuro";}catch(e){}</script>
+</head>
+<body>
+<header class="testata">
+  <div class="marchio">
+    <a href="/" class="nome">Iudex</a>
+    <span class="fonte">SentenzeWeb · Corte Suprema di Cassazione</span>
+    <nav class="info-link" aria-label="Informazioni">
+      <a href="/">Ricerca</a>
+      <a href="/faq.html">Domande frequenti</a>
+      <a href="/versioni.html" class="attiva">Versioni</a>
+      <a href="/software-simili.html">Software simili</a>
+    </nav>
+  </div>
+</header>
+
+<main class="pagina-info">
+  <nav aria-label="Indice">
+    <a href="#v020">0.2.0 — 21 ottobre 2026</a>
+    <a href="#v010">0.1.0 — 21 ottobre 2026</a>
+    <a href="#numerazione">Come sono numerate le versioni</a>
+  </nav>
+  <article class="documento">
+    <h1>Versioni di Iudex</h1>
+    <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v020">0.2.0 <span class="data">— 21 ottobre 2026</span></h2>
+    <h3>Novità</h3>
+    <ul>
+      <li>Filtro per <b>materia</b> (classificazione del CED), con i valori più frequenti nella stessa risposta della ricerca.</li>
+      <li>Pannello di lettura: testo ricostruito in <b>paragrafi</b>, salto al <b>P.Q.M.</b>, dimensione del carattere regolabile, evidenziazione delle occorrenze calcolata dal server anche per frasi, troncamenti e riferimenti normativi.</li>
+      <li><b>Riferimenti normativi</b> del provvedimento leggibili e cliccabili: un clic cerca le sentenze che citano la stessa norma.</li>
+      <li><b>Colonne ridimensionabili</b> trascinando le maniglie: pannello dei filtri, pannello del testo e tabelle di cronologia, ricerche salvate e preferiti (larghezze conservate nel browser; doppio clic per ripristinare; frecce da tastiera).</li>
+      <li>Cronologia, ricerche salvate e preferiti in <b>tabelle</b>; <b>note</b> sui preferiti; eliminazione delle singole voci di cronologia.</li>
+      <li><b>Controllo delle novità</b> delle ricerche salvate, su richiesta: una richiesta al server per ricerca, con l'elenco dei provvedimenti nuovi dall'ultimo controllo.</li>
+      <li><b>Esportazione</b> fino ai primi 100 risultati (al più due richieste), con l'indicazione del costo in richieste.</li>
+      <li>Barre proporzionali nei filtri per sezione, anno e materia; scorciatoie <code>j</code>/<code>k</code>, <code>Invio</code>, <code>Alt+→</code>/<code>Alt+←</code>.</li>
+      <li>Pulsanti per svuotare la cache delle ricerche e i testi conservati; percorso dell'archivio locale nella scheda Stato.</li>
+      <li>Pagine informative: domande frequenti, versioni, software simili.</li>
+      <li><b>Finestra nativa</b> (<code>avvia-finestra.cmd</code>, extra <code>desktop</code>) e <b>server MCP</b> (<code>python -m iudex.mcp_server</code>, extra <code>mcp</code>) per usare Iudex da un assistente locale.</li>
+    </ul>
+    <h3>Sicurezza</h3>
+    <ul>
+      <li>Le API rispondono solo all'interfaccia di Iudex (header dedicato): una pagina di un altro sito aperta nello stesso browser non può usare Iudex per interrogare la Corte.</li>
+    </ul>
+    <h3>Correzioni</h3>
+    <ul>
+      <li>Il piè di pagina non si sovrappone più all'elenco dei risultati.</li>
+      <li>La navigazione fra le occorrenze scorre solo il pannello del testo, non la pagina intera.</li>
+    </ul>
+
+    <h2 id="v010">0.1.0 <span class="data">— 21 ottobre 2026</span></h2>
+    <p>Prima versione.</p>
+    <ul>
+      <li>Ricerca su SentenzeWeb per parole, estremi e riferimento normativo con la stessa sintassi del sito ufficiale; filtri per archivio, tipo, sezione, anno e sottosezione.</li>
+      <li>Una sola richiesta al server per ricerca (conteggi dei filtri inclusi), intervallo minimo di 2 secondi, nessun suggerimento inviato al server, un solo nuovo tentativo.</li>
+      <li>Pannello di lettura con testo integrale, occorrenze evidenziate e navigabili, massima, collegamento al PDF ufficiale, citazione da copiare.</li>
+      <li>Cronologia, ricerche salvate, preferiti, indirizzi ricaricabili; esportazione CSV, JSON e Markdown; cache locale SQLite dei testi aperti.</li>
+      <li>Documentazione dell'analisi del sito in <code>docs/analisi-sito.md</code>.</li>
+    </ul>
+
+    <h2 id="numerazione">Come sono numerate le versioni</h2>
+    <p>Tre numeri, <code>maggiore.minore.correzione</code>: cambia il primo quando l'archivio locale o le API cambiano in modo incompatibile, il secondo quando arrivano funzioni nuove, il terzo per le sole correzioni. Ogni versione pubblicata ha un'etichetta nel repository.</p>
+  </article>
+</main>
+
+<footer class="pie"><span>Fonte dei dati: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb.</span></footer>
+</body>
+</html>

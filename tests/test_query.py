@@ -4,6 +4,7 @@ from iudex.query import (
     controlla_estremi,
     costruisci_query,
     escape_solr,
+    formatta_riferimenti,
     normalizza_documento,
     normalizza_facet,
     parametri_ricerca,
@@ -89,8 +90,34 @@ def test_parametri_ricerca_contengono_i_facet():
         "szdec",
         "anno",
         "ssz",
+        "materia",
     ]
+    assert coppie["f.materia.facet.limit"] == "60"
     assert dict(parametri_ricerca("q", "hl", 0, 10, "rilevanza")).get("sort") is None
+
+
+def test_formatta_riferimenti():
+    rnc = {
+        "sp": ["DLG", "LS", "CC", "DLG"],
+        "num": ["0368", "0296", "", "0368"],
+        "dat": ["2001", "2006", "", "2001"],
+        "art": ["0001 00", "0001 00", "2043 00", "0001 00"],
+        "com": ["0004", "0519", "", "0004"],
+    }
+    voci = formatta_riferimenti(rnc)
+    assert [v["testo"] for v in voci] == [
+        "art. 1 d.lgs. 368/2001",
+        "art. 1 legge 296/2006",
+        "art. 2043 c.c.",
+    ]
+    assert voci[0]["ricerca"] == "art. 1 d.lgs. 368/2001"
+    assert voci[2]["ricerca"] == "art. 2043 c.c."
+    assert formatta_riferimenti({}) == []
+
+
+def test_filtro_materia_nel_query():
+    q, _ = costruisci_query("mobbing", None, {"materia": ["LAVORO SUBORDINATO"]})
+    assert q.endswith(' AND materia:"LAVORO SUBORDINATO"')
 
 
 def test_url_pdf():

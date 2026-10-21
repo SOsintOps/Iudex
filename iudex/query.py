@@ -29,7 +29,31 @@ ORDINAMENTI = {
     "rilevanza": "",
 }
 
-CAMPI_FACET = ("kind", "tipoprov", "szdec", "anno", "ssz")
+CAMPI_FACET = ("kind", "tipoprov", "szdec", "anno", "ssz", "materia")
+
+# Tipi di atto nei campi "rnc-sp" dei provvedimenti (codici del CED, parziali).
+TIPI_ATTO = {
+    "LS": "legge",
+    "DLG": "d.lgs.",
+    "DL": "d.l.",
+    "DPR": "d.P.R.",
+    "DM": "d.m.",
+    "DPCM": "d.P.C.M.",
+    "RD": "r.d.",
+    "RDL": "r.d.l.",
+    "LR": "legge reg.",
+    "CC": "c.c.",
+    "CPC": "c.p.c.",
+    "CP": "c.p.",
+    "CPP": "c.p.p.",
+    "COST": "Cost.",
+    "CEDU": "CEDU",
+    "TUE": "TUE",
+    "TFUE": "TFUE",
+    "REG": "reg. UE",
+    "DIR": "dir. UE",
+}
+CODICI_SENZA_ESTREMI = {"CC", "CPC", "CP", "CPP", "COST", "CEDU", "TUE", "TFUE"}
 
 ARCHIVI = {"snciv": "Civile", "snpen": "Penale"}
 SEZIONI = {
@@ -248,9 +272,67 @@ def parametri_ricerca(
             ("facet.mincount", "1"),
             ("facet.limit", "257"),
             ("facet.sort", "false"),
+            # La materia ha migliaia di valori: solo i più frequenti, ordinati per conteggio.
+            ("f.materia.facet.limit", "60"),
+            ("f.materia.facet.sort", "count"),
         ]
         parametri += [("facet.field", campo) for campo in CAMPI_FACET]
     return parametri
+
+
+def _senza_zeri(valore: str) -> str:
+    v = valore.strip().lstrip("0")
+    return v or "0"
+
+
+def formatta_riferimenti(rnc: dict) -> list[dict]:
+    """Trasforma le liste parallele ``rnc-*`` di un provvedimento in riferimenti leggibili.
+
+    Ogni indice descrive un riferimento: ``sp`` tipo di atto, ``num`` numero, ``dat`` anno,
+    ``art`` articolo ("0001 00"), ``com`` comma. Restituisce voci con il testo da mostrare e
+    il testo da usare nel campo "Riferimento normativo".
+    """
+    if not rnc:
+        return []
+    liste = {k: (v if isinstance(v, list) else [v]) for k, v in rnc.items()}
+    quanti = max((len(v) for v in liste.values()), default=0)
+
+    def voce(campo: str, i: int) -> str:
+        lista = liste.get(campo, [])
+        return str(lista[i]).strip() if i < len(lista) and lista[i] is not None else ""
+
+    risultato: list[dict] = []
+    visti: set[str] = set()
+    for i in range(quanti):
+        codice = voce("sp", i).upper()
+        tipo = TIPI_ATTO.get(codice, codice.lower() if codice else "")
+        numero = _senza_zeri(voce("num", i)) if voce("num", i) else ""
+        anno = voce("dat", i)
+        articolo_grezzo = voce("art", i).split()
+        articolo = _senza_zeri(articolo_grezzo[0]) if articolo_grezzo else ""
+        # Il campo "com" (comma) non risulta allineato agli altri nei dati osservati:
+        # non viene mostrato per non attribuire commi sbagliati.
+        parti_atto = [tipo]
+        if codice not in CODICI_SENZA_ESTREMI and numero and anno:
+            parti_atto.append(f"{numero}/{anno}")
+        atto = " ".join(p for p in parti_atto if p).strip()
+        if not atto and not articolo:
+            continue
+        testo = ((f"art. {articolo} " if articolo else "") + atto).strip()
+        if testo in visti:
+            continue
+        visti.add(testo)
+        risultato.append(
+            {
+                "tipo": tipo,
+                "numero": numero,
+                "anno": anno,
+                "articolo": articolo,
+                "testo": testo,
+                "ricerca": testo,
+            }
+        )
+    return risultato
 
 
 def parametri_dettaglio(id_sentenza: str, hl_q: str | None) -> list[tuple[str, str]]:

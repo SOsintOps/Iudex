@@ -14,7 +14,11 @@
   <div class="marchio">
     <a href="/" class="nome" title="Iudex: torna all'inizio">Iudex</a>
     <span class="fonte">SentenzeWeb · Corte Suprema di Cassazione</span>
-    <span class="conteggio" id="conteggio-archivio" hidden></span>
+    <nav class="info-link" aria-label="Informazioni">
+      <a href="/faq.html">Domande frequenti</a>
+      <a href="/versioni.html">Versioni</a>
+      <a href="/software-simili.html">Software simili</a>
+    </nav>
   </div>
 
   <form id="ricerca" class="ricerca" autocomplete="off">
@@ -54,6 +58,7 @@
     <p><b>Parole:</b> più parole cercano la frase con distanza fino a 7 termini; <code>"giusta causa"</code> cerca la frase esatta; <code>licenz*</code> tronca; <code>AND</code>, <code>OR</code>, <code>NOT</code> combinano.</p>
     <p><b>Estremi:</b> <code>12345/2024</code>, <code>n. 123 del 2025</code>, <code>sent. 99/24</code> (anche ord., dec.).</p>
     <p><b>Riferimento normativo:</b> scrivi come lo citeresti (<code>art. 2043 c.c.</code>, <code>art. 18 legge 300/1970</code>); il server lo normalizza nelle varianti con cui le sentenze lo citano.</p>
+    <p><b>Tastiera:</b> <code>/</code> cerca · <code>j</code>/<code>k</code> scorrono i risultati · <code>Invio</code> apre · <code>n</code>/<code>p</code> occorrenze · <code>Alt+→</code>/<code>Alt+←</code> sentenza successiva/precedente · <code>Esc</code> chiude.</p>
   </div>
 
   <nav class="schede" aria-label="Sezioni">
@@ -76,6 +81,7 @@
     </div>
     <div id="elenco-filtri" class="elenco-filtri"></div>
   </aside>
+  <div class="maniglia" id="maniglia-filtri" role="separator" aria-orientation="vertical" aria-label="Larghezza dei filtri" tabindex="0" title="Trascina per ridimensionare, doppio clic per ripristinare"></div>
 
   <section class="pannello" id="pannello-risultati">
     <div class="barra" id="barra-risultati" hidden>
@@ -83,10 +89,15 @@
       <div class="strumenti">
         <button type="button" id="salva-ricerca" class="discreto">Salva ricerca</button>
         <span class="separatore"></span>
-        <span class="etichetta">Esporta pagina</span>
-        <a id="export-csv" class="discreto" download>CSV</a>
-        <a id="export-json" class="discreto" download>JSON</a>
-        <a id="export-md" class="discreto" download>Markdown</a>
+        <label class="etichetta" for="export-quanti">Esporta</label>
+        <select id="export-quanti" class="selettore">
+          <option value="pagina">pagina corrente</option>
+          <option value="50">primi 50 (1 richiesta)</option>
+          <option value="100">primi 100 (2 richieste)</option>
+        </select>
+        <button type="button" class="discreto esporta" data-formato="csv">CSV</button>
+        <button type="button" class="discreto esporta" data-formato="json">JSON</button>
+        <button type="button" class="discreto esporta" data-formato="md">Markdown</button>
       </div>
     </div>
     <form id="modulo-salva" class="modulo-salva" hidden>
@@ -102,9 +113,9 @@
       <h1>Ricerca libera fra le sentenze della Corte</h1>
       <p>Iudex interroga <a href="https://www.italgiure.giustizia.it/sncass/" target="_blank" rel="noopener">SentenzeWeb</a>, l'archivio pubblico delle sentenze civili e penali della Cassazione degli ultimi anni, con un'interfaccia pensata per leggere e confrontare, non solo per trovare.</p>
       <ul>
-        <li>Una ricerca produce una sola richiesta al server della Corte; i filtri arrivano nella stessa risposta.</li>
+        <li>Una ricerca produce una sola richiesta al server della Corte; i filtri, materia compresa, arrivano nella stessa risposta.</li>
         <li>Ogni ricerca ha un indirizzo ricaricabile e finisce nella cronologia; i testi aperti restano in cache locale.</li>
-        <li>Esporta la pagina in CSV, JSON o Markdown; salva le sentenze fra i preferiti.</li>
+        <li>Esporta i risultati in CSV, JSON o Markdown; salva le sentenze fra i preferiti con una nota; controlla le novità delle ricerche salvate quando vuoi tu.</li>
       </ul>
       <p class="nota">I dati sono della Corte Suprema di Cassazione. Il Garante della privacy ha richiamato la Corte sui dati personali presenti nei testi: non usare questo strumento per cercare persone.</p>
     </section>
@@ -113,24 +124,40 @@
   <section class="pannello" id="pannello-cronologia" hidden>
     <div class="barra"><div class="sommario">Cronologia delle ricerche</div>
       <div class="strumenti"><button type="button" id="svuota-cronologia" class="discreto">Svuota</button></div></div>
-    <ol id="lista-cronologia" class="lista-voci"></ol>
+    <table class="tabella" id="tabella-cronologia" data-chiave="cronologia">
+      <thead><tr><th>Quando</th><th>Ricerca</th><th>Risultati</th><th>Ordinamento</th><th>Per pagina</th><th>Azioni</th></tr></thead>
+      <tbody id="lista-cronologia"></tbody>
+    </table>
   </section>
 
   <section class="pannello" id="pannello-salvate" hidden>
-    <div class="barra"><div class="sommario">Ricerche salvate</div></div>
-    <ol id="lista-salvate" class="lista-voci"></ol>
+    <div class="barra"><div class="sommario">Ricerche salvate</div>
+      <div class="strumenti"><span class="etichetta">Il controllo delle novità fa una richiesta al server per ricerca, solo quando lo chiedi.</span></div></div>
+    <table class="tabella" id="tabella-salvate" data-chiave="salvate">
+      <thead><tr><th>Quando</th><th>Nome</th><th>Ultimo controllo</th><th>Trovati</th><th>Novità</th><th>Azioni</th></tr></thead>
+      <tbody id="lista-salvate"></tbody>
+    </table>
   </section>
 
   <section class="pannello" id="pannello-preferiti" hidden>
-    <div class="barra"><div class="sommario">Sentenze preferite</div></div>
-    <ol id="lista-preferiti" class="lista-voci"></ol>
+    <div class="barra"><div class="sommario">Sentenze preferite</div>
+      <div class="strumenti"><span class="etichetta">La nota si salva quando esci dal campo.</span></div></div>
+    <table class="tabella" id="tabella-preferiti" data-chiave="preferiti">
+      <thead><tr><th>Quando</th><th>Provvedimento</th><th>ECLI</th><th>Nota</th><th>Azioni</th></tr></thead>
+      <tbody id="lista-preferiti"></tbody>
+    </table>
   </section>
 
   <section class="pannello" id="pannello-stato" hidden>
-    <div class="barra"><div class="sommario">Stato del collegamento</div></div>
+    <div class="barra"><div class="sommario">Stato del collegamento</div>
+      <div class="strumenti">
+        <button type="button" id="svuota-cache" class="discreto">Svuota cache ricerche</button>
+        <button type="button" id="svuota-testi" class="discreto">Svuota testi in cache</button>
+      </div></div>
     <div id="stato" class="stato"></div>
   </section>
 
+  <div class="maniglia" id="maniglia-fascicolo" role="separator" aria-orientation="vertical" aria-label="Larghezza del testo" tabindex="0" title="Trascina per ridimensionare, doppio clic per ripristinare" hidden></div>
   <aside class="fascicolo" id="fascicolo" hidden aria-label="Testo della sentenza">
     <div class="fascicolo-testa">
       <div class="fascicolo-estremi" id="fascicolo-estremi"></div>
@@ -140,13 +167,18 @@
       <a id="fascicolo-pdf" class="discreto" target="_blank" rel="noopener">PDF ufficiale</a>
       <button type="button" id="copia-citazione" class="discreto">Copia citazione</button>
       <button type="button" id="preferito" class="discreto">Aggiungi ai preferiti</button>
-      <a id="fascicolo-md" class="discreto" download>Markdown</a>
-      <a id="fascicolo-json" class="discreto" download>JSON</a>
+      <button type="button" id="esporta-sentenza-md" class="discreto">Markdown</button>
+      <button type="button" id="esporta-sentenza-json" class="discreto">JSON</button>
+      <button type="button" id="vai-pqm" class="discreto" title="Vai al dispositivo" hidden>P.Q.M.</button>
       <span class="spazio"></span>
+      <span class="carattere">
+        <button type="button" id="carattere-meno" title="Carattere più piccolo">A−</button>
+        <button type="button" id="carattere-piu" title="Carattere più grande">A+</button>
+      </span>
       <span class="evidenziatore" id="evidenziatore" hidden>
-        <button type="button" id="hit-prec" title="Occorrenza precedente">‹</button>
+        <button type="button" id="hit-prec" title="Occorrenza precedente (p)">‹</button>
         <span id="hit-pos">0 / 0</span>
-        <button type="button" id="hit-succ" title="Occorrenza successiva">›</button>
+        <button type="button" id="hit-succ" title="Occorrenza successiva (n)">›</button>
       </span>
     </div>
     <div class="fascicolo-corpo" id="fascicolo-corpo"></div>

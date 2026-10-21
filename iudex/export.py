@@ -28,6 +28,47 @@ def _senza_tag(testo: str | None) -> str:
     return re.sub(r"<[^>]+>", "", testo or "")
 
 
+INTESTAZIONI = (
+    "FATTI DI CAUSA",
+    "RAGIONI DELLA DECISIONE",
+    "RITENUTO IN FATTO",
+    "CONSIDERATO IN DIRITTO",
+    "MOTIVI DELLA DECISIONE",
+    "SVOLGIMENTO DEL PROCESSO",
+    "FATTO E DIRITTO",
+    "RILEVATO CHE",
+    "CONSIDERATO CHE",
+    "RITENUTO CHE",
+    "OSSERVA",
+)
+_RE_PQM = re.compile(r"\s*P\.\s?Q\.\s?M\.?\s*")
+_RE_INTESTAZIONI = re.compile(r"\s*(" + "|".join(re.escape(i) for i in INTESTAZIONI) + r")\s*")
+_RE_PUNTI = re.compile(r"(?<=[.;:])\s*(\d{1,2}(?:\.\d{1,2}){0,3}\.)\s+(?=[A-ZÈÀÌÒÙ])")
+_RE_PARTI = re.compile(r"\s*(-\s?(?:contro)?ricorrent[ei]\s?-|-\s?intimat[oi]\s?-)\s*")
+
+
+def paragrafa(testo: str | None) -> tuple[str, int | None]:
+    """Ricostruisce i paragrafi di un testo OCR privo di a capo.
+
+    Inserisce un a capo doppio prima delle intestazioni classiche dei provvedimenti, dei
+    punti numerati ("2.", "2.1.") che seguono un segno di punteggiatura e delle parti
+    processuali; "P.Q.M." diventa un'intestazione. Restituisce il testo e la posizione del
+    dispositivo (indice di "P.Q.M."), se presente.
+    """
+    if not testo:
+        return "", None
+    t = testo
+    if "\n" not in t:
+        t = _RE_INTESTAZIONI.sub(lambda m: f"\n\n{m.group(1)}\n\n", t)
+        t = _RE_PARTI.sub(lambda m: f"\n{m.group(1)}\n", t)
+        t = _RE_PUNTI.sub(lambda m: f"\n\n{m.group(1)} ", t)
+    t = _RE_PQM.sub("\n\nP.Q.M.\n\n", t)
+    t = re.sub(r"[ \t]*\n[ \t]*", "\n", t)
+    t = re.sub(r"\n{3,}", "\n\n", t).strip()
+    posizione = t.find("P.Q.M.")
+    return t, (posizione if posizione >= 0 else None)
+
+
 def estremi_brevi(doc: dict) -> str:
     """``Cass. civ., Sez. Lavoro, Ordinanza n. 26349/2026``."""
     archivio = "civ." if doc.get("kind") == "snciv" else "pen."
@@ -92,7 +133,7 @@ def sentenza_markdown(doc: dict, testo: str | None) -> str:
         "",
         "---",
         "",
-        _senza_tag(testo) if testo else "(testo non disponibile)",
+        paragrafa(_senza_tag(testo))[0] if testo else "(testo non disponibile)",
     ]
     return "\n".join(righe)
 

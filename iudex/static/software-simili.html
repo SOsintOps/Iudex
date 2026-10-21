@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iudex · Software simili</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%237A1F2E'/%3E%3Ctext x='16' y='23' font-family='Palatino Linotype,Georgia,serif' font-size='20' text-anchor='middle' fill='%23F7F6F2'%3EI%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+<script>try{var t=localStorage.getItem("iudex.tema");if(t)document.documentElement.dataset.tema=t.replace(/"/g,"");else if(matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.dataset.tema="scuro";}catch(e){}</script>
+</head>
+<body>
+<header class="testata">
+  <div class="marchio">
+    <a href="/" class="nome">Iudex</a>
+    <span class="fonte">SentenzeWeb · Corte Suprema di Cassazione</span>
+    <nav class="info-link" aria-label="Informazioni">
+      <a href="/">Ricerca</a>
+      <a href="/faq.html">Domande frequenti</a>
+      <a href="/versioni.html">Versioni</a>
+      <a href="/software-simili.html" class="attiva">Software simili</a>
+    </nav>
+  </div>
+</header>
+
+<main class="pagina-info">
+  <nav aria-label="Indice">
+    <a href="#ufficiale">SentenzeWeb e ItalgiureWeb</a>
+    <a href="#it-eli-mcp">it-eli-mcp</a>
+    <a href="#bettercall">BetterCallClaudeMCP_Italy</a>
+    <a href="#mcp-legal-it">mcp-legal-it</a>
+    <a href="#giurisprudenza-db">giurisprudenza-db</a>
+    <a href="#confronto">Confronto</a>
+  </nav>
+  <article class="documento">
+    <h1>Software simili</h1>
+    <p>Progetti che accedono alla stessa banca dati o a dati vicini, come osservati il 21 ottobre 2026 leggendo codice e documentazione. Nessuno di essi offre un'interfaccia grafica locale: sono server MCP (strumenti per assistenti) o raccolte di dati.</p>
+
+    <h2 id="ufficiale">SentenzeWeb e ItalgiureWeb (Corte di Cassazione)</h2>
+    <p><a href="https://www.italgiure.giustizia.it/sncass/" target="_blank" rel="noopener">SentenzeWeb</a> è la fonte di Iudex: ricerca libera e gratuita sulle sentenze civili e penali degli ultimi anni, pagina jQuery su un motore Apache Solr. La sua interfaccia manda una richiesta al server per ogni lettera digitata e quattro richieste separate per i conteggi dei filtri; non ha cronologia, export, permalink né filtro per materia. <b>ItalgiureWeb</b> è il sistema completo del CED (massime, archivi storici, altre corti), riservato agli operatori della giustizia e, a pagamento, ad altre categorie; dal 1° ottobre 2026 è disponibile solo nel nuovo front end. Iudex non lo usa.</p>
+
+    <h2 id="it-eli-mcp">it-eli-mcp (matematicsolutions)</h2>
+    <p>Server MCP in Python, licenza MIT, nato per la legislazione (Normattiva) con un modulo per la Cassazione. Interroga lo stesso Solr di SentenzeWeb con richieste GET, query costruita a mano (<code>ocr:"termine" AND kind:snciv AND anno:2024</code>), nessuna autenticazione, User-Agent proprio. Ha individuato il difetto della catena TLS del server e include il certificato intermedio corretto: Iudex ha ripreso quella soluzione. Non usa i facet, l'ordinamento né il campo dei riferimenti normativi; nessun limite di velocità e nessuna cache. Il file <code>DISCOVERY.md</code> documenta la verifica degli endpoint.</p>
+
+    <h2 id="bettercall">BetterCallClaudeMCP_Italy (gattonim)</h2>
+    <p>Suite di server MCP in TypeScript, licenza AGPL-3. Il modulo Cassazione fa POST nella stessa forma del sito, ma chiede un cookie di sessione ottenuto accedendo a ItalgiureWeb (non necessario per SentenzeWeb) e senza cookie rinuncia a chiamare il server, restituendo link di ripiego. Disattiva la verifica del certificato TLS. Limita a una richiesta ogni due secondi con una sola connessione, ritmo che Iudex ha adottato.</p>
+
+    <h2 id="mcp-legal-it">mcp-legal-it (capazme)</h2>
+    <p>Server MCP in Python, licenza Apache 2.0, con oltre duecento strumenti per il diritto italiano: norme, giurisprudenza di Cassazione, tributaria, amministrativa e dell'Unione, Gazzetta Ufficiale, calcoli. Per la Cassazione usa lo stesso Solr con il parser <em>edismax</em>, pesi sui campi (il dispositivo pesa cinque volte il testo), filtri come <code>fq</code> separati e facet su materia, sezione, anno e tipo; i risultati quindi non coincidono con quelli del sito. Restringe o allarga da solo la query se i risultati sono troppi o troppo pochi, e stima gli orientamenti contando frasi segnale nei testi. Verifica TLS disattivata, nessun intervallo fra richieste, fonti interrogate in parallelo. Utile per un assistente, non per una persona.</p>
+
+    <h2 id="giurisprudenza-db">giurisprudenza-db (Synthos-Logic)</h2>
+    <p>Non interroga SentenzeWeb: raccoglie dal sito istituzionale della Corte i provvedimenti segnalati dall'Ufficio del Massimario e le rassegne mensili, e li converte in schede Markdown con massima ed estremi (licenza CC BY 4.0 per i dati, MIT per gli script). Copre solo le decisioni segnalate, poche centinaia l'anno, più la Corte costituzionale.</p>
+
+    <h2 id="confronto">Confronto</h2>
+    <table>
+      <thead><tr><th>Progetto</th><th>Tipo</th><th>Accesso</th><th>Stessi risultati del sito</th><th>Limiti di cortesia</th><th>TLS</th></tr></thead>
+      <tbody>
+        <tr><td>Iudex</td><td>interfaccia locale + MCP</td><td>Solr di SentenzeWeb, 1 richiesta per ricerca</td><td>sì</td><td>1 alla volta, 2 s, cache</td><td>verificato, intermedio incluso</td></tr>
+        <tr><td>it-eli-mcp</td><td>MCP</td><td>Solr, GET</td><td>no (query propria)</td><td>nessuno</td><td>verificato, intermedio incluso</td></tr>
+        <tr><td>BetterCallClaudeMCP_Italy</td><td>MCP</td><td>Solr, POST, cookie richiesto</td><td>no</td><td>1 alla volta, 2 s</td><td>verifica disattivata</td></tr>
+        <tr><td>mcp-legal-it</td><td>MCP</td><td>Solr, edismax</td><td>no (pesi e rilassamenti)</td><td>nessuno</td><td>verifica disattivata</td></tr>
+        <tr><td>giurisprudenza-db</td><td>dataset</td><td>sito istituzionale, PDF</td><td>—</td><td>aggiornamento periodico</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p>Riferimenti: <a href="https://github.com/matematicsolutions/it-eli-mcp" target="_blank" rel="noopener">it-eli-mcp</a>, <a href="https://github.com/gattonim/BetterCallClaudeMCP_Italy" target="_blank" rel="noopener">BetterCallClaudeMCP_Italy</a>, <a href="https://github.com/capazme/mcp-legal-it" target="_blank" rel="noopener">mcp-legal-it</a>, <a href="https://github.com/Synthos-Logic/giurisprudenza-db" target="_blank" rel="noopener">giurisprudenza-db</a>.</p>
+  </article>
+</main>
+
+<footer class="pie"><span>Fonte dei dati: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb.</span></footer>
+</body>
+</html>

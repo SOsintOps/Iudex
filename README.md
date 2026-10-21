@@ -7,23 +7,28 @@ Iudex non è un archivio e non copia la banca dati: ogni ricerca interroga il se
 Corte come farebbe il browser, ma con un'interfaccia pensata per leggere e confrontare,
 una cronologia, i preferiti, l'esportazione e una cache locale dei testi già aperti.
 
-![Iudex: pagina dei risultati](docs/immagini/risultati.png)
+![Iudex: pagina dei risultati con il pannello di lettura](docs/immagini/risultati.png)
 
 ## Che cosa fa
 
 - **Ricerca** per parole, frase esatta, troncamento, operatori `AND`/`OR`/`NOT`, estremi
   (`12345/2024`, `sent. n. 99 del 2025`) e **riferimento normativo** (`art. 18 legge 300/1970`),
   con la stessa sintassi e gli stessi risultati del sito ufficiale.
-- **Filtri** per archivio (civile/penale), tipo di provvedimento, sezione, anno e
-  sottosezione, con i conteggi, in selezione multipla.
-- **Testo integrale** in un pannello di lettura accanto ai risultati, con le occorrenze
-  evidenziate e navigabili (`n`/`p` da tastiera), la massima e i riferimenti normativi
-  indicizzati dal CED; collegamento al **PDF ufficiale**.
-- **Cronologia**, **ricerche salvate** e **preferiti**; ogni ricerca ha un indirizzo
-  ricaricabile (`http://127.0.0.1:8765/#testo=…&kind=snciv&anno=2026`).
-- **Esportazione** della pagina di risultati in CSV, JSON o Markdown e della singola
-  sentenza in Markdown o JSON, con la citazione pronta da copiare.
-- Tema chiaro e scuro, righe compatte, nessuna dipendenza esterna nel browser.
+- **Filtri** per archivio (civile/penale), tipo di provvedimento, sezione, anno,
+  sottosezione e **materia**, con i conteggi, in selezione multipla.
+- **Testo integrale** in un pannello di lettura accanto ai risultati, ricostruito in
+  paragrafi, con le occorrenze evidenziate e navigabili (`n`/`p`), il salto al P.Q.M., la
+  massima, i **riferimenti normativi** indicizzati dal CED (cliccabili: cercano le sentenze
+  che citano la stessa norma) e il collegamento al **PDF ufficiale**.
+- **Cronologia**, **ricerche salvate** con **controllo delle novità** su richiesta,
+  **preferiti con note**; ogni ricerca ha un indirizzo ricaricabile
+  (`http://127.0.0.1:8765/#testo=…&kind=snciv&anno=2026`).
+- **Esportazione** della pagina di risultati o dei primi 50/100 risultati in CSV, JSON o
+  Markdown, e della singola sentenza in Markdown o JSON, con la citazione pronta da copiare.
+- **Colonne ridimensionabili** trascinando le maniglie (pannelli e tabelle), tema chiaro e
+  scuro, righe compatte, carattere regolabile, scorciatoie da tastiera, nessuna dipendenza
+  esterna nel browser.
+- Pagine integrate di **domande frequenti**, **versioni** e **software simili**.
 
 ## Come interroga il sito (e perché è più leggero del sito stesso)
 
@@ -39,16 +44,20 @@ nella stessa richiesta della ricerca. Inoltre:
 | Nuovi tentativi | 1 solo, su errore di rete o 5xx; nessuno su 403/429 |
 | Suggerimenti mentre si digita | nessuna richiesta al server: la lista delle sigle normative è scaricata una volta e tenuta 30 giorni |
 | Risposte di ricerca | in cache locale per un'ora: ripetere o ricaricare una ricerca non chiama il server |
-| Testi aperti | conservati in locale per sempre: riaprire una sentenza non chiama il server |
+| Testi aperti | conservati in locale: riaprire una sentenza non chiama il server |
+| Controllo novità delle ricerche salvate | solo su clic, una richiesta per ricerca |
+| Esportazioni | pagina corrente: nessuna richiesta; primi 50: al più una; primi 100: al più due |
 | PDF | non scaricati da Iudex: il collegamento apre il documento sul sito della Corte |
 | Telemetria del sito (`xway`) | non replicata (`IUDEX_TELEMETRIA=1` per replicarla) |
 | Identità dichiarata | User-Agent e header di Chrome, come dal sito ufficiale |
+| API locali | rispondono solo all'interfaccia di Iudex (header `X-Iudex: 1`): un altro sito aperto nel browser non può usarle |
 
 Non c'è alcuna funzione di scaricamento massivo o di scansione dell'archivio, e non va
 aggiunta: la banca dati è della Corte, che la pubblica per la consultazione.
 
 I dettagli degli endpoint, dei parametri e dei campi sono in
-[docs/analisi-sito.md](docs/analisi-sito.md).
+[docs/analisi-sito.md](docs/analisi-sito.md); le risposte alle domande più comuni in
+[docs/faq.md](docs/faq.md); i progetti affini in [docs/software-simili.md](docs/software-simili.md).
 
 ## Installazione
 
@@ -69,6 +78,42 @@ macOS: `.venv/bin/python -m iudex`. I dati locali (cronologia, preferiti, cache)
 Variabili d'ambiente: `IUDEX_PORTA` (8765), `IUDEX_HOST` (127.0.0.1), `IUDEX_DATI`
 (cartella dei dati), `IUDEX_INTERVALLO` (secondi fra le richieste), `IUDEX_TTL_RICERCHE`
 (secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`.
+
+### Finestra nativa
+
+```bat
+.venv\Scripts\python.exe -m pip install -e .[desktop]
+avvia-finestra.cmd
+```
+
+Apre Iudex in una finestra propria (componente WebView2 di Windows 11; WebKitGTK su Linux,
+WebKit su macOS) e ferma il server quando la chiudi. Un eseguibile autonomo con PyInstaller
+è possibile ma non è fornito.
+
+### Con un assistente o un LLM locale (MCP)
+
+```bat
+.venv\Scripts\python.exe -m pip install -e .[mcp]
+```
+
+Con Iudex in esecuzione, `python -m iudex.mcp_server` espone tre strumenti MCP
+(`cerca_sentenze`, `cerca_per_norma`, `leggi_sentenza`) che passano dall'API locale, quindi
+dalla cache e dai limiti di cortesia. Esempio per LM Studio (`mcp.json`) o Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "iudex": {
+      "command": "H:\\github\\lavori miei\\Iudex\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "iudex.mcp_server"]
+    }
+  }
+}
+```
+
+Serve un modello che sappia chiamare strumenti; gli strumenti sono tre, quindi anche un
+modello piccolo li gestisce. Le istruzioni del server chiedono all'assistente di non
+ripetere ricerche identiche e di non scorrere molte pagine.
 
 ### Certificato TLS
 
@@ -91,12 +136,14 @@ Struttura:
 
 | Modulo | Compito |
 |--------|---------|
-| `iudex/query.py` | costruzione delle query Solr, trascritta dal JavaScript del sito |
+| `iudex/query.py` | costruzione delle query Solr, trascritta dal JavaScript del sito; riferimenti normativi |
 | `iudex/client.py` | client HTTP con i limiti di cortesia e il contesto TLS |
 | `iudex/cache.py` | SQLite: cronologia, ricerche salvate, preferiti, testi, cache |
-| `iudex/export.py` | CSV, JSON, Markdown |
-| `iudex/app.py` | server FastAPI e API JSON |
-| `iudex/static/` | interfaccia (HTML, CSS, JavaScript senza dipendenze) |
+| `iudex/export.py` | CSV, JSON, Markdown; ricostruzione dei paragrafi |
+| `iudex/app.py` | server FastAPI, API JSON, protezione delle API |
+| `iudex/mcp_server.py` | server MCP (extra `mcp`) |
+| `iudex/desktop.py` | finestra nativa (extra `desktop`) |
+| `iudex/static/` | interfaccia e pagine informative (HTML, CSS, JavaScript senza dipendenze) |
 
 ## Privacy
 

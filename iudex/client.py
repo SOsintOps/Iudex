@@ -113,8 +113,13 @@ class ClientSentenzeWeb:
             )
         if not self._sessione_pronta:
             # Come un browser: prima la pagina (che imposta il cookie di sessione), poi le query.
-            await self._richiesta("GET", URL_SNCASS, tipo="pagina", headers=HEADER_PAGINA)
+            # Il segnale va alzato subito, così due richieste concorrenti non la chiedono due volte.
             self._sessione_pronta = True
+            try:
+                await self._richiesta("GET", URL_SNCASS, tipo="pagina", headers=HEADER_PAGINA)
+            except ErroreRemoto:
+                self._sessione_pronta = False
+                raise
         return self._client
 
     async def chiudi(self) -> None:

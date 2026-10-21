@@ -1,4 +1,4 @@
-"""Archivio locale SQLite: cronologia, preferiti, sentenze lette, risposte in cache."""
+"""Archivio locale SQLite: cronologia, ricerche salvate, preferiti, sentenze lette, cache."""
 
 from __future__ import annotations
 
@@ -24,7 +24,11 @@ CREATE TABLE IF NOT EXISTS salvate (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     quando REAL NOT NULL,
     nome TEXT NOT NULL,
-    permalink TEXT NOT NULL UNIQUE
+    permalink TEXT NOT NULL UNIQUE,
+    ultimo_controllo REAL,
+    trovati INTEGER,
+    ultimi_id TEXT,
+    nuovi INTEGER
 );
 CREATE TABLE IF NOT EXISTS preferiti (
     id_sentenza TEXT PRIMARY KEY,
@@ -50,6 +54,16 @@ CREATE TABLE IF NOT EXISTS estremi (
 );
 """
 
+# Colonne aggiunte dopo la 0.1.0: vengono create se mancano (migrazione leggera).
+COLONNE_AGGIUNTE = {
+    "salvate": (
+        ("ultimo_controllo", "REAL"),
+        ("trovati", "INTEGER"),
+        ("ultimi_id", "TEXT"),
+        ("nuovi", "INTEGER"),
+    ),
+}
+
 
 class Archivio:
     def __init__(self, percorso: Path | str):
@@ -62,6 +76,15 @@ class Archivio:
         with self._lock:
             self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.executescript(SCHEMA)
+            self._migra()
+
+    def _migra(self) -> None:
+        for tabella, colonne in COLONNE_AGGIUNTE.items():
+            presenti = {r["name"] for r in self._conn.execute(f"PRAGMA table_info({tabella})")}
+            for nome, tipo in colonne:
+                if nome not in presenti:
+                    self._conn.execute(f"ALTER TABLE {tabella} ADD COLUMN {nome} {tipo}")
+        self._conn.commit()
 
     def chiudi(self) -> None:
         self._conn.close()
@@ -87,6 +110,10 @@ class Archivio:
     def svuota_risposte(self) -> int:
         with self._lock, self._conn:
             return self._conn.execute("DELETE FROM risposte").rowcount
+
+    def conta_risposte(self) -> int:
+        with self._lock:
+            return self._conn.execute("SELECT COUNT(*) FROM risposte").fetchone()[0]
 
     # --- estremi (lista sigle e riferimenti normalizzati) --------------------------------
 
@@ -134,6 +161,10 @@ class Archivio:
         with self._lock:
             return self._conn.execute("SELECT COUNT(*) FROM sentenze").fetchone()[0]
 
+    def svuota_sentenze(self) -> int:
+        with self._lock, self._conn:
+            return self._conn.execute("DELETE FROM sentenze").rowcount
+
     # --- cronologia ----------------------------------------------------------------------
 
     def registra_ricerca(
@@ -165,7 +196,7 @@ class Archivio:
                 ),
             )
 
-    def cronologia(self, limite: int = 100) -> list[dict]:
+    def cronologia(self, limite: int = 200) -> list[dict]:
         with self._lock:
             righe = self._conn.execute(
                 "SELECT * FROM ricerche ORDER BY quando DESC LIMIT ?", (limite,)
@@ -175,6 +206,10 @@ class Archivio:
     def svuota_cronologia(self) -> None:
         with self._lock, self._conn:
             self._conn.execute("DELETE FROM ricerche")
+
+    def elimina_ricerca(self, id_ricerca: int) -> None:
+        with self._lock, self._conn:
+            self._conn.execute("DELETE FROM ricerche WHERE id = ?", (id_ricerca,))
 
     # --- ricerche salvate ----------------------------------------------------------------
 
@@ -190,7 +225,28 @@ class Archivio:
     def ricerche_salvate(self) -> list[dict]:
         with self._lock:
             righe = self._conn.execute("SELECT * FROM salvate ORDER BY quando DESC").fetchall()
-        return [dict(r) for r in righe]
+        return [self._salvata(r) for r in righe]
+
+    def ricerca_salvata(self, id_salvata: int) -> dict | None:
+        with self._lock:
+            riga = self._conn.execute(
+                "SELECT * FROM salvate WHERE id = ?", (id_salvata,)
+            ).fetchone()
+        return self._salvata(riga) if riga else None
+
+    @staticmethod
+    def _salvata(riga: sqlite3.Row) -> dict:
+        d = dict(riga)
+        d["ultimi_id"] = json.loads(d["ultimi_id"]) if d.get("ultimi_id") else None
+        return d
+
+    def aggiorna_controllo(self, id_salvata: int, trovati: int, ids: list[str], nuovi: int) -> None:
+        with self._lock, self._conn:
+            self._conn.execute(
+                "UPDATE salvate SET ultimo_controllo = ?, trovati = ?, ultimi_id = ?, nuovi = ?"
+                " WHERE id = ?",
+                (time.time(), trovati, json.dumps(ids), nuovi, id_salvata),
+            )
 
     def elimina_ricerca_salvata(self, id_salvata: int) -> None:
         with self._lock, self._conn:
@@ -201,10 +257,18 @@ class Archivio:
     def aggiungi_preferito(self, id_sentenza: str, estremi: dict, nota: str | None) -> None:
         with self._lock, self._conn:
             self._conn.execute(
-                "INSERT OR REPLACE INTO preferiti (id_sentenza, quando, estremi, nota)"
-                " VALUES (?, ?, ?, ?)",
+                "INSERT INTO preferiti (id_sentenza, quando, estremi, nota) VALUES (?, ?, ?, ?)"
+                " ON CONFLICT(id_sentenza) DO UPDATE SET estremi = excluded.estremi,"
+                " nota = COALESCE(excluded.nota, preferiti.nota)",
                 (id_sentenza, time.time(), json.dumps(estremi, ensure_ascii=False), nota),
             )
+
+    def aggiorna_nota(self, id_sentenza: str, nota: str | None) -> bool:
+        with self._lock, self._conn:
+            cur = self._conn.execute(
+                "UPDATE preferiti SET nota = ? WHERE id_sentenza = ?", (nota, id_sentenza)
+            )
+            return cur.rowcount > 0
 
     def rimuovi_preferito(self, id_sentenza: str) -> None:
         with self._lock, self._conn:
