@@ -29,16 +29,19 @@ una cronologia, i preferiti, l'esportazione e una cache locale dei testi già ap
   scuro, righe compatte, carattere regolabile, scorciatoie da tastiera, nessuna dipendenza
   esterna nel browser.
 - Pagine integrate di **domande frequenti**, **versioni** e **software simili**.
+- Grafica allineata a [Exploratores](https://github.com/SOsintOps/Exploratores) (stessi
+  colori, font Inter in locale, stessa barra di navigazione), più un **tema scuro** che si
+  attiva da solo in base all'orario (dalle 19 alle 7, orari modificabili).
 
 ## Schermate
 
-Vista compatta con tema scuro: solo estremi, date, presidente, relatore ed ECLI; i filtri a
-sinistra con le barre proporzionali.
+Vista compatta con il tema scuro, che si attiva da solo la sera: solo estremi, date,
+presidente, relatore ed ECLI; i filtri a sinistra con le barre proporzionali.
 
 ![Iudex: tema scuro, righe compatte](docs/immagini/tema-scuro.png)
 
 Le pagine informative integrate (domande frequenti, versioni, software simili) usano lo
-stesso stile e sono raggiungibili dal menu in alto a destra.
+stesso stile e sono raggiungibili dal sottomenu Informazioni della barra di navigazione.
 
 ![Iudex: pagina delle domande frequenti](docs/immagini/domande-frequenti.png)
 

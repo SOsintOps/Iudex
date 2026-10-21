@@ -4,25 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Iudex · Domande frequenti</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%237A1F2E'/%3E%3Ctext x='16' y='23' font-family='Palatino Linotype,Georgia,serif' font-size='20' text-anchor='middle' fill='%23F7F6F2'%3EI%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230066ff'/%3E%3Ctext x='16' y='23' font-family='Inter,Arial,sans-serif' font-weight='700' font-size='20' text-anchor='middle' fill='%23ffffff'%3EI%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/static/app.css">
-<script>try{var t=localStorage.getItem("iudex.tema");if(t)document.documentElement.dataset.tema=t.replace(/"/g,"");else if(matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.dataset.tema="scuro";}catch(e){}</script>
+<script>(function(){try{var m=(localStorage.getItem("iudex.tema")||"auto").replace(/"/g,"");var o=null;try{o=JSON.parse(localStorage.getItem("iudex.tema.orari"))}catch(e){}if(!(o&&typeof o.inizio==="number"&&typeof o.fine==="number"))o={inizio:19,fine:7};var h=new Date().getHours();var s=m==="scuro"||(m==="auto"&&(o.inizio>o.fine?(h>=o.inizio||h<o.fine):(h>=o.inizio&&h<o.fine)));document.documentElement.dataset.tema=s?"scuro":"chiaro";}catch(e){}})();</script>
 </head>
 <body>
-<header class="testata">
-  <div class="marchio">
-    <a href="/" class="nome">Iudex</a>
-    <span class="fonte">SentenzeWeb · Corte Suprema di Cassazione</span>
-    <nav class="info-link" aria-label="Informazioni">
-      <a href="/">Ricerca</a>
-      <a href="/faq.html" class="attiva">Domande frequenti</a>
-      <a href="/versioni.html">Versioni</a>
-      <a href="/software-simili.html">Software simili</a>
-    </nav>
-  </div>
-</header>
+<nav class="navbar" aria-label="Principale">
+  <ul class="menu">
+    <li class="marchio"><a href="/" title="Iudex: torna alla ricerca">Iudex</a></li>
+    <li><a href="/">Ricerca</a></li>
+    <li><a href="/#cronologia">Cronologia</a></li>
+    <li class="con-sottomenu attiva" tabindex="0">
+      <span>Informazioni ▾</span>
+      <ul class="submenu">
+        <li class="attiva"><a href="/faq.html">Domande frequenti</a></li>
+        <li><a href="/versioni.html">Versioni</a></li>
+        <li><a href="/software-simili.html">Software simili</a></li>
+      </ul>
+    </li>
+    <li class="stretta"><button type="button" id="tema">Tema</button></li>
+  </ul>
+</nav>
 
-<main class="pagina-info">
+<main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
     <a href="#dati">I dati</a>
     <a href="#ricerca">La ricerca</a>
@@ -108,8 +112,13 @@
       <dd>Sì, con il server MCP incluso: <code>python -m iudex.mcp_server</code> espone tre strumenti (cerca sentenze, cerca per norma, leggi sentenza) che passano dall'API locale, quindi dalla cache e dai limiti di cortesia. Serve l'extra <code>mcp</code> e un client MCP (per esempio LM Studio con un modello che sappia chiamare strumenti). Il server locale di Iudex deve essere in esecuzione. Esempio di configurazione nel README.</dd>
     </dl>
   </article>
-</main>
+</div></main>
 
-<footer class="pie"><span>Fonte dei dati: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb.</span></footer>
+<footer class="pie">
+  <span>Iudex</span>
+  <span>Fonte: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb</span>
+  <a href="https://github.com/SOsintOps/Iudex/blob/main/LICENSE" target="_blank" rel="noopener">Licenza</a>
+</footer>
+<script src="/static/tema.js"></script>
 </body>
 </html>

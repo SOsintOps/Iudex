@@ -1,6 +1,6 @@
 [project]
 name = "iudex"
-version = "0.2.0"
+version = "0.3.0"
 description = "Interfaccia locale per interrogare SentenzeWeb, la banca dati pubblica delle sentenze della Corte Suprema di Cassazione"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -30,7 +30,7 @@ build-backend = "setuptools.build_meta"
 include = ["iudex*"]
 
 [tool.setuptools.package-data]
-iudex = ["certs/*.pem", "static/*"]
+iudex = ["certs/*.pem", "static/*", "static/fonts/*"]
 
 [tool.ruff]
 line-length = 100

@@ -152,8 +152,11 @@
     return p;
   }
 
+  const SCHEDE = ["risultati", "cronologia", "salvate", "preferiti", "stato"];
+
   function leggiHash() {
     const h = location.hash.replace(/^#/, "");
+    if (SCHEDE.includes(h)) { mostraScheda(h); return false; }
     const p = new URLSearchParams(h);
     stato.testo = p.get("testo") || "";
     stato.rif = p.get("rif") || "";
@@ -529,10 +532,15 @@
   async function caricaStato() {
     const s = await api("/api/stato");
     const righe = s.registro.map((r) => `<tr><td>${r.quando}</td><td>${escapa(r.tipo)}</td><td>${r.stato === null ? "rete" : r.stato}</td><td>${r.durata_ms} ms</td><td>${escapa(r.dettaglio)}</td></tr>`).join("");
+    const orari = window.IudexTema ? window.IudexTema.leggiOrari() : { inizio: 19, fine: 7 };
     $("#stato").innerHTML = `
       <p>Iudex ${escapa(s.versione)} · richieste al server della Corte in questa sessione: <b>${s.chiamate_remote}</b> ·
          intervallo minimo fra richieste: ${s.intervallo_minimo_s} s</p>
       <p>Cache locale: <b>${s.sentenze_in_cache}</b> testi di sentenze, <b>${s.risposte_in_cache}</b> risposte di ricerca · archivio: <code>${escapa(s.percorso_dati)}</code></p>
+      <div class="orari"><span class="etichetta">Tema scuro automatico</span>
+        dalle <input id="tema-inizio" class="input-field" type="number" min="0" max="23" value="${orari.inizio}"> alle
+        <input id="tema-fine" class="input-field" type="number" min="0" max="23" value="${orari.fine}">
+        <span class="dettaglio">(ora del computer; il pulsante Tema in alto sceglie automatico, chiaro o scuro)</span></div>
       <table><thead><tr><th>Ora</th><th>Tipo</th><th>Stato</th><th>Durata</th><th>Note</th></tr></thead><tbody>${righe || '<tr><td colspan="5">Nessuna richiesta ancora.</td></tr>'}</tbody></table>`;
   }
 
@@ -540,6 +548,7 @@
     try {
       const s = await api("/api/stato");
       $("#pie-cache").textContent = `${s.chiamate_remote} richieste al server in questa sessione · ${s.sentenze_in_cache} sentenze in cache`;
+      $("#pie-versione").textContent = `Iudex ${s.versione}`;
     } catch (e) { /* silenzioso */ }
   }
 
@@ -928,25 +937,27 @@
     if (leggiHash()) cerca(stato.pagina);
   });
 
-  // ---------- preferenze locali: tema, densità, carattere, colonne ----------
+  // ---------- preferenze locali: densità, carattere, colonne (il tema è in tema.js) ----------
 
-  function applicaTema(t) {
-    if (t) document.documentElement.dataset.tema = t; else delete document.documentElement.dataset.tema;
-  }
   try {
-    const t = localStorage.getItem("iudex.tema");
-    if (t) applicaTema(t);
-    else if (window.matchMedia("(prefers-color-scheme: dark)").matches) applicaTema("scuro");
     if (localStorage.getItem("iudex.densita") === "compatta") document.body.classList.add("compatta");
   } catch (e) { /* storage non disponibile */ }
   const carattere = memoria("iudex.carattere");
   if (carattere) applicaCarattere(carattere);
 
-  $("#tema").addEventListener("click", () => {
-    const scuro = document.documentElement.dataset.tema === "scuro";
-    applicaTema(scuro ? "chiaro" : "scuro");
-    try { localStorage.setItem("iudex.tema", scuro ? "chiaro" : "scuro"); } catch (e) { /* ignora */ }
+  // Orari del tema automatico (campi nella scheda Stato).
+  $("#stato").addEventListener("change", (e) => {
+    if (!e.target.matches("#tema-inizio, #tema-fine") || !window.IudexTema) return;
+    const inizio = Math.max(0, Math.min(23, parseInt($("#tema-inizio").value, 10) || 0));
+    const fine = Math.max(0, Math.min(23, parseInt($("#tema-fine").value, 10) || 0));
+    window.IudexTema.impostaOrari(inizio, fine);
+    messaggio(`Tema scuro automatico dalle ${inizio}:00 alle ${fine}:00.`);
   });
+
+  // Le voci della barra rispondono anche a Invio e barra spaziatrice.
+  $$(".menu > li.scheda").forEach((li) => li.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); li.click(); }
+  }));
 
   $("#densita").addEventListener("click", (e) => {
     const c = document.body.classList.toggle("compatta");

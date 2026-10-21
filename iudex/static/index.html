@@ -5,36 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Iudex</title>
 <meta name="description" content="Interfaccia locale per SentenzeWeb, la banca dati pubblica delle sentenze della Corte Suprema di Cassazione.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%237A1F2E'/%3E%3Ctext x='16' y='23' font-family='Palatino Linotype,Georgia,serif' font-size='20' text-anchor='middle' fill='%23F7F6F2'%3EI%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230066ff'/%3E%3Ctext x='16' y='23' font-family='Inter,Arial,sans-serif' font-weight='700' font-size='20' text-anchor='middle' fill='%23ffffff'%3EI%3C/text%3E%3C/svg%3E">
+<script>(function(){try{var m=(localStorage.getItem("iudex.tema")||"auto").replace(/"/g,"");var o=null;try{o=JSON.parse(localStorage.getItem("iudex.tema.orari"))}catch(e){}if(!(o&&typeof o.inizio==="number"&&typeof o.fine==="number"))o={inizio:19,fine:7};var h=new Date().getHours();var s=m==="scuro"||(m==="auto"&&(o.inizio>o.fine?(h>=o.inizio||h<o.fine):(h>=o.inizio&&h<o.fine)));document.documentElement.dataset.tema=s?"scuro":"chiaro";}catch(e){}})();</script>
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
 
-<header class="testata">
-  <div class="marchio">
-    <a href="/" class="nome" title="Iudex: torna all'inizio">Iudex</a>
-    <span class="fonte">SentenzeWeb · Corte Suprema di Cassazione</span>
-    <nav class="info-link" aria-label="Informazioni">
-      <a href="/faq.html">Domande frequenti</a>
-      <a href="/versioni.html">Versioni</a>
-      <a href="/software-simili.html">Software simili</a>
-    </nav>
-  </div>
+<nav class="navbar" aria-label="Principale">
+  <ul class="menu">
+    <li class="marchio"><a href="/" title="Iudex: torna all'inizio">Iudex</a></li>
+    <li class="scheda attiva" data-scheda="risultati" tabindex="0">Ricerca</li>
+    <li class="scheda" data-scheda="cronologia" tabindex="0">Cronologia</li>
+    <li class="scheda" data-scheda="salvate" tabindex="0">Ricerche salvate</li>
+    <li class="scheda" data-scheda="preferiti" tabindex="0">Preferiti</li>
+    <li class="scheda" data-scheda="stato" tabindex="0">Stato</li>
+    <li class="con-sottomenu" tabindex="0">
+      <span>Informazioni ▾</span>
+      <ul class="submenu">
+        <li><a href="/faq.html">Domande frequenti</a></li>
+        <li><a href="/versioni.html">Versioni</a></li>
+        <li><a href="/software-simili.html">Software simili</a></li>
+      </ul>
+    </li>
+    <li class="stretta"><button type="button" id="densita" title="Righe più compatte">Compatta</button></li>
+    <li class="stretta"><button type="button" id="tema">Tema</button></li>
+  </ul>
+</nav>
 
-  <form id="ricerca" class="ricerca" autocomplete="off">
+<header class="testata">
+  <form id="ricerca" class="ricerca search-instructions" autocomplete="off">
     <div class="campo campo-testo">
       <label for="testo">Parole o estremi</label>
-      <input id="testo" name="testo" type="search" spellcheck="false"
+      <input id="testo" name="testo" type="search" spellcheck="false" class="input-field"
              placeholder='licenziamento · "giusta causa" · 12345/2024 · sent. n. 99 del 2025'>
     </div>
     <div class="campo campo-rif">
       <label for="rif">Riferimento normativo</label>
-      <input id="rif" name="rif" type="search" spellcheck="false" placeholder="art. 18 legge 300/1970">
+      <input id="rif" name="rif" type="search" spellcheck="false" class="input-field" placeholder="art. 18 legge 300/1970">
       <ul id="suggerimenti" class="suggerimenti" hidden></ul>
     </div>
     <div class="campo campo-ordina">
       <label for="ordina">Ordina per</label>
-      <select id="ordina" name="ordina">
+      <select id="ordina" name="ordina" class="input-field">
         <option value="pubblicazione">data di pubblicazione</option>
         <option value="udienza">data di udienza</option>
         <option value="rilevanza">rilevanza</option>
@@ -42,7 +54,7 @@
     </div>
     <div class="campo campo-righe">
       <label for="righe">Per pagina</label>
-      <select id="righe" name="righe">
+      <select id="righe" name="righe" class="input-field">
         <option value="10">10</option>
         <option value="25">25</option>
         <option value="50">50</option>
@@ -60,17 +72,6 @@
     <p><b>Riferimento normativo:</b> scrivi come lo citeresti (<code>art. 2043 c.c.</code>, <code>art. 18 legge 300/1970</code>); il server lo normalizza nelle varianti con cui le sentenze lo citano.</p>
     <p><b>Tastiera:</b> <code>/</code> cerca · <code>j</code>/<code>k</code> scorrono i risultati · <code>Invio</code> apre · <code>n</code>/<code>p</code> occorrenze · <code>Alt+→</code>/<code>Alt+←</code> sentenza successiva/precedente · <code>Esc</code> chiude.</p>
   </div>
-
-  <nav class="schede" aria-label="Sezioni">
-    <button type="button" class="scheda attiva" data-scheda="risultati">Risultati</button>
-    <button type="button" class="scheda" data-scheda="cronologia">Cronologia</button>
-    <button type="button" class="scheda" data-scheda="salvate">Ricerche salvate</button>
-    <button type="button" class="scheda" data-scheda="preferiti">Preferiti</button>
-    <button type="button" class="scheda" data-scheda="stato">Stato</button>
-    <span class="spazio"></span>
-    <button type="button" id="tema" class="discreto" title="Cambia tema">Tema</button>
-    <button type="button" id="densita" class="discreto" title="Righe più compatte">Compatta</button>
-  </nav>
 </header>
 
 <main class="corpo" id="corpo">
@@ -101,8 +102,8 @@
       </div>
     </div>
     <form id="modulo-salva" class="modulo-salva" hidden>
-      <label for="nome-salva">Nome della ricerca</label>
-      <input id="nome-salva" type="text" maxlength="120">
+      <label for="nome-salva" class="etichetta">Nome della ricerca</label>
+      <input id="nome-salva" type="text" maxlength="120" class="input-field">
       <button type="submit" class="primario">Salva</button>
     </form>
     <div id="chip-filtri" class="chip-filtri"></div>
@@ -186,10 +187,13 @@
 </main>
 
 <footer class="pie">
-  <span>Fonte: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb.</span>
+  <span id="pie-versione">Iudex</span>
+  <span>Fonte: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb</span>
   <span id="pie-cache"></span>
+  <a href="https://github.com/SOsintOps/Iudex/blob/main/LICENSE" target="_blank" rel="noopener">Licenza</a>
 </footer>
 
+<script src="/static/tema.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

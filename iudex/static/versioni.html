@@ -4,26 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Iudex · Versioni</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%237A1F2E'/%3E%3Ctext x='16' y='23' font-family='Palatino Linotype,Georgia,serif' font-size='20' text-anchor='middle' fill='%23F7F6F2'%3EI%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230066ff'/%3E%3Ctext x='16' y='23' font-family='Inter,Arial,sans-serif' font-weight='700' font-size='20' text-anchor='middle' fill='%23ffffff'%3EI%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/static/app.css">
-<script>try{var t=localStorage.getItem("iudex.tema");if(t)document.documentElement.dataset.tema=t.replace(/"/g,"");else if(matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.dataset.tema="scuro";}catch(e){}</script>
+<script>(function(){try{var m=(localStorage.getItem("iudex.tema")||"auto").replace(/"/g,"");var o=null;try{o=JSON.parse(localStorage.getItem("iudex.tema.orari"))}catch(e){}if(!(o&&typeof o.inizio==="number"&&typeof o.fine==="number"))o={inizio:19,fine:7};var h=new Date().getHours();var s=m==="scuro"||(m==="auto"&&(o.inizio>o.fine?(h>=o.inizio||h<o.fine):(h>=o.inizio&&h<o.fine)));document.documentElement.dataset.tema=s?"scuro":"chiaro";}catch(e){}})();</script>
 </head>
 <body>
-<header class="testata">
-  <div class="marchio">
-    <a href="/" class="nome">Iudex</a>
-    <span class="fonte">SentenzeWeb · Corte Suprema di Cassazione</span>
-    <nav class="info-link" aria-label="Informazioni">
-      <a href="/">Ricerca</a>
-      <a href="/faq.html">Domande frequenti</a>
-      <a href="/versioni.html" class="attiva">Versioni</a>
-      <a href="/software-simili.html">Software simili</a>
-    </nav>
-  </div>
-</header>
+<nav class="navbar" aria-label="Principale">
+  <ul class="menu">
+    <li class="marchio"><a href="/" title="Iudex: torna alla ricerca">Iudex</a></li>
+    <li><a href="/">Ricerca</a></li>
+    <li><a href="/#cronologia">Cronologia</a></li>
+    <li class="con-sottomenu attiva" tabindex="0">
+      <span>Informazioni ▾</span>
+      <ul class="submenu">
+        <li><a href="/faq.html">Domande frequenti</a></li>
+        <li class="attiva"><a href="/versioni.html">Versioni</a></li>
+        <li><a href="/software-simili.html">Software simili</a></li>
+      </ul>
+    </li>
+    <li class="stretta"><button type="button" id="tema">Tema</button></li>
+  </ul>
+</nav>
 
-<main class="pagina-info">
+<main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v030">0.3.0 — 21 ottobre 2026</a>
     <a href="#v020">0.2.0 — 21 ottobre 2026</a>
     <a href="#v010">0.1.0 — 21 ottobre 2026</a>
     <a href="#numerazione">Come sono numerate le versioni</a>
@@ -31,6 +36,14 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v030">0.3.0 <span class="data">— 21 ottobre 2026</span></h2>
+    <h3>Grafica</h3>
+    <ul>
+      <li>Interfaccia allineata a <b>Exploratores</b>: stessi colori (blu <code>#0066ff</code>, grigi, sfondo <code>#f9f9f9</code>), font Inter ospitato in locale, barra di navigazione fissa con sottomenu, riquadro di ricerca, pulsanti bianchi che passano in blu, tabelle con righe alternate, piè di pagina fisso.</li>
+      <li><b>Tema scuro automatico in base all'orario</b>: scuro dalle 19 alle 7 per impostazione predefinita, orari modificabili nella scheda Stato; il pulsante Tema cicla fra automatico, chiaro e scuro.</li>
+      <li>Cronologia, Ricerche salvate, Preferiti e Stato nella barra di navigazione; pagine informative nel sottomenu Informazioni; indirizzi diretti <code>#cronologia</code>, <code>#salvate</code>, <code>#preferiti</code>, <code>#stato</code>.</li>
+    </ul>
 
     <h2 id="v020">0.2.0 <span class="data">— 21 ottobre 2026</span></h2>
     <h3>Novità</h3>
@@ -70,8 +83,13 @@
     <h2 id="numerazione">Come sono numerate le versioni</h2>
     <p>Tre numeri, <code>maggiore.minore.correzione</code>: cambia il primo quando l'archivio locale o le API cambiano in modo incompatibile, il secondo quando arrivano funzioni nuove, il terzo per le sole correzioni. Ogni versione pubblicata ha un'etichetta nel repository.</p>
   </article>
-</main>
+</div></main>
 
-<footer class="pie"><span>Fonte dei dati: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb.</span></footer>
+<footer class="pie">
+  <span>Iudex</span>
+  <span>Fonte: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb</span>
+  <a href="https://github.com/SOsintOps/Iudex/blob/main/LICENSE" target="_blank" rel="noopener">Licenza</a>
+</footer>
+<script src="/static/tema.js"></script>
 </body>
 </html>
