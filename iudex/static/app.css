@@ -174,8 +174,7 @@ nav.navbar {
 .menu > li.marchio > a::first-letter { color: var(--primary-color); }
 .menu > li.marchio:hover > a::first-letter { color: #fff; }
 .menu > li.stretta { flex: 0 0 auto; font-size: 1rem; }
-.menu > li.con-sottomenu > span { font-size: 1.4rem; }
-@media (max-width: 1400px) { .menu > li { font-size: 1.3rem; } .menu > li.marchio { font-size: 1.8rem; } .menu > li.con-sottomenu > span { font-size: 1.15rem; } }
+@media (max-width: 1400px) { .menu > li { font-size: 1.3rem; } .menu > li.marchio { font-size: 1.8rem; } }
 .menu > li > button.attivo { font-weight: 700; text-decoration: underline; }
 .menu > li.tema-icone { flex-direction: row; gap: 6px; padding: 0 12px; cursor: default; }
 .menu > li.tema-icone:hover { background: var(--superficie); }

@@ -7,6 +7,8 @@
   trasparente e variante per il tema scuro di GitHub.
 - **Favicon** ricavata dal logo: tratti bianchi su quadrato blu, leggibile anche a 16 px,
   al posto della "I" provvisoria.
+- La voce Informazioni della barra ha la stessa grandezza delle altre voci (era rimasta
+  più piccola).
 - Schermate del README rifatte con la barra attuale (icone sole e luna).
 - Tolto l'avviso sul Garante dalla pagina iniziale; la risposta sui dati personali resta
   nelle domande frequenti.
