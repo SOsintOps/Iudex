@@ -39,12 +39,24 @@
     const m = leggiModalita();
     const t = temaEffettivo(m, new Date().getHours(), leggiOrari());
     document.documentElement.dataset.tema = t;
-    const b = document.getElementById("tema");
-    if (b) {
-      b.textContent = m === "auto" ? `Tema: automatico (${t})` : `Tema: ${NOMI[m]}`;
-      b.title = "Clic per cambiare: automatico, chiaro, scuro";
+    const chiaro = document.getElementById("tema-chiaro");
+    const scuro = document.getElementById("tema-scuro");
+    if (chiaro && scuro) {
+      chiaro.classList.toggle("attivo", t === "chiaro");
+      scuro.classList.toggle("attivo", t === "scuro");
+      const auto = m === "auto" ? " (scelto automaticamente in base all'ora; un altro clic sull'icona attiva torna all'automatico)" : " (clic sull'icona attiva per tornare all'automatico)";
+      chiaro.title = "Tema chiaro" + (t === "chiaro" ? auto : "");
+      scuro.title = "Tema scuro" + (t === "scuro" ? auto : "");
+      const cont = document.getElementById("tema");
+      if (cont) cont.classList.toggle("auto", m === "auto");
     }
     return t;
+  }
+
+  /* Clic su un'icona: sceglie quel tema; secondo clic sull'icona già attiva: automatico. */
+  function scegli(tema) {
+    const m = leggiModalita();
+    return imposta(m === tema ? "auto" : tema);
   }
 
   function imposta(m) {
@@ -63,13 +75,15 @@
 
   function avvia() {
     applica();
-    const b = document.getElementById("tema");
-    if (b) b.addEventListener("click", cicla);
+    const chiaro = document.getElementById("tema-chiaro");
+    const scuro = document.getElementById("tema-scuro");
+    if (chiaro) chiaro.addEventListener("click", () => scegli("chiaro"));
+    if (scuro) scuro.addEventListener("click", () => scegli("scuro"));
     setInterval(applica, 60000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) applica(); });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", avvia); else avvia();
 
-  window.IudexTema = { leggiModalita, leggiOrari, temaEffettivo, applica, imposta, impostaOrari, cicla, PREDEFINITI };
+  window.IudexTema = { leggiModalita, leggiOrari, temaEffettivo, applica, imposta, impostaOrari, cicla, scegli, PREDEFINITI };
 })();

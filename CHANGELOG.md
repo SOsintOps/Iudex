@@ -9,7 +9,8 @@
   alternate, piè di pagina fisso. Sparisce il carattere Palatino e la palette porpora.
 - **Tema scuro** con scelta **automatica in base all'orario**: per impostazione predefinita
   scuro dalle 19 alle 7 (ora del computer), orari modificabili nella scheda Stato; il
-  pulsante Tema cicla fra automatico, chiaro e scuro e mostra la scelta attiva.
+  tema si sceglie con le icone sole e luna nella barra; un secondo clic su quella attiva
+  torna all'automatico.
 - Le voci Cronologia, Ricerche salvate, Preferiti e Stato stanno nella barra di navigazione;
   le pagine informative sono nel sottomenu Informazioni. Indirizzi `#cronologia`,
   `#salvate`, `#preferiti`, `#stato` per aprire direttamente una scheda.

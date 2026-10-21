@@ -540,7 +540,7 @@
       <div class="orari"><span class="etichetta">Tema scuro automatico</span>
         dalle <input id="tema-inizio" class="input-field" type="number" min="0" max="23" value="${orari.inizio}"> alle
         <input id="tema-fine" class="input-field" type="number" min="0" max="23" value="${orari.fine}">
-        <span class="dettaglio">(ora del computer; il pulsante Tema in alto sceglie automatico, chiaro o scuro)</span></div>
+        <span class="dettaglio">(ora del computer; le icone sole e luna in alto scelgono il tema, un secondo clic sull'icona attiva torna all'automatico)</span></div>
       <table><thead><tr><th>Ora</th><th>Tipo</th><th>Stato</th><th>Durata</th><th>Note</th></tr></thead><tbody>${righe || '<tr><td colspan="5">Nessuna richiesta ancora.</td></tr>'}</tbody></table>`;
   }
 

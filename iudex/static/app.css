@@ -177,6 +177,25 @@ nav.navbar {
 .menu > li.con-sottomenu > span { font-size: 1.4rem; }
 @media (max-width: 1400px) { .menu > li { font-size: 1.3rem; } .menu > li.marchio { font-size: 1.8rem; } .menu > li.con-sottomenu > span { font-size: 1.15rem; } }
 .menu > li > button.attivo { font-weight: 700; text-decoration: underline; }
+.menu > li.tema-icone { flex-direction: row; gap: 6px; padding: 0 12px; cursor: default; }
+.menu > li.tema-icone:hover { background: var(--superficie); }
+.menu > li.tema-icone > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--bordo-input);
+  border-radius: 3px;
+  background: var(--superficie);
+  color: var(--neutral-color);
+  box-shadow: var(--ombra-pulsante);
+  padding: 0;
+}
+.menu > li.tema-icone > button:hover { background: var(--primary-color); color: #fff; }
+.menu > li.tema-icone > button.attivo { color: var(--primary-color); border-color: var(--primary-color); background: var(--accento-chiaro); }
+.menu > li.tema-icone.auto > button.attivo { box-shadow: 0 0 0 2px var(--accento-chiaro); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .menu > li.con-sottomenu > span::after { content: ""; }
 
 .submenu {
