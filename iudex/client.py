@@ -102,7 +102,7 @@ class ClientSentenzeWeb:
         self._sessione_pronta = False
         self.stat = Statistiche()
 
-    async def _sessione(self) -> httpx.AsyncClient:
+    def _assicura_client(self) -> httpx.AsyncClient:
         if self._client is None:
             self._client = httpx.AsyncClient(
                 verify=contesto_ssl(self.imp.certificato_intermedio),
@@ -111,15 +111,6 @@ class ClientSentenzeWeb:
                 follow_redirects=True,
                 limits=httpx.Limits(max_connections=1, max_keepalive_connections=1),
             )
-        if not self._sessione_pronta:
-            # Come un browser: prima la pagina (che imposta il cookie di sessione), poi le query.
-            # Il segnale va alzato subito, così due richieste concorrenti non la chiedono due volte.
-            self._sessione_pronta = True
-            try:
-                await self._richiesta("GET", URL_SNCASS, tipo="pagina", headers=HEADER_PAGINA)
-            except ErroreRemoto:
-                self._sessione_pronta = False
-                raise
         return self._client
 
     async def chiudi(self) -> None:
@@ -135,6 +126,56 @@ class ClientSentenzeWeb:
             if attesa > 0:
                 await asyncio.sleep(attesa)
 
+    async def _invia(
+        self,
+        metodo: str,
+        url: str,
+        *,
+        tipo: str,
+        headers: dict | None = None,
+        content: str | None = None,
+        params: dict | None = None,
+    ) -> httpx.Response:
+        client = self._assicura_client()
+        tentativi = 0
+        while True:
+            tentativi += 1
+            await self._attendi_turno()
+            inizio = time.monotonic()
+            self.stat.ultima_chiamata = inizio
+            self.stat.chiamate += 1
+            try:
+                risposta = await client.request(
+                    metodo, url, headers=headers, content=content, params=params
+                )
+            except httpx.TransportError as exc:
+                durata = int((time.monotonic() - inizio) * 1000)
+                self.stat.registro.append(
+                    VoceRegistro(time.time(), tipo, None, durata, str(exc))
+                )
+                log.warning("%s %s: errore di rete (%s)", metodo, tipo, exc)
+                if tentativi >= 2:
+                    raise ErroreRemoto(f"errore di rete: {exc}") from exc
+                await asyncio.sleep(5)
+                continue
+            durata = int((time.monotonic() - inizio) * 1000)
+            self.stat.registro.append(
+                VoceRegistro(time.time(), tipo, risposta.status_code, durata, "")
+            )
+            log.info("%s %s -> %s in %d ms", metodo, tipo, risposta.status_code, durata)
+            if risposta.status_code in (403, 429):
+                raise ErroreRemoto(
+                    "il server ha rifiutato la richiesta "
+                    f"(HTTP {risposta.status_code}): attendi prima di riprovare",
+                    risposta.status_code,
+                )
+            if risposta.status_code >= 500 and tentativi < 2:
+                await asyncio.sleep(5)
+                continue
+            if risposta.status_code >= 400:
+                raise ErroreRemoto(f"HTTP {risposta.status_code}", risposta.status_code)
+            return risposta
+
     async def _richiesta(
         self,
         metodo: str,
@@ -145,50 +186,16 @@ class ClientSentenzeWeb:
         content: str | None = None,
         params: dict | None = None,
     ) -> httpx.Response:
-        """Esegue una richiesta rispettando il lock e l'intervallo minimo; un solo retry."""
-        assert self._client is not None
+        """Esegue una richiesta rispettando il lock, la sessione e l'intervallo minimo."""
         async with self._lock:
-            tentativi = 0
-            while True:
-                tentativi += 1
-                await self._attendi_turno()
-                inizio = time.monotonic()
-                self.stat.ultima_chiamata = inizio
-                self.stat.chiamate += 1
-                try:
-                    risposta = await self._client.request(
-                        metodo, url, headers=headers, content=content, params=params
-                    )
-                except httpx.TransportError as exc:
-                    durata = int((time.monotonic() - inizio) * 1000)
-                    self.stat.registro.append(
-                        VoceRegistro(time.time(), tipo, None, durata, str(exc))
-                    )
-                    log.warning("%s %s: errore di rete (%s)", metodo, tipo, exc)
-                    if tentativi >= 2:
-                        raise ErroreRemoto(f"errore di rete: {exc}") from exc
-                    await asyncio.sleep(5)
-                    continue
-                durata = int((time.monotonic() - inizio) * 1000)
-                self.stat.registro.append(
-                    VoceRegistro(time.time(), tipo, risposta.status_code, durata, "")
-                )
-                log.info("%s %s -> %s in %d ms", metodo, tipo, risposta.status_code, durata)
-                if risposta.status_code in (403, 429):
-                    raise ErroreRemoto(
-                        "il server ha rifiutato la richiesta "
-                        f"(HTTP {risposta.status_code}): attendi prima di riprovare",
-                        risposta.status_code,
-                    )
-                if risposta.status_code >= 500 and tentativi < 2:
-                    await asyncio.sleep(5)
-                    continue
-                if risposta.status_code >= 400:
-                    raise ErroreRemoto(f"HTTP {risposta.status_code}", risposta.status_code)
-                return risposta
+            if not self._sessione_pronta:
+                await self._invia("GET", URL_SNCASS, tipo="pagina", headers=HEADER_PAGINA)
+                self._sessione_pronta = True
+            return await self._invia(
+                metodo, url, tipo=tipo, headers=headers, content=content, params=params
+            )
 
     async def _solr(self, parametri: list[tuple[str, str]], *, suffisso: str, tipo: str) -> dict:
-        await self._sessione()
         risposta = await self._richiesta(
             "POST",
             URL_SOLR + suffisso,
@@ -219,14 +226,12 @@ class ClientSentenzeWeb:
         return await self._solr(parametri, suffisso="", tipo="dettaglio")
 
     async def lista_estremi(self) -> str:
-        await self._sessione()
         risposta = await self._richiesta(
             "GET", URL_ESTREMI, tipo="estremi-lista", headers=HEADER_XHR, params={"wat": "list"}
         )
         return risposta.text
 
     async def normalizza_riferimento(self, testo: str) -> str:
-        await self._sessione()
         risposta = await self._richiesta(
             "GET", URL_ESTREMI, tipo="estremi", headers=HEADER_XHR, params={"wat": testo}
         )
@@ -234,7 +239,6 @@ class ClientSentenzeWeb:
 
     async def telemetria(self, azione: str, valore: str, kind: str | None = None) -> None:
         """Replica facoltativa della chiamata di tracciamento del sito (disattiva per difetto)."""
-        await self._sessione()
         url = URL_TELEMETRIA + "?" + azione + (f"={kind}" if kind else "")
         try:
             await self._richiesta(

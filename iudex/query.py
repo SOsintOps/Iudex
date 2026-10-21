@@ -87,7 +87,7 @@ def escape_solr(valore: str) -> str:
 
 _CLAUSOLE_TIPO = {
     "sent": 'tipoprov:"Sentenza"',
-    "ord": 'tipoprov:"Ordinanza" OR tipoprov:"Ordinanza Interlocutoria"',
+    "ord": '(tipoprov:"Ordinanza" OR tipoprov:"Ordinanza Interlocutoria")',
     "dec": 'tipoprov:"Decreto"',
 }
 
@@ -453,10 +453,16 @@ def ecli(doc: dict) -> str | None:
     return f"ECLI:IT:CASS:{anno}:{numdec}{suffisso}"
 
 
+def _in_oscuramento(doc: dict) -> bool:
+    testo = str(_primo(doc.get("ocr") or doc.get("testoocr")) or "").lower()
+    return "in fase di oscuramento" in testo or "in fase di valutazione oscuramento" in testo
+
+
 def normalizza_documento(doc: dict, evidenziazioni: dict | None = None) -> dict:
     """Trasforma un documento Solr nel formato usato dall'interfaccia di Iudex."""
     kind = doc.get("kind", "")
     filename = _primo(doc.get("filename"))
+    oscuramento = _in_oscuramento(doc)
     frammenti = []
     if evidenziazioni:
         frammenti = evidenziazioni.get(doc.get("id", ""), {}).get("ocr", []) or []
@@ -478,7 +484,7 @@ def normalizza_documento(doc: dict, evidenziazioni: dict | None = None) -> dict:
         "relatore": _primo(doc.get("relatore")),
         "ecli": ecli(doc),
         "frammenti": frammenti,
-        "pdf": url_pdf(kind, filename) if filename and kind else None,
+        "pdf": url_pdf(kind, filename) if filename and kind and not oscuramento else None,
         "filename": filename,
     }
 

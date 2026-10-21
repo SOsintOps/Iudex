@@ -12,6 +12,7 @@ import os
 import httpx
 
 from . import __version__
+from .config import impostazioni
 
 try:  # mcp 2.x
     from mcp.server import MCPServer as FastMCP
@@ -21,7 +22,7 @@ except ImportError:  # pragma: no cover - mcp 1.x
     except ImportError as exc:
         raise SystemExit("Installa l'extra MCP: pip install -e .[mcp]") from exc
 
-BASE = os.environ.get("IUDEX_URL", "http://127.0.0.1:8765")
+BASE = os.environ.get("IUDEX_URL", f"http://{impostazioni.host}:{impostazioni.porta}")
 HEADER = {"X-Iudex": "1"}
 RIGHE_MASSIME = 20
 

@@ -104,7 +104,7 @@ Rilettura completa di `index.js` (versione `?v1.2`, 75 KB, esportato con REA il 
 | campo `requisitoria` + secondo `filename` | per i provvedimenti penali con requisitoria, il PDF della **requisitoria del Procuratore generale** (`verbo=attach&db=snpen&id=<secondo filename .clean.pdf>`) | campo richiesto ma non mostrato; da valutare |
 | campi `ved-numdec`/`ved-an`/`ved-nmas`, `con-*`, `dif-*`, `sic-ved-*` | **precedenti collegati** dal CED (vedi, conformi, difformi), resi come collegamenti a `detail.html` | non richiesti né mostrati; da valutare |
 | campi `ocrfull`, `nmas`, `origin`, `numdep` | testo completo nella pagina di dettaglio; numero di massima; archivio di origine; per `kind:"penale"` (archivio storico) il numero è `numdep` | `numdep` è richiesto; gli altri no |
-| testo "in fase di oscuramento" / "in fase di valutazione oscuramento" nel campo `ocr` | il sito **non apre il PDF** dei provvedimenti in corso di oscuramento | Iudex non controlla la dicitura: il collegamento al PDF resta visibile (da allineare) |
+| testo "in fase di oscuramento" / "in fase di valutazione oscuramento" nel campo `ocr` | il sito **non apre il PDF** dei provvedimenti in corso di oscuramento | Iudex nasconde il collegamento al PDF quando il testo indica l'oscuramento |
 | `GET /sncass/accessibilita.html` | note di accessibilità del CED | pagina statica, nessuna API |
 
 Ordinamenti offerti dal sito: `pd desc,numdec desc` (pubblicazione), `datdec desc,pd desc,numdec desc`

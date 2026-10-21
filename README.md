@@ -134,7 +134,7 @@ dalla cache e dai limiti di cortesia. Esempio per LM Studio (`mcp.json`) o Claud
 {
   "mcpServers": {
     "iudex": {
-      "command": "H:\\github\\lavori miei\\Iudex\\.venv\\Scripts\\python.exe",
+      "command": "C:\\percorso\\di\\Iudex\\.venv\\Scripts\\python.exe",
       "args": ["-m", "iudex.mcp_server"]
     }
   }
@@ -181,7 +181,7 @@ Struttura:
 | `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini |
 | `assets/logo/` | logo originale e script che genera logo, marchio e favicon |
 | `scripts/` | avviatori per Windows |
-| `.github/` | integrazione continua (ruff + pytest), modelli per segnalazioni e pull request |
+| `.github/` | integrazione continua (ruff + pytest), Dependabot, modelli per segnalazioni e pull request |
 
 ## Licenza
 

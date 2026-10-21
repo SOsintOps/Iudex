@@ -22,8 +22,7 @@ Su Linux e macOS: `.venv/bin/python`. Serve Python 3.11 o successivo.
 
 ## Stile
 
-- Testi, commenti, messaggi di commit e interfaccia in **italiano**; identificatori di
-  codice in inglese.
+- Testi, commenti, messaggi di commit, interfaccia e identificatori di codice in **italiano**.
 - `ruff check iudex tests` deve passare (configurazione in `pyproject.toml`, righe da
   100 caratteri).
 - I test (`pytest`) non toccano la rete: le risposte del server sono simulate con `respx`.

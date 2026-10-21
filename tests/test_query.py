@@ -28,8 +28,8 @@ def test_estremi_numero_anno():
         'anno:"2025" AND numdec:"00099" AND tipoprov:"Sentenza"'
     )
     assert controlla_estremi("ord. 5/2023", 2026) == (
-        'anno:"2023" AND numdec:"00005" AND tipoprov:"Ordinanza"'
-        ' OR tipoprov:"Ordinanza Interlocutoria"'
+        'anno:"2023" AND numdec:"00005" AND (tipoprov:"Ordinanza"'
+        ' OR tipoprov:"Ordinanza Interlocutoria")'
     )
 
 
@@ -186,6 +186,8 @@ def test_normalizza_documento():
     assert n["data_decisione"] == "2026-09-04" and n["data_deposito"] == "2026-10-14"
     assert n["frammenti"] == hl["snpen2026636099S"]["ocr"]
     assert n["pdf"].endswith("n36099%40tS.clean.pdf")
+    osc = normalizza_documento({**doc, "ocr": ["Provvedimento in fase di oscuramento"]})
+    assert osc["pdf"] is None
 
 
 def test_normalizza_facet():

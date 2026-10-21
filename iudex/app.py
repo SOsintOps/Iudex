@@ -38,10 +38,14 @@ PAGINE_STATICHE = {"guida", "faq", "versioni", "software-simili", "licenza"}
 SEPARATORI = {"materia": ";"}
 
 
+HEADERS_HOST_VALIDI = {"127.0.0.1", "localhost", "testserver"}
+
+
 @asynccontextmanager
 async def ciclo_vita(app: FastAPI):
     app.state.archivio = Archivio(impostazioni.percorso_db)
     app.state.client = ClientSentenzeWeb(impostazioni)
+    app.state.sigle = None
     log.info(
         "Iudex %s in ascolto su http://%s:%s/", __version__, impostazioni.host, impostazioni.porta
     )
@@ -61,8 +65,12 @@ async def solo_interfaccia(request: Request, call_next):
     """Le API rispondono solo alla pagina di Iudex.
 
     L'header personalizzato obbliga i browser al preflight CORS, che il server non
-    autorizza: una pagina di un altro sito non può usare Iudex per interrogare la Corte.
+    autorizza; il controllo sull'Host impedisce anche il DNS rebinding.
     """
+    host = (request.headers.get("host") or "").split(":")[0].lower()
+    host_consentiti = HEADERS_HOST_VALIDI | {impostazioni.host.lower()}
+    if host and host not in host_consentiti:
+        return JSONResponse(status_code=403, content={"errore": "host non autorizzato"})
     if request.url.path.startswith("/api/") and request.headers.get(HEADER_INTERFACCIA) != "1":
         return JSONResponse(
             status_code=403,
@@ -333,6 +341,8 @@ async def pdf(request: Request, id_sentenza: str) -> RedirectResponse:
 
 
 async def _lista_sigle(request: Request) -> list[tuple[str, str]]:
+    if getattr(request.app.state, "sigle", None) is not None:
+        return request.app.state.sigle
     archivio: Archivio = request.app.state.archivio
     ttl = impostazioni.ttl_estremi_giorni * SECONDI_GIORNO
     contenuto = archivio.leggi_estremi("lista", ttl)
@@ -345,6 +355,7 @@ async def _lista_sigle(request: Request) -> list[tuple[str, str]]:
         if "/" in riga:
             sigla, descrizione = riga.split("/", 1)
             coppie.append((sigla.strip(), descrizione.strip()))
+    request.app.state.sigle = coppie
     return coppie
 
 
