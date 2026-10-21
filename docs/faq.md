@@ -1,6 +1,6 @@
 # Domande frequenti
 
-La stessa pagina è nell'app: menu "Domande frequenti" (`/faq.html`).
+La stessa pagina è nell'app, nel menu **Help → Domande frequenti**.
 
 ## I dati
 
@@ -22,9 +22,12 @@ vittime di reati nei testi pubblicati. Iudex non costruisce indici per nome.
 
 ## La ricerca
 
-**I risultati sono gli stessi del sito?** Sì, a parità di parole e filtri: Iudex costruisce
-la query come il JavaScript del sito ufficiale e la manda allo stesso motore
-(`docs/analisi-sito.md`).
+**I risultati sono gli stessi del sito?** Sì, a parità di parole e filtri: Iudex segue la
+stessa sintassi del sito (frasi, troncamenti, estremi, riferimenti normativi, descritta in
+[analisi-sito.md](analisi-sito.md)) e manda la query allo stesso motore. In tre casi fa
+meglio: `NOT parola` esclude davvero (sul sito finisce dentro una frase e non esclude), i
+caratteri speciali sono protetti anche con gli operatori, gli estremi accettano anche
+`Cass. civ.` e il tipo in fondo.
 
 **Estremi:** `12345/2024`, `n. 123 del 2025`, `sent. 99/24`, `ord. 5/2023` (ultimi sette anni).
 
@@ -76,7 +79,7 @@ clic ripristina; da tastiera, fuoco sulla maniglia e frecce.
   l'intermedio in `iudex/certs/`. Se il messaggio compare, reinstalla o apri una segnalazione.
 - **"Richiesta non proveniente dall'interfaccia di Iudex":** le API accettano solo le
   chiamate della pagina (header `X-Iudex: 1`).
-- **La ricerca non risponde:** il server locale non è avviato (`avvia.cmd`).
+- **La ricerca non risponde:** il server locale non è avviato (`scripts\avvia.cmd`).
 
 ## Oltre il browser
 

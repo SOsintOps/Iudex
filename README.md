@@ -22,7 +22,8 @@ una cronologia, i preferiti, l'esportazione e una cache locale dei testi già ap
 
 - **Ricerca** per parole, frase esatta, troncamento, operatori `AND`/`OR`/`NOT`, estremi
   (`12345/2024`, `sent. n. 99 del 2025`) e **riferimento normativo** (`art. 18 legge 300/1970`),
-  con la stessa sintassi e gli stessi risultati del sito ufficiale.
+  con la stessa sintassi e gli stessi risultati del sito ufficiale (e `NOT`, che sul sito non
+  esclude, qui esclude davvero).
 - **Filtri** per archivio (civile/penale), tipo di provvedimento, sezione, anno,
   sottosezione e **materia**, con i conteggi, in selezione multipla.
 - **Testo integrale** in un pannello di lettura accanto ai risultati, ricostruito in

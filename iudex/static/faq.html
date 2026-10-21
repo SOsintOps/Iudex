@@ -56,7 +56,7 @@
     <h2 id="ricerca">La ricerca</h2>
     <dl>
       <dt>I risultati sono gli stessi del sito?</dt>
-      <dd>Sì, a parità di parole e filtri: Iudex costruisce la query esattamente come il JavaScript del sito ufficiale (stesse regole per frasi, troncamenti, estremi e riferimenti normativi) e la manda allo stesso motore. Trovi la verifica in <code>docs/analisi-sito.md</code>.</dd>
+      <dd>Sì, a parità di parole e filtri: Iudex segue la stessa sintassi del sito (frasi, troncamenti, estremi, riferimenti normativi, descritta in <code>docs/analisi-sito.md</code>) e manda la query allo stesso motore. In tre casi fa meglio: <code>NOT parola</code> esclude davvero (sul sito finisce dentro una frase e non esclude), i caratteri speciali sono protetti anche con gli operatori, gli estremi accettano anche <code>Cass. civ.</code> e il tipo in fondo.</dd>
       <dt>Come si cerca per estremi?</dt>
       <dd>Scrivi numero e anno nel campo principale: <code>12345/2024</code>, <code>n. 123 del 2025</code>, <code>sent. 99/24</code>, <code>ord. 5/2023</code>. Vale per gli ultimi sette anni.</dd>
       <dt>Come si cerca una frase o un troncamento?</dt>
@@ -104,7 +104,7 @@
       <dt>"Ricerca non riuscita: richiesta non proveniente dall'interfaccia di Iudex"</dt>
       <dd>Le API accettano solo le chiamate della pagina di Iudex. Il messaggio compare se chiami gli indirizzi <code>/api/…</code> da un'altra pagina o da uno script senza l'header <code>X-Iudex: 1</code>.</dd>
       <dt>La pagina si apre ma la ricerca non risponde</dt>
-      <dd>Il server locale non è in esecuzione: avvialo con <code>avvia.cmd</code> (o <code>python -m iudex</code>) e ricarica la pagina.</dd>
+      <dd>Il server locale non è in esecuzione: avvialo con <code>scripts\avvia.cmd</code> (o <code>python -m iudex</code>) e ricarica la pagina.</dd>
     </dl>
 
     <h2 id="oltre">Oltre il browser</h2>

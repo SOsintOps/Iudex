@@ -2,7 +2,7 @@
 
 Su Windows usa il componente WebView2 già presente in Windows 11; su Linux WebKitGTK, su
 macOS WebKit. Richiede l'extra ``[desktop]`` (``pip install -e .[desktop]``).
-Avvio: ``python -m iudex.desktop`` oppure ``avvia-finestra.cmd``.
+Avvio: ``python -m iudex.desktop`` oppure ``scripts\avvia-finestra.cmd``.
 """
 
 from __future__ import annotations
