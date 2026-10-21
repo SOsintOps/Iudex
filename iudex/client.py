@@ -238,7 +238,7 @@ class ClientSentenzeWeb:
         return risposta.text.strip()
 
     async def telemetria(self, azione: str, valore: str, kind: str | None = None) -> None:
-        """Replica facoltativa della chiamata di tracciamento del sito (disattiva per difetto)."""
+        """Replica facoltativa della chiamata di tracciamento del sito (disattiva di default)."""
         url = URL_TELEMETRIA + "?" + azione + (f"={kind}" if kind else "")
         try:
             await self._richiesta(

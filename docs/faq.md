@@ -17,9 +17,10 @@ diario delle tue consultazioni.
 **Di chi sono i testi?** Della Corte Suprema di Cassazione, che li pubblica per la
 consultazione. Il PDF si apre sempre dal sito ufficiale.
 
-**Perché non cercare per nome di persona?** Le sentenze contengono nomi e a volte dati
-sensibili; nel 2024 il Garante ha ammonito la Corte per la presenza di dati sanitari e di
-vittime di reati nei testi pubblicati. Iudex non costruisce indici per nome.
+**Perché non cercare per nome di persona?** Le sentenze contengono dati personali e talvolta
+categorie particolari di dati; nel 2024 il Garante per la protezione dei dati personali ha
+ammonito la Corte per la presenza di dati relativi alla salute e a vittime di reati nei testi
+pubblicati. Iudex non costruisce indici nominativi.
 
 ## La ricerca
 
@@ -76,7 +77,7 @@ diario non si svuota con i pulsanti della cache; si esporta in JSONL, CSV o zip,
 sicurezza* salva il database intero.
 
 **Colonne:** trascina le linee fra i pannelli o fra le intestazioni delle tabelle; doppio
-clic ripristina; da tastiera, fuoco sulla maniglia e frecce.
+clic ripristina; da tastiera, focus sulla maniglia e frecce.
 
 ## Problemi
 

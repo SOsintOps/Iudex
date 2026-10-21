@@ -3,8 +3,8 @@
 La stessa guida è nell'app, nel menu **Help → Guida all'utilizzo**.
 
 Iudex è un'interfaccia locale per SentenzeWeb, la banca dati pubblica delle sentenze civili
-e penali della Corte Suprema di Cassazione. Non copia nulla: ogni ricerca interroga il
-server della Corte nel momento in cui la fai; in locale restano cronologia, ricerche
+e penali della Corte Suprema di Cassazione. Non duplica la banca dati: ogni ricerca interroga il
+server della Corte nel momento in cui la esegui; in locale restano cronologia, diario, ricerche
 salvate, preferiti e una cache dei testi già aperti.
 
 ## Il flusso di lavoro
@@ -17,10 +17,10 @@ salvate, preferiti e una cache dei testi già aperti.
    le occorrenze evidenziate, il salto al P.Q.M. e i riferimenti normativi cliccabili. Il
    PDF ufficiale si apre sempre dal sito della Corte.
 4. **Conserva**: *Preferisci* mette il provvedimento fra i preferiti (con una nota);
-   *Salva ricerca* conserva l'interrogazione per ripeterla e controllare le novità.
+   *Salva ricerca* salva i criteri di ricerca per ripeterla e controllare le novità.
 5. **Esporta**: pagina di risultati o primi 50/100 in CSV, JSON o Markdown; singola
    sentenza in Markdown o JSON; citazione pronta da incollare.
-6. **Ritrova**: tutto è nella *Cronologia*; ogni ricerca ha un indirizzo ricaricabile.
+6. **Ritrova**: tutto è nella *Cronologia* e nel *Diario*; ogni ricerca ha un collegamento diretto (permalink).
 
 ## La barra di navigazione
 
@@ -65,7 +65,7 @@ sottosezione, materia (classificazione del CED; nell'indirizzo i valori sono sep
 punto e virgola).
 
 La maniglia fra filtri e risultati si trascina per cambiare la larghezza; doppio clic per
-ripristinare; frecce da tastiera con il fuoco sulla maniglia.
+ripristinare; frecce da tastiera con il focus sulla maniglia.
 
 ## I risultati
 
@@ -76,11 +76,11 @@ presidente, relatore, ECLI e (vista normale) i frammenti con le parole evidenzia
   poi dalla cache). Anche il clic sugli estremi lo apre.
 - **PDF ufficiale**: apre il documento sul sito della Corte. Iudex non scarica i PDF.
 - **Preferisci**: aggiunge o toglie dai preferiti.
-- **Salva ricerca**: conserva l'interrogazione corrente con un nome a tua scelta.
+- **Salva ricerca**: salva i criteri di ricerca correnti con un nome a tua scelta.
 - **Esporta**: *pagina corrente* (nessuna richiesta), *primi 50* (al più una), *primi 100*
   (al più due); formati CSV, JSON, Markdown.
-- **Indirizzo ricaricabile**: dopo ogni ricerca la barra del browser contiene tutti i
-  parametri (`#testo=licenziamento&kind=snciv&anno=2026`); riaprendolo Iudex rifà la
+- **Collegamento diretto (permalink)**: dopo ogni ricerca la barra degli indirizzi del browser contiene tutti i
+  parametri (`#testo=licenziamento&kind=snciv&anno=2026`); riaprendolo Iudex ripete la
   stessa ricerca.
 
 ## Il pannello di lettura
@@ -114,7 +114,7 @@ stessa sentenza aperta in giorni diversi da ricerche diverse compare sotto ognun
 - Export: *Diario JSONL*, *Diario CSV* (tutte le voci); *Sentenze consultate (zip)* con
   `<id>.json` (risposta del server, tutti i campi) e `<id>.txt` (solo testo in paragrafi).
 - I testi contengono nomi, date di nascita e fatti di causa in chiaro: restano in
-  `dati/iudex.sqlite` e da nessun'altra parte. Trattalo come un fascicolo.
+  `dati/iudex.sqlite` e da nessun'altra parte. Va custodito con la stessa riservatezza di un fascicolo di studio.
 
 ## Cronologia, ricerche salvate, preferiti
 

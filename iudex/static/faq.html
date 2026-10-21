@@ -50,7 +50,7 @@
       <dt>Di chi sono i testi?</dt>
       <dd>Della Corte Suprema di Cassazione, che li pubblica per la consultazione. Iudex li mostra e li esporta per uso personale; il PDF si apre sempre dal sito ufficiale.</dd>
       <dt>Perché non cercare per nome di persona?</dt>
-      <dd>Le sentenze contengono nomi e a volte dati sensibili. Nel 2024 il Garante per la protezione dei dati personali ha ammonito la Corte proprio per la presenza, nei testi pubblicati, di dati sanitari e di vittime di reati. Iudex non costruisce indici per nome e non va usato per questo.</dd>
+      <dd>Le sentenze contengono dati personali e talvolta categorie particolari di dati. Nel 2024 il Garante per la protezione dei dati personali ha ammonito la Corte proprio per la presenza, nei testi pubblicati, di dati relativi alla salute e a vittime di reati. Iudex non costruisce indici nominativi e non va usato per questo.</dd>
     </dl>
 
     <h2 id="ricerca">La ricerca</h2>
@@ -87,14 +87,14 @@
 
     <h2 id="locale">I dati locali</h2>
     <dl>
-      <dt>Dove stanno cronologia, preferiti e cache?</dt>
-      <dd>In un unico file SQLite, <code>dati/iudex.sqlite</code> nella cartella di Iudex (il percorso esatto è nella scheda Stato). Le preferenze di aspetto (tema, densità, carattere, larghezze delle colonne) stanno nel browser.</dd>
+      <dt>Dove sono salvati cronologia, preferiti e cache?</dt>
+      <dd>In un unico file SQLite, <code>dati/iudex.sqlite</code> nella cartella di Iudex (il percorso esatto è nella scheda Stato). Le preferenze di aspetto (tema, densità, carattere, larghezze delle colonne) sono memorizzate nel browser.</dd>
       <dt>Iudex salva le mie ricerche?</dt>
       <dd>Sì, nel <a href="/guida.html#diario">Diario</a>: ogni ricerca (parole, filtri, quanti risultati) e ogni sentenza aperta, con la ricerca da cui l'hai aperta. Delle sentenze aperte conserva anche la risposta intera del server, testo compreso; dei risultati non aperti nulla oltre il conteggio. Il diario non si svuota con i pulsanti della cache e si esporta in JSONL, CSV o zip.</dd>
       <dt>Come cancello tutto?</dt>
-      <dd>Dalla scheda Stato: "Svuota cache ricerche" e "Svuota testi in cache"; cronologia e preferiti si svuotano dalle rispettive schede. Il diario non ha un pulsante: per azzerare davvero, chiudi Iudex ed elimina il file <code>dati/iudex.sqlite</code> (prima, se vuoi, "Copia di sicurezza" nella scheda Stato).</dd>
+      <dd>Dalla scheda Stato: "Svuota cache ricerche" e "Svuota testi in cache"; cronologia e preferiti si svuotano dalle rispettive schede. Il diario non ha un pulsante di cancellazione: per azzerare l'intero archivio, chiudi Iudex ed elimina il file <code>dati/iudex.sqlite</code> (prima, se vuoi, usa "Copia di sicurezza" nella scheda Stato).</dd>
       <dt>Posso cambiare la larghezza delle colonne?</dt>
-      <dd>Sì: trascina la linea fra i filtri e i risultati, quella fra i risultati e il testo, o le linee fra le intestazioni delle tabelle di cronologia, ricerche salvate e preferiti. Un doppio clic ripristina la larghezza predefinita; con la tastiera, porta il fuoco sulla maniglia e usa le frecce.</dd>
+      <dd>Sì: trascina la linea fra i filtri e i risultati, quella fra i risultati e il testo, o le linee fra le intestazioni delle tabelle di cronologia, ricerche salvate e preferiti. Un doppio clic ripristina la larghezza predefinita; con la tastiera, porta il focus sulla maniglia e usa le frecce.</dd>
     </dl>
 
     <h2 id="problemi">Problemi</h2>

@@ -120,7 +120,7 @@ def cerca_per_norma(riferimento: str, testo: str = "", archivio: str = "", righe
 
 @mcp.tool()
 def leggi_sentenza(id_sentenza: str, da_carattere: int = 0, quanti: int = 12000) -> str:
-    """Restituisce estremi, massima, riferimenti normativi e testo integrale di una sentenza
+    """Restituisce estremi, dispositivo, riferimenti normativi e testo integrale di una sentenza
     dato il suo id (es. snciv2026L26495S). Il testo è restituito a finestre: usa da_carattere
     per leggere oltre i primi caratteri."""
     d = _chiama(f"/api/sentenza/{id_sentenza}", {})
@@ -135,7 +135,7 @@ def leggi_sentenza(id_sentenza: str, da_carattere: int = 0, quanti: int = 12000)
         f"PDF ufficiale: {doc.get('pdf')}\n"
         f"Materia: {', '.join(doc.get('materia') or []) or '-'}\n"
         f"Riferimenti normativi: {riferimenti or '-'}\n"
-        f"Massima/dispositivo: {doc.get('massima') or '-'}\n"
+        f"Dispositivo: {doc.get('massima') or '-'}\n"
         f"Testo ({len(testo)} caratteri, da {da_carattere}):\n"
     )
     return intestazione + finestra

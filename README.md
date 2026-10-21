@@ -27,11 +27,11 @@ una cronologia, i preferiti, l'esportazione e una cache locale dei testi già ap
 - **Filtri** per archivio (civile/penale), tipo di provvedimento, sezione, anno,
   sottosezione e **materia**, con i conteggi, in selezione multipla.
 - **Testo integrale** in un pannello di lettura accanto ai risultati, ricostruito in
-  paragrafi, con le occorrenze evidenziate e navigabili (`n`/`p`), il salto al P.Q.M., la
-  massima, i **riferimenti normativi** indicizzati dal CED (cliccabili: cercano le sentenze
+  paragrafi, con le occorrenze evidenziate e navigabili (`n`/`p`), il salto al P.Q.M., il
+  dispositivo, i **riferimenti normativi** indicizzati dal CED (cliccabili: cercano le sentenze
   che citano la stessa norma) e il collegamento al **PDF ufficiale**.
 - **Cronologia**, **ricerche salvate** con **controllo delle novità** su richiesta,
-  **preferiti con note**; ogni ricerca ha un indirizzo ricaricabile
+  **preferiti con note**; ogni ricerca ha un collegamento diretto (permalink)
   (`http://127.0.0.1:8765/#testo=…&kind=snciv&anno=2026`).
 - **Diario**: archivio personale permanente, per giorno, delle ricerche e delle sentenze
   aperte da ciascuna; delle sentenze aperte conserva la risposta intera del server, testo
@@ -106,8 +106,8 @@ scripts\avvia.cmd
 ```
 
 `scripts\avvia.cmd` apre il browser su <http://127.0.0.1:8765/> e avvia il server; su Linux o
-macOS: `.venv/bin/python -m iudex`. I dati locali (cronologia, preferiti, cache) stanno in
-`dati/iudex.sqlite`.
+macOS: `.venv/bin/python -m iudex`. I dati locali (cronologia, diario, preferiti, cache) sono
+archiviati in `dati/iudex.sqlite`.
 
 Variabili d'ambiente: `IUDEX_PORTA` (8765), `IUDEX_HOST` (127.0.0.1), `IUDEX_DATI`
 (cartella dei dati), `IUDEX_INTERVALLO` (secondi fra le richieste), `IUDEX_TTL_RICERCHE`
@@ -132,7 +132,7 @@ WebKit su macOS) e ferma il server quando la chiudi. Un eseguibile autonomo con 
 
 Con Iudex in esecuzione, `python -m iudex.mcp_server` espone tre strumenti MCP
 (`cerca_sentenze`, `cerca_per_norma`, `leggi_sentenza`) che passano dall'API locale, quindi
-dalla cache e dai limiti di cortesia. Esempio per LM Studio (`mcp.json`) o Claude Desktop:
+dalla cache e dalla limitazione della frequenza delle richieste. Esempio per LM Studio (`mcp.json`) o Claude Desktop:
 
 ```json
 {
@@ -174,7 +174,7 @@ Struttura:
 | Modulo | Compito |
 |--------|---------|
 | `iudex/query.py` | costruzione delle query Solr secondo la sintassi del sito (implementazione propria); riferimenti normativi |
-| `iudex/client.py` | client HTTP con i limiti di cortesia e il contesto TLS |
+| `iudex/client.py` | client HTTP con la limitazione delle richieste e il contesto TLS |
 | `iudex/cache.py` | SQLite: cronologia, ricerche salvate, preferiti, testi, cache, diario e sentenze consultate |
 | `iudex/export.py` | CSV, JSON, Markdown, JSONL, zip; ricostruzione dei paragrafi |
 | `iudex/app.py` | server FastAPI, API JSON, protezione delle API |

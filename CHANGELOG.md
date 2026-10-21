@@ -10,7 +10,7 @@
 - Delle sentenze aperte Iudex conserva la **risposta intera del server**, testo compreso,
   una volta sola per sentenza (tabella `consultate`, JSON compresso con zlib); dei risultati
   non aperti solo il conteggio. Una sentenza già in cache ma mai consultata viene richiesta
-  una volta per avere il grezzo. Nessun pulsante della cache tocca le due tabelle.
+  una volta per acquisire la risposta JSON integrale. Nessun pulsante della cache tocca le due tabelle.
 - Nel pannello di lettura: «Aperta *N* volte», prima apertura e ricerche di provenienza
   cliccabili (`/api/sentenza/{id}?da=<permalink>`).
 - API: `GET /api/diario` (per giorno o per sentenza), `GET /api/diario/giorni`,
