@@ -1,6 +1,6 @@
 # Registro delle modifiche
 
-## 0.4.0 — 2026-10-21
+## 0.3.1 — 2026-10-21
 
 ### Interfaccia
 - Il menu **Informazioni** si chiama **Help** e contiene due pagine nuove: la **Guida
@@ -19,8 +19,6 @@
   (permalink `detail.html`, telemetria `app.document`, requisitoria, precedenti collegati,
   liste dei filtri con `facet.prefix`, suggerimenti con `kind:"key"`, provvedimenti in
   fase di oscuramento).
-
-## 0.3.1 — 2026-10-21
 
 ### Grafica
 - **Logo** di Iudex (bilancia con corona d'alloro e circuiti) nel README, con sfondo

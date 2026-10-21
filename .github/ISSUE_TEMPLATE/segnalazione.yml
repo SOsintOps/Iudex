@@ -14,7 +14,7 @@ body:
     attributes:
       label: Versione di Iudex
       description: La trovi nel piè di pagina o nella scheda Stato.
-      placeholder: "0.4.0"
+      placeholder: "0.3.1"
   - type: input
     id: ambiente
     attributes:
