@@ -168,7 +168,7 @@ Struttura:
 
 | Modulo | Compito |
 |--------|---------|
-| `iudex/query.py` | costruzione delle query Solr, trascritta dal JavaScript del sito; riferimenti normativi |
+| `iudex/query.py` | costruzione delle query Solr secondo la sintassi del sito (implementazione propria); riferimenti normativi |
 | `iudex/client.py` | client HTTP con i limiti di cortesia e il contesto TLS |
 | `iudex/cache.py` | SQLite: cronologia, ricerche salvate, preferiti, testi, cache |
 | `iudex/export.py` | CSV, JSON, Markdown; ricostruzione dei paragrafi |

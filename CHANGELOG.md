@@ -20,6 +20,14 @@
   liste dei filtri con `facet.prefix`, suggerimenti con `kind:"key"`, provvedimenti in
   fase di oscuramento).
 
+### Ricerca
+- Costruttore delle query riscritto **dalla specifica della sintassi** (`docs/analisi-sito.md`),
+  senza codice derivato dal JavaScript del sito (che è GPL-3). Stesse clausole del sito e tre
+  miglioramenti: `NOT parola` e `-parola` **escludono davvero** (sul sito finivano dentro una
+  frase); i caratteri speciali sono protetti anche con gli operatori (`a:b OR c`); gli
+  estremi accettano `Cass. civ.` davanti, il tipo in fondo (`n. 99 del 2025 sent.`) e il
+  trattino (`123-2024`).
+
 ### Grafica
 - **Logo** di Iudex (bilancia con corona d'alloro e circuiti) nel README, con sfondo
   trasparente e variante per il tema scuro di GitHub.

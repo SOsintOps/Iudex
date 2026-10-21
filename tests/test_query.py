@@ -1,4 +1,5 @@
-"""Il costruttore di query deve produrre le stesse stringhe del JavaScript del sito."""
+"""Il costruttore di query deve produrre le stesse clausole del sito (o migliori, dove la
+sintassi del sito tradisce l'intenzione: NOT, caratteri speciali con gli operatori)."""
 
 from iudex.query import (
     controlla_estremi,
@@ -8,6 +9,7 @@ from iudex.query import (
     normalizza_documento,
     normalizza_facet,
     parametri_ricerca,
+    query_evidenziazione,
     query_riferimenti,
     query_testo_libero,
     url_pdf,
@@ -31,6 +33,21 @@ def test_estremi_numero_anno():
     )
 
 
+def test_estremi_varianti():
+    assert controlla_estremi("Cass. civ. sent. n. 99 del 2025", 2026) == (
+        'anno:"2025" AND numdec:"00099" AND tipoprov:"Sentenza"'
+    )
+    assert controlla_estremi("n. 99 del 2025 sent.", 2026) == (
+        'anno:"2025" AND numdec:"00099" AND tipoprov:"Sentenza"'
+    )
+    assert controlla_estremi("99/25", 2026) == 'anno:"2025" AND numdec:"00099"'
+    assert controlla_estremi("123-2024", 2026) == 'anno:"2024" AND numdec:"00123"'
+    assert controlla_estremi("dec. 7/2026", 2026) == (
+        'anno:"2026" AND numdec:"00007" AND tipoprov:"Decreto"'
+    )
+    assert controlla_estremi("99/27", 2026) is None  # anno futuro
+
+
 def test_estremi_non_riconosciuti():
     assert controlla_estremi("licenziamento", 2026) is None
     assert controlla_estremi("123/1999", 2026) is None  # anno fuori dagli ultimi 7
@@ -43,9 +60,28 @@ def test_testo_libero():
     assert query_testo_libero('"giusta causa"') == '"giusta causa"'
     assert query_testo_libero("licenz*") == "licenz*"
     assert query_testo_libero("a AND b") == "a AND b"
-    assert query_testo_libero("NOT mobbing") == r" \-mobbing"
-    assert query_testo_libero("demansionamento NOT mobbing") == '"demansionamento -mobbing"~7'
     assert query_testo_libero("  ") is None
+
+
+def test_testo_libero_esclusioni_e_sintassi():
+    # Il sito produce ` \-mobbing` e `"demansionamento -mobbing"~7`, che non escludono nulla.
+    assert query_testo_libero("NOT mobbing") == "*:* -mobbing"
+    assert query_testo_libero("demansionamento NOT mobbing") == "demansionamento -mobbing"
+    assert query_testo_libero("demansionamento -mobbing") == "demansionamento -mobbing"
+    assert query_testo_libero('"giusta causa" AND licenz*') == '"giusta causa" AND licenz*'
+    assert query_testo_libero("(mobbing OR straining) AND danno") == (
+        "( mobbing OR straining ) AND danno"
+    )
+    assert query_testo_libero("a:b OR c") == "a\\:b OR c"
+    assert query_testo_libero('danno NOT "giusta causa"') == 'danno -"giusta causa"'
+    assert query_testo_libero("NOTE spese") == '"NOTE spese"~7'
+    assert query_testo_libero("art. 2043 c.c.") == '"art. 2043 c.c."~7'
+
+
+def test_evidenziazione_solo_termini_positivi():
+    assert query_evidenziazione("demansionamento NOT mobbing") == "demansionamento"
+    assert query_evidenziazione('"giusta causa" AND licenz*') == '"giusta causa" licenz*'
+    assert query_evidenziazione("NOT mobbing") is None
 
 
 def test_riferimenti_con_graffe():

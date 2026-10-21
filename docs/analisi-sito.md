@@ -116,20 +116,58 @@ Non è stata fatta nessuna prova di endpoint diversi da quelli che il sito stess
 pubblico e di una pagina di dettaglio.
 
 Nota: l'intestazione di `index.js` dichiara la licenza **GPL versione 3**
-(`http://www.maas.ccr.it/z.licence`). `iudex/query.py` ne trascrive le regole di
-costruzione della query (comportamento, non codice), ma la cosa va tenuta presente.
+(`http://www.maas.ccr.it/z.licence`, "This file is part of Z"). Iudex non contiene né
+traduce quel codice: `iudex/query.py` è scritto dalla specifica della sezione "Sintassi del
+campo" qui sotto e riproduce solo il formato delle richieste, che è un'interfaccia.
 
 ## Sintassi del campo "Parole o Numero/Anno sentenza"
 
-Trascritta in `iudex/query.py` dalle funzioni `freeTextQuery`, `checkEstremi` ed
-`escapeSolrValue` del sito:
+Questa sezione è la **specifica** da cui è scritto `iudex/query.py`: descrive che cosa il
+sito fa con il testo digitato (comportamento osservato provando le ricerche e leggendo le
+richieste inviate), non come lo fa. Iudex riproduce le stesse clausole e, nei tre casi
+segnati, fa di meglio.
 
-- `12345/2024`, `n. 123 del 2025`, `sent. 99/24` → `anno:"…" AND numdec:"…"` (numero riempito
-  a 5 cifre, anno negli ultimi 7 anni, tipo facoltativo);
-- più parole → frase con distanza 7 (`"giusta causa"~7`);
-- `"…"`, `*`, `AND`, `OR` → passati a Solr così come sono;
-- `NOT x` → ` -x`;
-- una parola sola → caratteri speciali di Solr protetti con `\`.
+### Estremi di un provvedimento
+
+Se il testo è fatto di un numero (al più 5 cifre) e di un anno (2 o 4 cifre) separati da
+`/`, da `del` o da un trattino, con davanti facoltativamente `n.`/`num.` e un tipo
+(`sent…`, `ord…`, `dec…`), la ricerca diventa:
+
+```
+anno:"2024" AND numdec:"12345"[ AND tipoprov:"Sentenza"]
+```
+
+con il numero riempito di zeri a 5 cifre (`numdec:"00099"`), l'anno a due cifre completato a
+`20xx`, `ord` che vale `tipoprov:"Ordinanza" OR tipoprov:"Ordinanza Interlocutoria"` e `dec`
+`tipoprov:"Decreto"`. Il sito accetta solo anni negli ultimi sette; Iudex accetta dal 2000
+all'anno corrente (l'archivio copre circa cinque anni, quindi i risultati coincidono) e in
+più ignora un prefisso `Cass.`/`Cass. civ.` e accetta il tipo anche in fondo
+(`n. 99 del 2025 sent.`). Per gli estremi non si chiede l'evidenziazione (`hl.q` resta
+`nomatch`).
+
+### Parole
+
+| Testo digitato | Clausola inviata | Note |
+|----------------|------------------|------|
+| `licenziamento` | `licenziamento` | una parola: caratteri speciali di Solr protetti con `\` |
+| `giusta causa` | `"giusta causa"~7` | più parole: frase con distanza massima 7 fra i termini |
+| `"giusta causa"` | `"giusta causa"` | virgolette: frase esatta, passata com'è |
+| `licenz*` | `licenz*` | troncamento, passato com'è |
+| `a AND b`, `a OR b` | `a AND b`, `a OR b` | operatori in maiuscolo, passati com'è |
+| `demansionamento NOT mobbing` | sito: `"demansionamento -mobbing"~7` · Iudex: `demansionamento -mobbing` | il sito chiude tutto in una frase e Solr ignora il `-`: *non* esclude. Iudex esclude davvero |
+| `NOT mobbing` | sito: ` \-mobbing` · Iudex: `*:* -mobbing` | il sito protegge il meno; Iudex antepone `*:*` perché una query solo negativa abbia una base |
+| `a:b OR c` | sito: `a:b OR c` · Iudex: `a\:b OR c` | con gli operatori il sito non protegge i caratteri speciali e la query può fallire |
+
+Regola generale di Iudex: il testo è scomposto in token (frasi fra virgolette, parentesi,
+`AND`/`OR`/`NOT`, parole con eventuale `-` davanti o `*` dentro). Senza frasi, operatori,
+parentesi, esclusioni o troncamenti vale la riga "una parola" o "più parole"; altrimenti
+ogni token è reso nella sintassi di Solr (`NOT x` e `-x` diventano `-x`, le parole sono
+protette tranne il `*`) e i token sono uniti da spazi. L'evidenziazione (`hl.q`) usa i soli
+termini positivi.
+
+### Riferimento normativo
+
+Vedi sopra: forma canonica chiesta al server, ogni variante come frase con distanza 8.
 
 ## Campi del documento
 

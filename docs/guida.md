@@ -39,8 +39,8 @@ salvate, preferiti e una cache dei testi già aperti.
 ## La ricerca
 
 - **Parole o estremi**: più parole cercano la frase con distanza fino a 7 termini;
-  `"giusta causa"` cerca la frase esatta; `licenz*` tronca; `AND`, `OR`, `NOT`
-  combinano. Estremi: `12345/2024`, `n. 123 del 2025`, `sent. 99/24`, `ord. 5/2023`.
+  `"giusta causa"` cerca la frase esatta; `licenz*` tronca; `AND`, `OR` combinano;
+  `NOT mobbing` o `-mobbing` esclude la parola. Estremi: `12345/2024`, `n. 123 del 2025`, `sent. 99/24`, `ord. 5/2023`.
   La sintassi è quella del sito ufficiale, quindi i risultati coincidono.
 - **Riferimento normativo**: `art. 2043 c.c.`, `art. 18 legge 300/1970`, `art. 640 c.p.`.
   Il server della Corte lo normalizza nelle forme con cui le sentenze lo citano; Iudex

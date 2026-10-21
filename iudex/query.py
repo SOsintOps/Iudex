@@ -1,14 +1,15 @@
-"""Costruzione delle query Solr nello stesso modo del JavaScript ufficiale di SentenzeWeb.
+"""Costruzione delle query Solr per SentenzeWeb.
 
-Le regole sono una trascrizione di ``index.js`` del sito (funzioni ``freeTextQuery``,
-``checkEstremi``, ``escapeSolrValue``, ``buildQuery``, ``buildHlQuery`` e il costruttore
-delle frasi per i riferimenti normativi), così che una ricerca fatta con Iudex restituisca
-gli stessi risultati della ricerca fatta sul sito.
+Implementazione indipendente della sintassi di ricerca del sito, descritta in
+``docs/analisi-sito.md`` (sezione "Sintassi del campo"). Il modulo non contiene né traduce
+codice del sito: riproduce il formato delle richieste e il comportamento osservabile, così
+che una ricerca fatta con Iudex restituisca gli stessi risultati della ricerca fatta sul
+sito, e corregge i casi in cui quella sintassi tradisce l'intenzione di chi scrive (per
+esempio ``NOT`` dentro una frase).
 """
 
 from __future__ import annotations
 
-import itertools
 import re
 from datetime import date
 from urllib.parse import urlencode
@@ -17,7 +18,7 @@ from .config import URL_PDF
 
 QUERY_INIZIALE = '(kind:"snciv" OR kind:"snpen")'
 
-# Elenco dei campi richiesti dal sito per la pagina dei risultati (copiato dalla cattura).
+# Campi richiesti per la pagina dei risultati (gli stessi che chiede il sito).
 CAMPI_RISULTATO = (
     "id,filename,szdec,kind,ssz,tipoprov,numcard,numdec,numdep,datdep,ecli,anno,datdec,"
     "presidente,relatore,requisitoria,testoocr,ocr"
@@ -70,130 +71,181 @@ SEZIONI = {
 }
 SOTTOSEZIONI = {"0": "nessuna", "5": "Tributaria", "L": "Lavoro"}
 
-_SOLR_DA_ESCAPARE = set('/\\+-&|!(){}[]^~*?:"')
-_SOLO_CIFRE = re.compile(r"^\d+$")
+# Caratteri con significato speciale nella sintassi di Solr (documentazione Solr,
+# "Escaping Special Characters"). ``*`` resta fuori dal secondo insieme perché nel modo
+# avanzato è il troncamento voluto dall'utente.
+_SPECIALI_SOLR = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')
+_SPECIALI_SENZA_JOLLY = re.compile(r'([+\-&|!(){}\[\]^"~?:\\/])')
 
 
 def escape_solr(valore: str) -> str:
-    """Antepone una barra rovesciata ai caratteri speciali di Solr (``escapeSolrValue``)."""
-    return "".join(("\\" + c) if c in _SOLR_DA_ESCAPARE else c for c in valore)
+    """Protegge con una barra rovesciata ogni carattere speciale di Solr."""
+    return _SPECIALI_SOLR.sub(r"\\\1", valore)
+
+
+# ---------- estremi di un provvedimento ----------
+
+_CLAUSOLE_TIPO = {
+    "sent": 'tipoprov:"Sentenza"',
+    "ord": 'tipoprov:"Ordinanza" OR tipoprov:"Ordinanza Interlocutoria"',
+    "dec": 'tipoprov:"Decreto"',
+}
+
+# Grammatica degli estremi: [Cass. [civ.|pen.]] [tipo] [n.] NUMERO (/ | - | del) ANNO [tipo]
+_ESTREMI = re.compile(
+    r"""^\s*
+    (?:cass(?:azione)?\.?\s*(?:civ(?:ile)?\.?|pen(?:ale)?\.?)?\s*)?
+    (?:(?P<tipo1>sent|ord|dec)[a-z]*\.?\s*)?
+    (?:n(?:um(?:ero)?)?\.?\s*)?
+    (?P<numero>\d{1,5})\s*
+    (?:/|-|del)\s*
+    (?P<anno>\d{4}|\d{2})
+    (?:\s*(?P<tipo2>sent|ord|dec)[a-z]*\.?)?
+    \s*$""",
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
+def _anno_valido(cifre: str, anno_corrente: int) -> int | None:
+    anno = int(cifre) if len(cifre) == 4 else 2000 + int(cifre)
+    return anno if 2000 <= anno <= anno_corrente else None
 
 
 def controlla_estremi(testo: str, anno_corrente: int | None = None) -> str | None:
-    """Riconosce "numero/anno" o "sent. n. 123 del 2024" e lo traduce in clausole Solr.
+    """Clausola Solr per gli estremi di un provvedimento, oppure ``None``.
 
-    Trascrizione di ``checkEstremi``: numero di al più 5 cifre (riempito con zeri),
-    anno a 2 o 4 cifre negli ultimi 7 anni, tipo di provvedimento facoltativo.
+    Riconosce ``12345/2024``, ``123 / 24``, ``n. 99 del 2025``, ``sent. 99/24``,
+    ``ord. 5-2023``, ``Cass. civ. n. 99 del 2025 sent.``: numero di al più 5 cifre, anno a
+    due o quattro cifre dal 2000 all'anno corrente, tipo di provvedimento facoltativo prima o
+    dopo. Il numero è riempito di zeri a 5 cifre, come indicizzato dal CED.
     """
-    anno_corrente = anno_corrente or date.today().year
-    val = testo.replace("/", " / ").replace(".", " ")
-    val = re.sub(r"\s+", " ", val).strip().lower()
-    token = val.split(" ")
-    if len(token) < 3 or len(token) > 6:
+    m = _ESTREMI.match(testo)
+    if not m:
         return None
-    anno = num = tipo = None
-    for j, tkn in enumerate(token):
-        if not tipo:
-            if tkn.startswith("dec"):
-                tipo = 'tipoprov:"Decreto"'
-            elif tkn.startswith("ord"):
-                tipo = 'tipoprov:"Ordinanza" OR tipoprov:"Ordinanza Interlocutoria"'
-            elif tkn.startswith("sent"):
-                tipo = 'tipoprov:"Sentenza"'
-        if not _SOLO_CIFRE.match(tkn):
+    anno = _anno_valido(m.group("anno"), anno_corrente or date.today().year)
+    if anno is None:
+        return None
+    clausola = f'anno:"{anno}" AND numdec:"{m.group("numero").zfill(5)}"'
+    tipo = (m.group("tipo1") or m.group("tipo2") or "").lower()
+    if tipo:
+        clausola += " AND " + _CLAUSOLE_TIPO[tipo]
+    return clausola
+
+
+# ---------- parole, frasi, operatori ----------
+
+_TOKEN = re.compile(
+    r"""
+    "(?P<frase>[^"]*)"?                 # frase fra virgolette (anche non chiusa)
+  | (?P<par>[()])                       # parentesi di raggruppamento
+  | (?P<op>AND|OR|NOT)(?=\s|$|[()])     # operatori, solo in maiuscolo
+  | -(?P<neg>[^\s()"]+)                 # esclusione con il meno
+  | (?P<parola>[^\s()"]+)               # parola, eventualmente con * di troncamento
+    """,
+    re.VERBOSE,
+)
+
+
+def _token(testo: str) -> list[tuple[str, str]]:
+    """Scompone il testo in token ``(tipo, valore)``; ``NOT`` nega il termine che segue."""
+    risultato: list[tuple[str, str]] = []
+    nega = False
+    for m in _TOKEN.finditer(testo):
+        tipo = m.lastgroup or "parola"
+        valore = m.group(tipo) or ""
+        if tipo == "op" and valore == "NOT":
+            nega = True
             continue
-        precede_barra = j > 1 and token[j - 1] == "/"
-        segue_barra = j + 2 < len(token) and token[j + 1] == "/"
-        if not num:
-            precede_n = j > 0 and token[j - 1] in ("n", "num")
-            if len(tkn) < 6 and (precede_n or precede_barra or segue_barra):
-                num = f'numdec:"{tkn.zfill(5)}"'
-                continue
-        if not anno:
-            precede_del = j > 0 and token[j - 1] == "del"
-            if precede_del or precede_barra or segue_barra:
-                trovato = None
-                if len(tkn) == 2:
-                    candidato = int(str(anno_corrente)[:2] + tkn)
-                    trovato = candidato if candidato <= anno_corrente else int("19" + tkn)
-                elif len(tkn) == 4:
-                    y = int(tkn)
-                    if anno_corrente - 7 <= y <= anno_corrente:
-                        trovato = y
-                if trovato:
-                    anno = f'anno:"{trovato}"'
-                    continue
-    if anno and num:
-        return anno + " AND " + num + (" AND " + tipo if tipo else "")
-    return None
+        if tipo in ("frase", "parola") and nega:
+            tipo = "neg_frase" if tipo == "frase" else "neg"
+        nega = False
+        if tipo == "frase" and not valore.strip():
+            continue
+        risultato.append((tipo, valore))
+    return risultato
 
 
-def _ha_esclusione(val: str) -> bool:
-    return " NOT " in val[1:] or val.startswith("NOT ")
+def _modo_avanzato(token: list[tuple[str, str]]) -> bool:
+    return any(t != "parola" or "*" in v for t, v in token)
 
 
-def _normalizza_not(val: str) -> str:
-    val = re.sub(r"^NOT +", " -", val)
-    return re.sub(r" NOT +", " -", val)
-
-
-def _ha_sintassi(val: str) -> bool:
-    return "*" in val or '"' in val or " AND " in val or " OR " in val
+def _rendi(tipo: str, valore: str) -> str:
+    if tipo == "frase":
+        return f'"{valore}"'
+    if tipo == "neg_frase":
+        return f'-"{valore}"'
+    if tipo == "neg":
+        return "-" + _SPECIALI_SENZA_JOLLY.sub(r"\\\1", valore)
+    if tipo == "parola":
+        return _SPECIALI_SENZA_JOLLY.sub(r"\\\1", valore)
+    return valore  # operatori e parentesi
 
 
 def query_testo_libero(testo: str | None) -> str | None:
-    """Clausola Solr per il campo "Parole o Numero/Anno sentenza" (``freeTextQuery``)."""
+    """Clausola Solr per il campo "Parole o estremi".
+
+    - estremi di un provvedimento → clausola su ``anno``, ``numdec`` e ``tipoprov``;
+    - una parola sola → la parola, con i caratteri speciali protetti;
+    - più parole senza operatori → frase con distanza massima 7 fra i termini;
+    - altrimenti (frasi fra virgolette, ``AND``/``OR``/``NOT``, parentesi, troncamento
+      ``*``) → i termini nella sintassi di Solr; ``NOT x`` e ``-x`` escludono ``x``; se
+      restano solo esclusioni si antepone ``*:*`` perché la query abbia una base.
+    """
     if not testo or not testo.strip():
         return None
-    val = testo.strip()
-    estremi = controlla_estremi(val)
+    estremi = controlla_estremi(testo)
     if estremi:
         return estremi
-    if _ha_esclusione(val):
-        val = _normalizza_not(val)
-    if _ha_sintassi(val):
-        return val
-    # Come nel sito: conta solo uno spazio non in prima posizione (dopo la riscrittura di NOT).
-    if val.find(" ") > 0:
-        return '"' + val.replace('"', "") + '"~7'
-    return escape_solr(val.replace('"', ""))
+    token = _token(testo)
+    if not token:
+        return None
+    if not _modo_avanzato(token):
+        parole = [v for _, v in token]
+        if len(parole) == 1:
+            return escape_solr(parole[0])
+        return '"' + " ".join(parole) + '"~7'
+    positivi = any(t in ("frase", "parola") for t, _ in token)
+    negativi = any(t in ("neg", "neg_frase") for t, _ in token)
+    clausola = " ".join(_rendi(t, v) for t, v in token)
+    if negativi and not positivi:
+        clausola = "*:* " + clausola
+    return clausola
 
 
 def query_evidenziazione(testo: str | None) -> str | None:
-    """Clausola usata per ``hl.q`` (``freeTextQuery`` con ``hl`` attivo)."""
+    """Clausola per ``hl.q``: i soli termini positivi, così da evidenziarli nel testo."""
     if not testo or not testo.strip():
         return None
-    return escape_solr(testo.strip().replace('"', ""))
+    termini = []
+    for tipo, valore in _token(testo):
+        if tipo == "frase":
+            termini.append(f'"{valore}"')
+        elif tipo == "parola":
+            termini.append(_SPECIALI_SENZA_JOLLY.sub(r"\\\1", valore))
+    return " ".join(termini) or None
+
+
+# ---------- riferimenti normativi ----------
+
+_GRAFFA = re.compile(r"\{([^{}]*)\}")
 
 
 def _espandi_graffe(frase: str) -> list[str]:
-    """``a {b,c} d`` → ``["a b d", "a c d"]`` (stessa combinatoria del sito)."""
-    segmenti: list[list[str]] = []
-    pos = 0
-    while True:
-        apre = frase.find("{", pos)
-        if apre < 0:
-            if pos < len(frase):
-                segmenti.append([frase[pos:]])
-            break
-        if apre != pos:
-            segmenti.append([frase[pos:apre]])
-        chiude = frase.find("}", apre)
-        if chiude < 0:
-            segmenti.append([frase[apre:]])
-            break
-        segmenti.append(frase[apre + 1 : chiude].split(","))
-        pos = chiude + 1
-    if not segmenti:
+    """``a {b,c} d`` → ``["a b d", "a c d"]``: ogni gruppo fra graffe è un'alternativa."""
+    m = _GRAFFA.search(frase)
+    if not m:
         return [frase]
-    return ["".join(c) for c in itertools.product(*segmenti)]
+    risultato: list[str] = []
+    for alternativa in m.group(1).split(","):
+        risultato.extend(_espandi_graffe(frase[: m.start()] + alternativa + frase[m.end() :]))
+    return risultato
 
 
 def query_riferimenti(normalizzato: str | None) -> str | None:
     """Clausola per i riferimenti normativi a partire dalla risposta di ``estremi?wat=``.
 
-    Il sito chiede al server la forma canonica del riferimento (alternative separate da
-    `` OR `` e varianti fra graffe) e cerca ciascuna variante come frase con distanza 8.
+    Il server restituisce la forma canonica del riferimento come alternative separate da
+    `` OR ``, con varianti fra graffe; ogni variante diventa una frase con distanza 8.
     """
     if not normalizzato or not normalizzato.strip():
         return None
@@ -201,6 +253,9 @@ def query_riferimenti(normalizzato: str | None) -> str | None:
     for alternativa in normalizzato.split(" OR "):
         frasi.extend(_espandi_graffe(alternativa))
     return " OR ".join(f'"{f}"~8' for f in frasi)
+
+
+# ---------- query completa e parametri delle richieste ----------
 
 
 def _clausola_filtro(campo: str, valori: list[str]) -> str:
@@ -216,7 +271,11 @@ def costruisci_query(
     riferimenti_normalizzati: str | None,
     filtri: dict[str, list[str]] | None = None,
 ) -> tuple[str, str]:
-    """Restituisce ``(q, hl.q)`` come ``Y.buildQuery`` e ``Y.buildHlQuery`` del sito."""
+    """Restituisce ``(q, hl.q)`` nel formato che il server si aspetta.
+
+    ``q`` = testo, riferimenti, archivi e filtri uniti da ``AND``; ``hl.q`` = ``nomatch``
+    più le stesse parti tranne gli estremi, che non vanno evidenziati.
+    """
     filtri = filtri or {}
     parti: list[str] = []
     testo_q = query_testo_libero(testo)
@@ -243,7 +302,7 @@ def costruisci_query(
 def parametri_ricerca(
     q: str, hl_q: str, inizio: int, righe: int, ordinamento: str, con_facet: bool = True
 ) -> list[tuple[str, str]]:
-    """Corpo della POST ``app.query`` (parametri del sito, più i facet nella stessa chiamata)."""
+    """Corpo della POST di ricerca (parametri del sito, più i facet nella stessa chiamata)."""
     parametri: list[tuple[str, str]] = [
         ("start", str(inizio)),
         ("rows", str(righe)),
@@ -336,7 +395,7 @@ def formatta_riferimenti(rnc: dict) -> list[dict]:
 
 
 def parametri_dettaglio(id_sentenza: str, hl_q: str | None) -> list[tuple[str, str]]:
-    """Corpo della POST per il testo integrale di una sentenza (``openDetail`` del sito)."""
+    """Corpo della POST per il testo integrale di un provvedimento (un solo documento)."""
     parametri: list[tuple[str, str]] = [
         ("start", "0"),
         ("rows", "1"),
@@ -363,7 +422,7 @@ def codifica_corpo(parametri: list[tuple[str, str]]) -> str:
 
 
 def url_pdf(kind: str, filename: str) -> str:
-    """URL del PDF "pulito" come lo costruisce il sito a partire dal campo ``filename``."""
+    """URL del PDF "pulito" a partire dal campo ``filename`` del documento."""
     nome = filename
     if ".clean." not in nome:
         nome = nome.replace(".pdf", ".clean.pdf")
