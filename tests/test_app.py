@@ -68,6 +68,17 @@ def test_api_rifiuta_senza_header(client):
     assert c.get("/").status_code == 200
 
 
+def test_pagine_di_aiuto(client):
+    c, _ = client
+    for nome in ("guida", "faq", "versioni", "software-simili", "licenza"):
+        r = c.get(f"/{nome}.html")
+        assert r.status_code == 200, nome
+        assert "Help" in r.text, nome
+    assert c.get("/inesistente.html").status_code == 404
+    assert "Guida all'utilizzo" in c.get("/guida.html").text
+    assert "MIT License" in c.get("/licenza.html").text
+
+
 def test_ricerca_con_facet_materia_e_cache(client):
     c, mock = client
     rotta = mock.post(URL_SOLR + "?app.query").mock(

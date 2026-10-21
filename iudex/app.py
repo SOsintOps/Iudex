@@ -33,7 +33,7 @@ log = logging.getLogger("iudex.app")
 STATICA = Path(__file__).resolve().parent / "static"
 SECONDI_GIORNO = 86400
 HEADER_INTERFACCIA = "x-iudex"
-PAGINE_STATICHE = {"versioni", "faq", "software-simili"}
+PAGINE_STATICHE = {"guida", "faq", "versioni", "software-simili", "licenza"}
 # I valori di "materia" contengono spazi e virgole: nel permalink usano un separatore diverso.
 SEPARATORI = {"materia": ";"}
 

@@ -90,6 +90,35 @@ Ogni variante diventa una frase con distanza 8 (`"(18 300 1970)"~8 OR …`). Iud
 stesso procedimento e conserva in locale sia la lista delle sigle (`?wat=list`, ~130 KB) sia
 le normalizzazioni già chieste, per 30 giorni.
 
+## Chiamate e pagine del sito che Iudex non usa
+
+Rilettura completa di `index.js` (versione `?v1.2`, 75 KB, esportato con REA il 21 ottobre
+2026) alla ricerca di ogni `$.ajax` e di ogni URL. Oltre a quanto sopra, il sito conosce:
+
+| Chiamata o pagina | Che cosa fa | Iudex |
+|-------------------|-------------|-------|
+| `GET /sncass/detail.html?numdec:<n>+AND+anno:<a>+AND+kind:<snciv\|snpen>` | pagina che mostra un solo provvedimento, usata come **permalink** (verificata: `detail.html?numdec:26495+AND+anno:2026+AND+kind:snciv` apre la sentenza). Variante `detail.html?nmas:<Rv.>+AND+kind:…` per numero di massima | non usato: il collegamento a un provvedimento è sempre il PDF; da valutare un collegamento "pagina sul sito" |
+| `GET /xway/application/nif/isapishare/hc.dll?app.document=<url del PDF>` | **telemetria** all'apertura di un PDF ("document tracking"), risposta ignorata | non replicata (come la telemetria `app.query`) |
+| `POST …/select?app.suggester` con `q={!boost b=score}kind:"key" AND key:<testo>*`, `rows=16`, `fl=key` | i suggerimenti mentre si digita: le sigle sono **documenti con `kind:"key"` nella stessa collezione** Solr | non usato: Iudex non fa richieste mentre si digita |
+| `POST …/select?app.facet` con `facet.prefix`, `facet.offset`, `facet.limit`, `facet.sort`, `fl=name` | la lista completa di un filtro, a pagine e filtrabile per prefisso (il "+" accanto ai filtri) | non usato: Iudex chiede fino a 257 valori per filtro nella ricerca stessa |
+| campo `requisitoria` + secondo `filename` | per i provvedimenti penali con requisitoria, il PDF della **requisitoria del Procuratore generale** (`verbo=attach&db=snpen&id=<secondo filename .clean.pdf>`) | campo richiesto ma non mostrato; da valutare |
+| campi `ved-numdec`/`ved-an`/`ved-nmas`, `con-*`, `dif-*`, `sic-ved-*` | **precedenti collegati** dal CED (vedi, conformi, difformi), resi come collegamenti a `detail.html` | non richiesti né mostrati; da valutare |
+| campi `ocrfull`, `nmas`, `origin`, `numdep` | testo completo nella pagina di dettaglio; numero di massima; archivio di origine; per `kind:"penale"` (archivio storico) il numero è `numdep` | `numdep` è richiesto; gli altri no |
+| testo "in fase di oscuramento" / "in fase di valutazione oscuramento" nel campo `ocr` | il sito **non apre il PDF** dei provvedimenti in corso di oscuramento | Iudex non controlla la dicitura: il collegamento al PDF resta visibile (da allineare) |
+| `GET /sncass/accessibilita.html` | note di accessibilità del CED | pagina statica, nessuna API |
+
+Ordinamenti offerti dal sito: `pd desc,numdec desc` (pubblicazione), `datdec desc,pd desc,numdec desc`
+(udienza), nessun `sort` (rilevanza); il predefinito interno di `index.js` è
+`pd desc,datdec desc,anno desc,numdec desc`. Iudex usa i tre del menu.
+
+Non è stata fatta nessuna prova di endpoint diversi da quelli che il sito stesso chiama
+(nessun `/admin`, `/terms`, `/suggest` di Solr): l'analisi è in sola lettura del codice
+pubblico e di una pagina di dettaglio.
+
+Nota: l'intestazione di `index.js` dichiara la licenza **GPL versione 3**
+(`http://www.maas.ccr.it/z.licence`). `iudex/query.py` ne trascrive le regole di
+costruzione della query (comportamento, non codice), ma la cosa va tenuta presente.
+
 ## Sintassi del campo "Parole o Numero/Anno sentenza"
 
 Trascritta in `iudex/query.py` dalle funzioni `freeTextQuery`, `checkEstremi` ed

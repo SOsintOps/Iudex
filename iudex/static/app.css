@@ -171,8 +171,14 @@ nav.navbar {
 .menu > li > button { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
 
 .menu > li.marchio { flex: 0 0 auto; font-weight: 700; font-size: 2.2rem; letter-spacing: 0.06em; padding: 0 22px; }
-.menu > li.marchio > a::first-letter { color: var(--primary-color); }
-.menu > li.marchio:hover > a::first-letter { color: #fff; }
+.menu > li.marchio > a { display: inline-flex; align-items: center; gap: 10px; }
+.menu > li.marchio .nome { display: inline-block; }
+.menu > li.marchio .nome::first-letter { color: var(--primary-color); }
+.menu > li.marchio:hover .nome::first-letter { color: #fff; }
+.menu > li.marchio .marchio-img { display: block; width: 44px; height: 44px; }
+.menu > li.marchio .marchio-img.scuro { display: none; }
+:root[data-tema="scuro"] .menu > li.marchio .marchio-img.chiaro, .menu > li.marchio:hover .marchio-img.chiaro { display: none; }
+:root[data-tema="scuro"] .menu > li.marchio .marchio-img.scuro, .menu > li.marchio:hover .marchio-img.scuro { display: block; }
 .menu > li.stretta { flex: 0 0 auto; font-size: 1rem; }
 @media (max-width: 1400px) { .menu > li { font-size: 1.3rem; } .menu > li.marchio { font-size: 1.8rem; } }
 .menu > li > button.attivo { font-weight: 700; text-decoration: underline; }
@@ -655,6 +661,7 @@ main.informativa {
 @media (max-width: 820px) {
   .menu > li { font-size: 0.95rem; padding: 0 6px; }
   .menu > li.marchio { font-size: 1.3rem; }
+  .menu > li.marchio .marchio-img { width: 32px; height: 32px; }
   .ricerca { grid-template-columns: 1fr 1fr; }
   .campo-testo, .campo-rif { grid-column: 1 / -1; }
   .corpo, .corpo.con-fascicolo { grid-template-columns: 1fr; gap: 12px; padding: 12px; }

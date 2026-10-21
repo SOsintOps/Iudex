@@ -12,15 +12,17 @@
 <body>
 <nav class="navbar" aria-label="Principale">
   <ul class="menu">
-    <li class="marchio"><a href="/" title="Iudex: torna alla ricerca">Iudex</a></li>
+    <li class="marchio"><a href="/" title="Iudex: torna alla ricerca"><img class="marchio-img chiaro" src="/static/marchio.png" alt="" width="44" height="44"><img class="marchio-img scuro" src="/static/marchio-scuro.png" alt="" width="44" height="44"><span class="nome">Iudex</span></a></li>
     <li><a href="/">Ricerca</a></li>
     <li><a href="/#cronologia">Cronologia</a></li>
     <li class="con-sottomenu attiva" tabindex="0">
-      <span>Informazioni ▾</span>
+      <span>Help ▾</span>
       <ul class="submenu">
+        <li><a href="/guida.html">Guida all'utilizzo</a></li>
         <li class="attiva"><a href="/faq.html">Domande frequenti</a></li>
         <li><a href="/versioni.html">Versioni</a></li>
         <li><a href="/software-simili.html">Software simili</a></li>
+        <li><a href="/licenza.html">Licenza</a></li>
       </ul>
     </li>
     <li class="stretta tema-icone" id="tema"><button type="button" id="tema-chiaro" title="Tema chiaro"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/></g></svg><span class="sr">Tema chiaro</span></button><button type="button" id="tema-scuro" title="Tema scuro"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="sr">Tema scuro</span></button></li>
@@ -108,7 +110,7 @@
     <h2 id="oltre">Oltre il browser</h2>
     <dl>
       <dt>Esiste una versione "app"?</dt>
-      <dd>Sì: <code>avvia-finestra.cmd</code> apre Iudex in una finestra propria (componente WebView2 di Windows) e ferma il server quando la chiudi. Richiede l'extra <code>desktop</code>: <code>pip install -e .[desktop]</code>.</dd>
+      <dd>Sì: <code>scripts\avvia-finestra.cmd</code> apre Iudex in una finestra propria (componente WebView2 di Windows) e ferma il server quando la chiudi. Richiede l'extra <code>desktop</code>: <code>pip install -e .[desktop]</code>.</dd>
       <dt>Si può usare da un assistente o da un LLM locale?</dt>
       <dd>Sì, con il server MCP incluso: <code>python -m iudex.mcp_server</code> espone tre strumenti (cerca sentenze, cerca per norma, leggi sentenza) che passano dall'API locale, quindi dalla cache e dai limiti di cortesia. Serve l'extra <code>mcp</code> e un client MCP (per esempio LM Studio con un modello che sappia chiamare strumenti). Il server locale di Iudex deve essere in esecuzione. Esempio di configurazione nel README.</dd>
     </dl>
@@ -116,9 +118,7 @@
 </div></main>
 
 <footer class="pie">
-  <span>Iudex</span>
-  <span>Fonte: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb</span>
-  <a href="https://github.com/SOsintOps/Iudex/blob/main/LICENSE" target="_blank" rel="noopener">Licenza</a>
+  <span id="pie-versione">Iudex</span>
 </footer>
 <script src="/static/tema.js"></script>
 </body>

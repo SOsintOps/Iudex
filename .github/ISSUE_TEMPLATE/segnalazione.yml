@@ -1,0 +1,27 @@
+name: Segnalazione
+description: Un errore, un risultato diverso dal sito ufficiale o un'idea
+labels: []
+body:
+  - type: textarea
+    id: cosa
+    attributes:
+      label: Che cosa succede
+      description: Descrivi il problema o la proposta. Se i risultati differiscono dal sito ufficiale, indica la ricerca esatta (parole, filtri, ordinamento).
+    validations:
+      required: true
+  - type: input
+    id: versione
+    attributes:
+      label: Versione di Iudex
+      description: La trovi nel piè di pagina o nella scheda Stato.
+      placeholder: "0.4.0"
+  - type: input
+    id: ambiente
+    attributes:
+      label: Sistema e Python
+      placeholder: "Windows 11, Python 3.13, Chrome 142"
+  - type: textarea
+    id: registro
+    attributes:
+      label: Registro delle richieste (scheda Stato) o messaggi d'errore
+      render: text

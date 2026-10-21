@@ -14,18 +14,20 @@
 
 <nav class="navbar" aria-label="Principale">
   <ul class="menu">
-    <li class="marchio"><a href="/" title="Iudex: torna all'inizio">Iudex</a></li>
+    <li class="marchio"><a href="/" title="Iudex: torna all'inizio"><img class="marchio-img chiaro" src="/static/marchio.png" alt="" width="44" height="44"><img class="marchio-img scuro" src="/static/marchio-scuro.png" alt="" width="44" height="44"><span class="nome">Iudex</span></a></li>
     <li class="scheda attiva" data-scheda="risultati" tabindex="0">Ricerca</li>
     <li class="scheda" data-scheda="cronologia" tabindex="0">Cronologia</li>
     <li class="scheda" data-scheda="salvate" tabindex="0">Ricerche salvate</li>
     <li class="scheda" data-scheda="preferiti" tabindex="0">Preferiti</li>
     <li class="scheda" data-scheda="stato" tabindex="0">Stato</li>
     <li class="con-sottomenu" tabindex="0">
-      <span>Informazioni ▾</span>
+      <span>Help ▾</span>
       <ul class="submenu">
+        <li><a href="/guida.html">Guida all'utilizzo</a></li>
         <li><a href="/faq.html">Domande frequenti</a></li>
         <li><a href="/versioni.html">Versioni</a></li>
         <li><a href="/software-simili.html">Software simili</a></li>
+        <li><a href="/licenza.html">Licenza</a></li>
       </ul>
     </li>
     <li class="stretta"><button type="button" id="densita" title="Righe più compatte">Compatta</button></li>
@@ -188,9 +190,6 @@
 
 <footer class="pie">
   <span id="pie-versione">Iudex</span>
-  <span>Fonte: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb</span>
-  <span id="pie-cache"></span>
-  <a href="https://github.com/SOsintOps/Iudex/blob/main/LICENSE" target="_blank" rel="noopener">Licenza</a>
 </footer>
 
 <script src="/static/tema.js"></script>

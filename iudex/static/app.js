@@ -547,7 +547,6 @@
   async function aggiornaPie() {
     try {
       const s = await api("/api/stato");
-      $("#pie-cache").textContent = `${s.chiamate_remote} richieste al server in questa sessione · ${s.sentenze_in_cache} sentenze in cache`;
       $("#pie-versione").textContent = `Iudex ${s.versione}`;
     } catch (e) { /* silenzioso */ }
   }

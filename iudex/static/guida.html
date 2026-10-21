@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iudex · Guida all'utilizzo</title>
+<link rel="icon" href="/static/favicon.ico" sizes="16x16 32x32 48x48 64x64">
+<link rel="icon" type="image/png" href="/static/favicon.png" sizes="256x256">
+<link rel="stylesheet" href="/static/app.css">
+<script>(function(){try{var m=(localStorage.getItem("iudex.tema")||"auto").replace(/"/g,"");var o=null;try{o=JSON.parse(localStorage.getItem("iudex.tema.orari"))}catch(e){}if(!(o&&typeof o.inizio==="number"&&typeof o.fine==="number"))o={inizio:19,fine:7};var h=new Date().getHours();var s=m==="scuro"||(m==="auto"&&(o.inizio>o.fine?(h>=o.inizio||h<o.fine):(h>=o.inizio&&h<o.fine)));document.documentElement.dataset.tema=s?"scuro":"chiaro";}catch(e){}})();</script>
+</head>
+<body>
+<nav class="navbar" aria-label="Principale">
+  <ul class="menu">
+    <li class="marchio"><a href="/" title="Iudex: torna alla ricerca"><img class="marchio-img chiaro" src="/static/marchio.png" alt="" width="44" height="44"><img class="marchio-img scuro" src="/static/marchio-scuro.png" alt="" width="44" height="44"><span class="nome">Iudex</span></a></li>
+    <li><a href="/">Ricerca</a></li>
+    <li><a href="/#cronologia">Cronologia</a></li>
+    <li class="con-sottomenu attiva" tabindex="0">
+      <span>Help ▾</span>
+      <ul class="submenu">
+        <li class="attiva"><a href="/guida.html">Guida all'utilizzo</a></li>
+        <li><a href="/faq.html">Domande frequenti</a></li>
+        <li><a href="/versioni.html">Versioni</a></li>
+        <li><a href="/software-simili.html">Software simili</a></li>
+        <li><a href="/licenza.html">Licenza</a></li>
+      </ul>
+    </li>
+    <li class="stretta tema-icone" id="tema"><button type="button" id="tema-chiaro" title="Tema chiaro"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/></g></svg><span class="sr">Tema chiaro</span></button><button type="button" id="tema-scuro" title="Tema scuro"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="sr">Tema scuro</span></button></li>
+  </ul>
+</nav>
+
+<main class="informativa"><div class="pagina-info">
+  <nav aria-label="Indice">
+    <a href="#flusso">Il flusso di lavoro</a>
+    <a href="#barra">La barra di navigazione</a>
+    <a href="#ricerca">La ricerca</a>
+    <a href="#filtri">I filtri</a>
+    <a href="#risultati">I risultati</a>
+    <a href="#lettura">Il pannello di lettura</a>
+    <a href="#cronologia">Cronologia</a>
+    <a href="#salvate">Ricerche salvate</a>
+    <a href="#preferiti">Preferiti</a>
+    <a href="#stato">Stato</a>
+    <a href="#tastiera">Tastiera</a>
+    <a href="#oltre">Oltre il browser</a>
+  </nav>
+  <article class="documento">
+    <h1>Guida all'utilizzo</h1>
+    <p>Iudex è un'interfaccia locale per <b>SentenzeWeb</b>, la banca dati pubblica delle sentenze civili e penali della Corte Suprema di Cassazione. Non copia nulla: ogni ricerca interroga il server della Corte nel momento in cui la fai, e in locale restano solo la cronologia, le ricerche salvate, i preferiti e una cache dei testi già aperti. Questa pagina descrive il percorso tipico di lavoro e che cosa fa ogni voce dell'interfaccia.</p>
+
+    <h2 id="flusso">Il flusso di lavoro</h2>
+    <ol>
+      <li><b>Cerca</b>: scrivi parole, estremi o un riferimento normativo nel riquadro in alto e premi <b>Cerca</b> (o Invio). Parte una sola richiesta al server della Corte.</li>
+      <li><b>Restringi</b>: nella colonna di sinistra spunta archivio, tipo di provvedimento, sezione, anno, sottosezione o materia. I conteggi arrivano con la stessa risposta della ricerca, quindi sai subito quanti provvedimenti restano.</li>
+      <li><b>Leggi</b>: <b>Apri testo</b> mostra il provvedimento in un pannello accanto ai risultati, in paragrafi, con le occorrenze evidenziate, il salto al P.Q.M. e i riferimenti normativi cliccabili. Il PDF ufficiale si apre sempre dal sito della Corte.</li>
+      <li><b>Conserva</b>: <b>Preferisci</b> mette il provvedimento fra i preferiti (con una nota tua); <b>Salva ricerca</b> conserva l'interrogazione per ripeterla e controllare se ci sono novità.</li>
+      <li><b>Esporta</b>: la pagina di risultati o i primi 50/100 in CSV, JSON o Markdown; la singola sentenza in Markdown o JSON; la citazione pronta da incollare.</li>
+      <li><b>Ritrova</b>: tutto quello che hai cercato è nella <b>Cronologia</b>; ogni ricerca ha un indirizzo ricaricabile che puoi copiare dalla barra del browser.</li>
+    </ol>
+
+    <h2 id="barra">La barra di navigazione</h2>
+    <dl>
+      <dt>Logo e nome</dt>
+      <dd>Riportano alla pagina iniziale della ricerca.</dd>
+      <dt>Ricerca</dt>
+      <dd>La scheda principale: riquadro di ricerca, filtri, risultati e pannello di lettura.</dd>
+      <dt>Cronologia</dt>
+      <dd>Le ricerche fatte, in ordine di tempo, con il numero di risultati e il collegamento per rifarle.</dd>
+      <dt>Ricerche salvate</dt>
+      <dd>Le interrogazioni che hai deciso di conservare, con il controllo delle novità su richiesta.</dd>
+      <dt>Preferiti</dt>
+      <dd>I singoli provvedimenti che hai segnato, con le note.</dd>
+      <dt>Stato</dt>
+      <dd>Versione, richieste fatte al server in questa sessione, contenuto della cache, orari del tema scuro e registro delle chiamate.</dd>
+      <dt>Help</dt>
+      <dd>Questa guida, le domande frequenti, le versioni, i software simili e la licenza.</dd>
+      <dt>Compatta</dt>
+      <dd>Riduce ogni risultato a una riga: estremi, date, presidente, relatore ed ECLI. Un secondo clic torna alla vista normale, con i frammenti di testo. La scelta resta memorizzata nel browser.</dd>
+      <dt>Sole e luna</dt>
+      <dd>Scelgono il tema chiaro o scuro. Un secondo clic sull'icona attiva torna al tema automatico, che segue l'orario impostato nella scheda Stato (dalle 19 alle 7 per impostazione predefinita).</dd>
+    </dl>
+
+    <h2 id="ricerca">La ricerca</h2>
+    <dl>
+      <dt>Parole o estremi</dt>
+      <dd>Più parole cercano la frase con una distanza fino a 7 termini (<code>giusta causa</code> trova anche "giusta e grave causa"); <code>"giusta causa"</code> fra virgolette cerca la frase esatta; <code>licenz*</code> tronca; <code>AND</code>, <code>OR</code>, <code>NOT</code> combinano. Per gli estremi scrivi numero e anno: <code>12345/2024</code>, <code>n. 123 del 2025</code>, <code>sent. 99/24</code>, <code>ord. 5/2023</code>. La sintassi è la stessa del sito ufficiale, quindi i risultati coincidono.</dd>
+      <dt>Riferimento normativo</dt>
+      <dd>Scrivi la norma come la citeresti: <code>art. 2043 c.c.</code>, <code>art. 18 legge 300/1970</code>, <code>art. 640 c.p.</code>. Il server della Corte la normalizza nelle forme con cui le sentenze la citano; Iudex conserva in locale le normalizzazioni già chieste per 30 giorni. Puoi combinare parole e riferimento nella stessa ricerca.</dd>
+      <dt>Ordina per</dt>
+      <dd><i>Data di pubblicazione</i> (la più recente prima, come sul sito), <i>data di udienza</i> o <i>rilevanza</i> (il punteggio del motore di ricerca).</dd>
+      <dt>Per pagina</dt>
+      <dd>10, 25 o 50 risultati per pagina. Ogni pagina nuova è una richiesta al server; le pagine già viste restano in cache per un'ora.</dd>
+      <dt>Cerca</dt>
+      <dd>Avvia la ricerca. Mentre scrivi non parte nessuna richiesta: Iudex non ha suggerimenti automatici.</dd>
+      <dt>Sintassi</dt>
+      <dd>Apre un promemoria della sintassi e delle scorciatoie da tastiera sotto il riquadro.</dd>
+    </dl>
+
+    <h2 id="filtri">I filtri</h2>
+    <p>La colonna di sinistra elenca, per ogni filtro, i valori presenti nei risultati con il conteggio e una barra proporzionale. Spunta più valori dello stesso filtro per sommarli (civile <i>o</i> penale), più filtri diversi per incrociarli (sezione Lavoro <i>e</i> anno 2026). Ogni filtro attivo compare come etichetta sopra i risultati: la crocetta lo toglie; <b>Azzera</b> li toglie tutti.</p>
+    <dl>
+      <dt>Archivio</dt>
+      <dd>Civile o penale.</dd>
+      <dt>Tipo di provvedimento</dt>
+      <dd>Sentenza, ordinanza, ordinanza interlocutoria, decreto.</dd>
+      <dt>Sezione</dt>
+      <dd>Prima … Settima, Feriale, Lavoro, Unite.</dd>
+      <dt>Anno di decisione</dt>
+      <dd>L'anno della decisione (l'archivio copre circa gli ultimi cinque anni).</dd>
+      <dt>Sottosezione</dt>
+      <dd>Per esempio la tributaria o la lavoro, quando il CED l'ha indicata.</dd>
+      <dt>Materia</dt>
+      <dd>La classificazione del CED (ad esempio "Lavoro subordinato", "Responsabilità civile"). I valori contengono spazi e virgole: nell'indirizzo sono separati da punto e virgola.</dd>
+    </dl>
+    <p>La maniglia fra i filtri e i risultati si trascina per cambiare la larghezza della colonna; il doppio clic la ripristina; con il fuoco sulla maniglia le frecce la spostano. La larghezza resta memorizzata nel browser.</p>
+
+    <h2 id="risultati">I risultati</h2>
+    <p>L'intestazione dice quanti provvedimenti rispondono alla ricerca e se la risposta arriva dalla cache locale. Ogni risultato mostra archivio e sezione, tipo e numero, date di udienza e di deposito, presidente, relatore, ECLI e, nella vista normale, i frammenti di testo con le parole cercate evidenziate.</p>
+    <dl>
+      <dt>Apri testo</dt>
+      <dd>Carica il testo integrale nel pannello di lettura (una richiesta al server la prima volta, poi dalla cache). Anche il clic sugli estremi lo apre.</dd>
+      <dt>PDF ufficiale</dt>
+      <dd>Apre il documento sul sito della Corte, in una nuova scheda. Iudex non scarica i PDF.</dd>
+      <dt>Preferisci</dt>
+      <dd>Aggiunge o toglie il provvedimento dai preferiti.</dd>
+      <dt>Salva ricerca</dt>
+      <dd>Conserva l'interrogazione corrente (parole, riferimento, filtri, ordinamento) fra le ricerche salvate, con un nome a tua scelta.</dd>
+      <dt>Esporta</dt>
+      <dd>Scegli <i>pagina corrente</i> (nessuna richiesta), <i>primi 50</i> (al più una richiesta) o <i>primi 100</i> (al più due), poi il formato: <b>CSV</b> per un foglio di calcolo, <b>JSON</b> per un programma, <b>Markdown</b> per appunti e documenti. L'esportazione contiene gli estremi, le date, i magistrati, l'ECLI, la citazione e il collegamento al PDF.</dd>
+      <dt>Pagine</dt>
+      <dd>I pulsanti sotto l'elenco scorrono le pagine di risultati.</dd>
+      <dt>Indirizzo ricaricabile</dt>
+      <dd>Dopo ogni ricerca l'indirizzo nella barra del browser contiene tutti i parametri (per esempio <code>#testo=licenziamento&amp;kind=snciv&amp;anno=2026</code>): copialo, salvalo fra i segnalibri o incollalo in un appunto. Riaprendolo, Iudex rifà la stessa ricerca.</dd>
+    </dl>
+
+    <h2 id="lettura">Il pannello di lettura</h2>
+    <p>Si apre a destra dei risultati e mostra il provvedimento ricostruito in paragrafi, con le intestazioni (Fatti di causa, Ragioni della decisione, P.Q.M. e simili) riconosciute. In alto ci sono gli estremi, le date, presidente e relatore, l'ECLI e, quando il CED l'ha indicata, la materia. La maniglia fra risultati e testo regola la larghezza come quella dei filtri.</p>
+    <dl>
+      <dt>PDF ufficiale</dt>
+      <dd>Lo stesso collegamento al sito della Corte.</dd>
+      <dt>Copia citazione</dt>
+      <dd>Mette negli appunti la citazione nel formato <code>Cass. civ., Sez. Lavoro, Sentenza n. 26495/2026, dep. 09/10/2026 (ECLI:IT:CASS:2026:26495CIV)</code>.</dd>
+      <dt>Aggiungi ai preferiti</dt>
+      <dd>Come il pulsante nell'elenco.</dd>
+      <dt>Markdown, JSON</dt>
+      <dd>Scaricano il singolo provvedimento, testo compreso, in quel formato.</dd>
+      <dt>P.Q.M.</dt>
+      <dd>Salta al dispositivo, se riconosciuto.</dd>
+      <dt>A−, A+</dt>
+      <dd>Riducono o ingrandiscono il carattere del testo; la scelta resta memorizzata.</dd>
+      <dt>‹ 1 / 4 ›</dt>
+      <dd>Scorre le occorrenze delle parole cercate, evidenziate nel testo (anche con i tasti <code>n</code> e <code>p</code>). Per i riferimenti normativi e le frasi l'evidenziazione è calcolata dal server, quindi coincide con quella del sito.</dd>
+      <dt>Riferimenti normativi</dt>
+      <dd>In fondo al testo, l'elenco delle norme indicizzate dal CED per quel provvedimento. Ogni voce è cliccabile e cerca le sentenze che citano la stessa norma.</dd>
+      <dt>Chiudi</dt>
+      <dd>Chiude il pannello (anche con <code>Esc</code>). <code>Alt+→</code> e <code>Alt+←</code> passano al provvedimento successivo o precedente dell'elenco senza chiuderlo.</dd>
+    </dl>
+
+    <h2 id="cronologia">Cronologia</h2>
+    <p>Ogni ricerca finisce qui con data e ora, testo e filtri, numero di risultati, ordinamento e risultati per pagina. <b>Apri</b> la rifà (dalla cache se è recente); <b>Elimina</b> toglie la singola voce; <b>Svuota</b> cancella tutta la cronologia. La cronologia è solo tua: resta nel file SQLite nella cartella <code>dati</code>.</p>
+
+    <h2 id="salvate">Ricerche salvate</h2>
+    <p>Una ricerca salvata è un'<i>interrogazione</i> da ripetere, non un elenco di risultati. La tabella riporta quando l'hai salvata, il nome, l'ultimo controllo, i provvedimenti trovati allora e le novità.</p>
+    <dl>
+      <dt>Controlla novità</dt>
+      <dd>Rifà la ricerca sul server (una richiesta) e confronta i risultati con quelli dell'ultimo controllo: elenca i provvedimenti nuovi e aggiorna il conteggio. Non c'è nessun controllo automatico: lo fai tu, quando vuoi.</dd>
+      <dt>Apri</dt>
+      <dd>Carica la ricerca nella scheda Ricerca.</dd>
+      <dt>Elimina</dt>
+      <dd>Toglie la ricerca salvata.</dd>
+    </dl>
+
+    <h2 id="preferiti">Preferiti</h2>
+    <p>Un preferito è un <i>singolo provvedimento</i>: estremi, ECLI, collegamento al PDF e una nota che scrivi tu (per esempio perché ti interessa o a quale pratica si riferisce). La tabella si ordina per data di inserimento; <b>PDF</b> apre il documento sul sito della Corte, <b>Rimuovi</b> lo toglie dai preferiti. Il testo, se l'hai già aperto, è anche in cache e si rilegge senza chiamare il server.</p>
+
+    <h2 id="stato">Stato</h2>
+    <dl>
+      <dt>Richieste al server</dt>
+      <dd>Quante chiamate Iudex ha fatto alla Corte da quando è partito, e l'intervallo minimo fra due chiamate (2 secondi per impostazione predefinita).</dd>
+      <dt>Cache locale</dt>
+      <dd>Quanti testi e quante risposte di ricerca sono conservati, e dove sta l'archivio. <b>Svuota cache ricerche</b> cancella le risposte (valgono comunque un'ora); <b>Svuota testi in cache</b> cancella i testi aperti, non i preferiti.</dd>
+      <dt>Tema scuro automatico</dt>
+      <dd>L'ora di inizio e di fine del tema scuro, secondo l'ora del computer.</dd>
+      <dt>Registro</dt>
+      <dd>Le ultime chiamate al server con ora, tipo, esito e durata: serve a vedere che cosa Iudex ha chiesto davvero alla Corte.</dd>
+    </dl>
+
+    <h2 id="tastiera">Tastiera</h2>
+    <table>
+      <thead><tr><th>Tasto</th><th>Effetto</th></tr></thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>porta il cursore nel campo di ricerca</td></tr>
+        <tr><td><code>Invio</code></td><td>nel campo di ricerca avvia la ricerca; su un risultato lo apre</td></tr>
+        <tr><td><code>j</code> / <code>k</code></td><td>scorrono i risultati verso il basso e verso l'alto</td></tr>
+        <tr><td><code>n</code> / <code>p</code></td><td>occorrenza successiva o precedente nel testo</td></tr>
+        <tr><td><code>Alt+→</code> / <code>Alt+←</code></td><td>provvedimento successivo o precedente, con il pannello aperto</td></tr>
+        <tr><td><code>Esc</code></td><td>chiude il pannello di lettura</td></tr>
+        <tr><td><code>←</code> / <code>→</code> su una maniglia</td><td>allargano o stringono la colonna; doppio clic per ripristinare</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="oltre">Oltre il browser</h2>
+    <p><b>Finestra nativa</b>: <code>scriptsvvia-finestra.cmd</code> apre Iudex in una finestra propria (WebView2 su Windows, WebKit su Linux e macOS) e ferma il server quando la chiudi. <b>Assistenti e LLM locali</b>: il server MCP incluso espone tre strumenti (cerca sentenze, cerca per norma, leggi sentenza) che passano dall'API locale, quindi dalla cache e dai limiti di cortesia. I dettagli sono nelle <a href="/faq.html#oltre">domande frequenti</a>.</p>
+    <p>Qualunque strada usi, vale la stessa regola: Iudex fa al server della Corte una richiesta alla volta, con almeno due secondi di distanza, e non ha funzioni di scaricamento massivo. I testi restano della Corte Suprema di Cassazione.</p>
+  </article>
+</div></main>
+
+<footer class="pie">
+  <span id="pie-versione">Iudex</span>
+</footer>
+<script src="/static/tema.js"></script>
+</body>
+</html>

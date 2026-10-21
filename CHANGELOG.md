@@ -1,5 +1,25 @@
 # Registro delle modifiche
 
+## 0.4.0 — 2026-10-21
+
+### Interfaccia
+- Il menu **Informazioni** si chiama **Help** e contiene due pagine nuove: la **Guida
+  all'utilizzo** (flusso di lavoro e funzione di ogni voce) e la **Licenza** (MIT, testi
+  della Corte, componenti di terzi).
+- **Logo** nella barra di navigazione, a sinistra del nome, con variante per il tema scuro.
+- Il piè di pagina mostra solo la versione; il conteggio delle richieste e della cache
+  resta nella scheda Stato.
+
+### Repository
+- Riordino secondo le convenzioni di GitHub: avviatori in `scripts/`, logo originale e
+  script di generazione in `assets/logo/`, `CONTRIBUTING.md`, `SECURITY.md`,
+  `.editorconfig`, `.gitattributes`, integrazione continua (ruff + pytest su Python 3.11 e
+  3.13) e modelli per segnalazioni e pull request in `.github/`.
+- `docs/analisi-sito.md`: sezione sulle chiamate e pagine del sito che Iudex non usa
+  (permalink `detail.html`, telemetria `app.document`, requisitoria, precedenti collegati,
+  liste dei filtri con `facet.prefix`, suggerimenti con `kind:"key"`, provvedimenti in
+  fase di oscuramento).
+
 ## 0.3.1 — 2026-10-21
 
 ### Grafica

@@ -1,6 +1,6 @@
 @echo off
 rem Avvia Iudex sulla porta 8765 e apre il browser.
-cd /d "%~dp0"
+cd /d "%~dp0.."
 if not exist .venv\Scripts\python.exe (
   echo Ambiente virtuale assente: eseguo l'installazione.
   python -m venv .venv || exit /b 1

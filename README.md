@@ -7,6 +7,8 @@
 
 # Iudex
 
+[![CI](https://github.com/SOsintOps/Iudex/actions/workflows/ci.yml/badge.svg)](https://github.com/SOsintOps/Iudex/actions/workflows/ci.yml)
+
 Interfaccia locale per interrogare **SentenzeWeb**, la banca dati pubblica delle sentenze
 civili e penali della Corte Suprema di Cassazione (<https://www.italgiure.giustizia.it/sncass/>).
 
@@ -35,7 +37,8 @@ una cronologia, i preferiti, l'esportazione e una cache locale dei testi già ap
 - **Colonne ridimensionabili** trascinando le maniglie (pannelli e tabelle), tema chiaro e
   scuro, righe compatte, carattere regolabile, scorciatoie da tastiera, nessuna dipendenza
   esterna nel browser.
-- Pagine integrate di **domande frequenti**, **versioni** e **software simili**.
+- Menu **Help** con la **guida all'utilizzo**, le **domande frequenti**, le **versioni**, i
+  **software simili** e la **licenza**.
 - Grafica allineata a [Exploratores](https://github.com/SOsintOps/Exploratores) (stessi
   colori, font Inter in locale, stessa barra di navigazione), più un **tema scuro** che si
   attiva da solo in base all'orario (dalle 19 alle 7, orari modificabili).
@@ -48,7 +51,7 @@ presidente, relatore ed ECLI; i filtri a sinistra con le barre proporzionali.
 ![Iudex: tema scuro, righe compatte](docs/immagini/tema-scuro.png)
 
 Le pagine informative integrate (domande frequenti, versioni, software simili) usano lo
-stesso stile e sono raggiungibili dal sottomenu Informazioni della barra di navigazione.
+stesso stile e sono raggiungibili dal menu Help della barra di navigazione.
 
 ![Iudex: pagina delle domande frequenti](docs/immagini/domande-frequenti.png)
 
@@ -81,8 +84,9 @@ Non c'è alcuna funzione di scaricamento massivo o di scansione dell'archivio, e
 aggiunta: la banca dati è della Corte, che la pubblica per la consultazione.
 
 I dettagli degli endpoint, dei parametri e dei campi sono in
-[docs/analisi-sito.md](docs/analisi-sito.md); le risposte alle domande più comuni in
-[docs/faq.md](docs/faq.md); i progetti affini in [docs/software-simili.md](docs/software-simili.md).
+[docs/analisi-sito.md](docs/analisi-sito.md); la guida all'uso in [docs/guida.md](docs/guida.md);
+le risposte alle domande più comuni in [docs/faq.md](docs/faq.md); i progetti affini in
+[docs/software-simili.md](docs/software-simili.md).
 
 ## Installazione
 
@@ -93,10 +97,10 @@ git clone https://github.com/SOsintOps/Iudex.git
 cd Iudex
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -e .
-avvia.cmd
+scripts\avvia.cmd
 ```
 
-`avvia.cmd` apre il browser su <http://127.0.0.1:8765/> e avvia il server; su Linux o
+`scripts\avvia.cmd` apre il browser su <http://127.0.0.1:8765/> e avvia il server; su Linux o
 macOS: `.venv/bin/python -m iudex`. I dati locali (cronologia, preferiti, cache) stanno in
 `dati/iudex.sqlite`.
 
@@ -108,7 +112,7 @@ Variabili d'ambiente: `IUDEX_PORTA` (8765), `IUDEX_HOST` (127.0.0.1), `IUDEX_DAT
 
 ```bat
 .venv\Scripts\python.exe -m pip install -e .[desktop]
-avvia-finestra.cmd
+scripts\avvia-finestra.cmd
 ```
 
 Apre Iudex in una finestra propria (componente WebView2 di Windows 11; WebKitGTK su Linux,
@@ -149,6 +153,9 @@ disattivare la verifica.
 
 ## Sviluppo
 
+Le regole per contribuire sono in [CONTRIBUTING.md](CONTRIBUTING.md), la segnalazione
+delle vulnerabilità in [SECURITY.md](SECURITY.md).
+
 ```bat
 .venv\Scripts\python.exe -m pip install -e .[dev]
 .venv\Scripts\python.exe -m ruff check iudex tests
@@ -168,7 +175,12 @@ Struttura:
 | `iudex/app.py` | server FastAPI, API JSON, protezione delle API |
 | `iudex/mcp_server.py` | server MCP (extra `mcp`) |
 | `iudex/desktop.py` | finestra nativa (extra `desktop`) |
-| `iudex/static/` | interfaccia e pagine informative (HTML, CSS, JavaScript senza dipendenze) |
+| `iudex/static/` | interfaccia e pagine di aiuto (HTML, CSS, JavaScript senza dipendenze), font, icone |
+| `tests/` | test automatici (senza rete) |
+| `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini |
+| `assets/logo/` | logo originale e script che genera logo, marchio e favicon |
+| `scripts/` | avviatori per Windows |
+| `.github/` | integrazione continua (ruff + pytest), modelli per segnalazioni e pull request |
 
 ## Licenza
 

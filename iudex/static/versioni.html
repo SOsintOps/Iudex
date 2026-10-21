@@ -12,15 +12,17 @@
 <body>
 <nav class="navbar" aria-label="Principale">
   <ul class="menu">
-    <li class="marchio"><a href="/" title="Iudex: torna alla ricerca">Iudex</a></li>
+    <li class="marchio"><a href="/" title="Iudex: torna alla ricerca"><img class="marchio-img chiaro" src="/static/marchio.png" alt="" width="44" height="44"><img class="marchio-img scuro" src="/static/marchio-scuro.png" alt="" width="44" height="44"><span class="nome">Iudex</span></a></li>
     <li><a href="/">Ricerca</a></li>
     <li><a href="/#cronologia">Cronologia</a></li>
     <li class="con-sottomenu attiva" tabindex="0">
-      <span>Informazioni ▾</span>
+      <span>Help ▾</span>
       <ul class="submenu">
+        <li><a href="/guida.html">Guida all'utilizzo</a></li>
         <li><a href="/faq.html">Domande frequenti</a></li>
         <li class="attiva"><a href="/versioni.html">Versioni</a></li>
         <li><a href="/software-simili.html">Software simili</a></li>
+        <li><a href="/licenza.html">Licenza</a></li>
       </ul>
     </li>
     <li class="stretta tema-icone" id="tema"><button type="button" id="tema-chiaro" title="Tema chiaro"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/></g></svg><span class="sr">Tema chiaro</span></button><button type="button" id="tema-scuro" title="Tema scuro"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="sr">Tema scuro</span></button></li>
@@ -29,6 +31,7 @@
 
 <main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v040">0.4.0 — 21 ottobre 2026</a>
     <a href="#v031">0.3.1 — 21 ottobre 2026</a>
     <a href="#v030">0.3.0 — 21 ottobre 2026</a>
     <a href="#v020">0.2.0 — 21 ottobre 2026</a>
@@ -38,6 +41,19 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v040">0.4.0 <span class="data">— 21 ottobre 2026</span></h2>
+    <h3>Interfaccia</h3>
+    <ul>
+      <li>Il menu <b>Informazioni</b> si chiama <b>Help</b> e contiene due pagine nuove: la <b>Guida all'utilizzo</b> (flusso di lavoro e funzione di ogni voce) e la <b>Licenza</b>.</li>
+      <li><b>Logo</b> nella barra di navigazione, a sinistra del nome, con variante per il tema scuro.</li>
+      <li>Il piè di pagina mostra solo la versione; richieste e cache restano nella scheda Stato.</li>
+    </ul>
+    <h3>Repository</h3>
+    <ul>
+      <li>Riordino secondo le convenzioni di GitHub: avviatori in <code>scripts/</code>, logo in <code>assets/logo/</code>, guida per contribuire, integrazione continua, modelli per segnalazioni.</li>
+      <li>Documentate in <code>docs/analisi-sito.md</code> le chiamate del sito ufficiale che Iudex non usa (permalink <code>detail.html</code>, telemetria sui documenti, requisitoria, precedenti collegati).</li>
+    </ul>
 
     <h2 id="v031">0.3.1 <span class="data">— 21 ottobre 2026</span></h2>
     <h3>Grafica</h3>
@@ -97,9 +113,7 @@
 </div></main>
 
 <footer class="pie">
-  <span>Iudex</span>
-  <span>Fonte: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb</span>
-  <a href="https://github.com/SOsintOps/Iudex/blob/main/LICENSE" target="_blank" rel="noopener">Licenza</a>
+  <span id="pie-versione">Iudex</span>
 </footer>
 <script src="/static/tema.js"></script>
 </body>

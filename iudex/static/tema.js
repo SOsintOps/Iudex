@@ -87,3 +87,13 @@
 
   window.IudexTema = { leggiModalita, leggiOrari, temaEffettivo, applica, imposta, impostaOrari, cicla, scegli, PREDEFINITI };
 })();
+
+// Pagine informative: scrive la versione nel piè di pagina (nella pagina principale lo fa app.js).
+(function () {
+  var e = document.getElementById("pie-versione");
+  if (!e || document.getElementById("risultati")) return;
+  fetch("/api/stato", { headers: { "X-Iudex": "1" } })
+    .then(function (r) { return r.json(); })
+    .then(function (s) { if (s && s.versione) e.textContent = "Iudex " + s.versione; })
+    .catch(function () { /* resta "Iudex" */ });
+})();

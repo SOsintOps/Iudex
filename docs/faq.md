@@ -80,6 +80,6 @@ clic ripristina; da tastiera, fuoco sulla maniglia e frecce.
 
 ## Oltre il browser
 
-- **Finestra nativa:** `avvia-finestra.cmd` (extra `desktop`, pywebview su WebView2).
+- **Finestra nativa:** `scripts\avvia-finestra.cmd` (extra `desktop`, pywebview su WebView2).
 - **Assistenti e LLM locali:** `python -m iudex.mcp_server` (extra `mcp`) espone tre
   strumenti che passano dall'API locale; serve un client MCP e Iudex in esecuzione.
