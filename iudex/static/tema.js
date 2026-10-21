@@ -91,7 +91,7 @@
 // Pagine informative: scrive la versione nel piè di pagina (nella pagina principale lo fa app.js).
 (function () {
   var e = document.getElementById("pie-versione");
-  if (!e || document.getElementById("risultati")) return;
+  if (!e || document.querySelector("form#ricerca")) return;
   fetch("/api/stato", { headers: { "X-Iudex": "1" } })
     .then(function (r) { return r.json(); })
     .then(function (s) { if (s && s.versione) e.textContent = "Iudex " + s.versione; })
