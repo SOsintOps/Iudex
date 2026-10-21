@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Iudex · Versioni</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230066ff'/%3E%3Ctext x='16' y='23' font-family='Inter,Arial,sans-serif' font-weight='700' font-size='20' text-anchor='middle' fill='%23ffffff'%3EI%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="/static/favicon.ico" sizes="16x16 32x32 48x48 64x64">
+<link rel="icon" type="image/png" href="/static/favicon.png" sizes="256x256">
 <link rel="stylesheet" href="/static/app.css">
 <script>(function(){try{var m=(localStorage.getItem("iudex.tema")||"auto").replace(/"/g,"");var o=null;try{o=JSON.parse(localStorage.getItem("iudex.tema.orari"))}catch(e){}if(!(o&&typeof o.inizio==="number"&&typeof o.fine==="number"))o={inizio:19,fine:7};var h=new Date().getHours();var s=m==="scuro"||(m==="auto"&&(o.inizio>o.fine?(h>=o.inizio||h<o.fine):(h>=o.inizio&&h<o.fine)));document.documentElement.dataset.tema=s?"scuro":"chiaro";}catch(e){}})();</script>
 </head>
@@ -28,6 +29,7 @@
 
 <main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v031">0.3.1 — 21 ottobre 2026</a>
     <a href="#v030">0.3.0 — 21 ottobre 2026</a>
     <a href="#v020">0.2.0 — 21 ottobre 2026</a>
     <a href="#v010">0.1.0 — 21 ottobre 2026</a>
@@ -36,6 +38,14 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v031">0.3.1 <span class="data">— 21 ottobre 2026</span></h2>
+    <h3>Grafica</h3>
+    <ul>
+      <li><b>Logo</b> di Iudex (bilancia con corona d'alloro e circuiti) nel README, con sfondo trasparente e variante per il tema scuro.</li>
+      <li><b>Favicon</b> ricavata dal logo: tratti bianchi su quadrato blu, leggibile anche a 16 px, al posto della "I" provvisoria.</li>
+      <li>Schermate del README rifatte con la barra attuale; tolto l'avviso sul Garante dalla pagina iniziale (la risposta sui dati personali resta nelle domande frequenti).</li>
+    </ul>
 
     <h2 id="v030">0.3.0 <span class="data">— 21 ottobre 2026</span></h2>
     <h3>Grafica</h3>

@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Iudex</title>
 <meta name="description" content="Interfaccia locale per SentenzeWeb, la banca dati pubblica delle sentenze della Corte Suprema di Cassazione.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230066ff'/%3E%3Ctext x='16' y='23' font-family='Inter,Arial,sans-serif' font-weight='700' font-size='20' text-anchor='middle' fill='%23ffffff'%3EI%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="/static/favicon.ico" sizes="16x16 32x32 48x48 64x64">
+<link rel="icon" type="image/png" href="/static/favicon.png" sizes="256x256">
 <script>(function(){try{var m=(localStorage.getItem("iudex.tema")||"auto").replace(/"/g,"");var o=null;try{o=JSON.parse(localStorage.getItem("iudex.tema.orari"))}catch(e){}if(!(o&&typeof o.inizio==="number"&&typeof o.fine==="number"))o={inizio:19,fine:7};var h=new Date().getHours();var s=m==="scuro"||(m==="auto"&&(o.inizio>o.fine?(h>=o.inizio||h<o.fine):(h>=o.inizio&&h<o.fine)));document.documentElement.dataset.tema=s?"scuro":"chiaro";}catch(e){}})();</script>
 <link rel="stylesheet" href="/static/app.css">
 </head>
@@ -118,7 +119,6 @@
         <li>Ogni ricerca ha un indirizzo ricaricabile e finisce nella cronologia; i testi aperti restano in cache locale.</li>
         <li>Esporta i risultati in CSV, JSON o Markdown; salva le sentenze fra i preferiti con una nota; controlla le novità delle ricerche salvate quando vuoi tu.</li>
       </ul>
-      <p class="nota">I dati sono della Corte Suprema di Cassazione. Il Garante della privacy ha richiamato la Corte sui dati personali presenti nei testi: non usare questo strumento per cercare persone.</p>
     </section>
   </section>
 

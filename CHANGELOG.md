@@ -1,5 +1,16 @@
 # Registro delle modifiche
 
+## 0.3.1 — 2026-10-21
+
+### Grafica
+- **Logo** di Iudex (bilancia con corona d'alloro e circuiti) nel README, con sfondo
+  trasparente e variante per il tema scuro di GitHub.
+- **Favicon** ricavata dal logo: tratti bianchi su quadrato blu, leggibile anche a 16 px,
+  al posto della "I" provvisoria.
+- Schermate del README rifatte con la barra attuale (icone sole e luna).
+- Tolto l'avviso sul Garante dalla pagina iniziale; la risposta sui dati personali resta
+  nelle domande frequenti.
+
 ## 0.3.0 — 2026-10-21
 
 ### Grafica

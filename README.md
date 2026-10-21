@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/immagini/logo-scuro.png">
+    <img src="docs/immagini/logo.png" alt="Iudex" width="320">
+  </picture>
+</p>
+
 # Iudex
 
 Interfaccia locale per interrogare **SentenzeWeb**, la banca dati pubblica delle sentenze

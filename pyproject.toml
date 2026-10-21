@@ -1,6 +1,6 @@
 [project]
 name = "iudex"
-version = "0.3.0"
+version = "0.3.1"
 description = "Interfaccia locale per interrogare SentenzeWeb, la banca dati pubblica delle sentenze della Corte Suprema di Cassazione"
 readme = "README.md"
 requires-python = ">=3.11"
