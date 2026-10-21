@@ -183,7 +183,7 @@ Struttura:
 | `iudex/static/` | interfaccia e pagine di aiuto (HTML, CSS, JavaScript senza dipendenze), font, icone |
 | `tests/` | test automatici (senza rete) |
 | `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini |
-| `assets/logo/` | logo originale e script che genera logo, marchio e favicon |
+| `assets/logo/` | logo originale e script che generano logo, marchio, favicon e anteprima social (`docs/immagini/anteprima-social.png`) |
 | `scripts/` | avviatori per Windows |
 | `.github/` | integrazione continua (ruff + pytest), Dependabot, modelli per segnalazioni e pull request |
 

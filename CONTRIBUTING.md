@@ -38,7 +38,7 @@ Su Linux e macOS: `.venv/bin/python`. Serve Python 3.11 o successivo.
 | `iudex/certs/` | certificato intermedio per la catena TLS del server della Corte |
 | `tests/` | test automatici |
 | `docs/` | analisi del sito, domande frequenti, guida, software simili, immagini del README |
-| `assets/logo/` | logo originale e script che genera logo, marchio e favicon |
+| `assets/logo/` | logo originale e script che generano logo, marchio, favicon e anteprima social (`docs/immagini/anteprima-social.png`) |
 | `scripts/` | avviatori per Windows |
 | `.github/` | integrazione continua, Dependabot, modelli per segnalazioni e pull request |
 
