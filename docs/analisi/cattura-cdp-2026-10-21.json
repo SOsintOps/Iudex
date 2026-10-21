@@ -1,0 +1,375 @@
+[
+ {
+  "method": "POST",
+  "url": "https://www.italgiure.giustizia.it/sncass/isapi/hc.dll/sn.solr/sn-collection/select?app.query",
+  "status": 200,
+  "mime": "text/plain",
+  "headers": {
+   "Accept": "*/*",
+   "Accept-Encoding": "gzip, deflate, br, zstd",
+   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+   "Connection": "keep-alive",
+   "Content-Length": "482",
+   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+   "Cookie": "cookiesession1=<omesso>",
+   "Host": "www.italgiure.giustizia.it",
+   "Origin": "https://www.italgiure.giustizia.it",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "Sec-Fetch-Dest": "empty",
+   "Sec-Fetch-Mode": "cors",
+   "Sec-Fetch-Site": "same-origin",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "X-Requested-With": "XMLHttpRequest",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "sec-ch-ua-platform": "\"Windows\""
+  },
+  "postData": "start=0&rows=10&q=(licenziamento) AND ((kind:\"snciv\" OR kind:\"snpen\"))&wt=json&indent=off&sort=pd desc,numdec desc&fl=id,filename,szdec,kind,ssz,tipoprov,numcard,numdec,numdep,datdep,ecli,anno,datdec,presidente,relatore,requisitoria,testoocr,ocr&hl=true&hl.snippets=4&hl.fragsize=100&hl.fl=ocr&hl.q=nomatch AND (licenziamento)&hl.maxAnalyzedChars=1000000&hl.simple.pre=<em class=\"hit\">&hl.simple.post=</em>",
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "Content-Length": "266423",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "text/plain;charset=UTF-8",
+   "X-Powered-By": "ASP.NET",
+   "Server": "Microsoft-IIS/7.5"
+  }
+ },
+ {
+  "method": "GET",
+  "url": "https://www.italgiure.giustizia.it/xway/application/nif/isapishare/hc.dll?app.query&q=(licenziamento)%20AND%20((kind%3A%22snciv%22%20OR%20kind%3A%22snpen%22))",
+  "status": 200,
+  "mime": "text/html",
+  "headers": {
+   "Accept": "*/*",
+   "Accept-Encoding": "gzip, deflate, br, zstd",
+   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+   "Connection": "keep-alive",
+   "Cookie": "cookiesession1=<omesso>",
+   "Host": "www.italgiure.giustizia.it",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "Sec-Fetch-Dest": "empty",
+   "Sec-Fetch-Mode": "cors",
+   "Sec-Fetch-Site": "same-origin",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "X-Requested-With": "XMLHttpRequest",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "sec-ch-ua-platform": "\"Windows\""
+  },
+  "postData": null,
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "Content-Length": "246",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "text/html",
+   "X-Powered-By": "ASP.NET",
+   "Server": "Microsoft-IIS/7.5"
+  }
+ },
+ {
+  "method": "POST",
+  "url": "https://www.italgiure.giustizia.it/sncass/isapi/hc.dll/sn.solr/sn-collection/select?app.facet",
+  "status": 200,
+  "mime": "text/plain",
+  "headers": {
+   "sec-ch-ua-platform": "\"Windows\"",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "X-Requested-With": "XMLHttpRequest",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "Accept": "*/*",
+   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+  },
+  "postData": "facet.method=enum&facet.mincount=1&wt=json&indent=off&q=(licenziamento) AND ((kind:\"snciv\" OR kind:\"snpen\"))&fl=name&facet=true&facet.limit=257&facet.sort=false&facet.prefix=&facet.field=kind",
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "Content-Length": "508",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "text/plain;charset=UTF-8",
+   "X-Powered-By": "ASP.NET",
+   "Server": "Microsoft-IIS/7.5"
+  }
+ },
+ {
+  "method": "POST",
+  "url": "https://www.italgiure.giustizia.it/sncass/isapi/hc.dll/sn.solr/sn-collection/select?app.facet",
+  "status": 200,
+  "mime": "text/plain",
+  "headers": {
+   "sec-ch-ua-platform": "\"Windows\"",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "X-Requested-With": "XMLHttpRequest",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "Accept": "*/*",
+   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+  },
+  "postData": "facet.method=enum&facet.mincount=1&wt=json&indent=off&q=(licenziamento) AND ((kind:\"snciv\" OR kind:\"snpen\"))&fl=name&facet=true&facet.limit=257&facet.sort=false&facet.prefix=&facet.field=tipoprov",
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "Content-Length": "554",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "text/plain;charset=UTF-8",
+   "X-Powered-By": "ASP.NET",
+   "Server": "Microsoft-IIS/7.5"
+  }
+ },
+ {
+  "method": "POST",
+  "url": "https://www.italgiure.giustizia.it/sncass/isapi/hc.dll/sn.solr/sn-collection/select?app.facet",
+  "status": 200,
+  "mime": "text/plain",
+  "headers": {
+   "Accept": "*/*",
+   "Accept-Encoding": "gzip, deflate, br, zstd",
+   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+   "Connection": "keep-alive",
+   "Content-Length": "208",
+   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+   "Cookie": "cookiesession1=<omesso>",
+   "Host": "www.italgiure.giustizia.it",
+   "Origin": "https://www.italgiure.giustizia.it",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "Sec-Fetch-Dest": "empty",
+   "Sec-Fetch-Mode": "cors",
+   "Sec-Fetch-Site": "same-origin",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "X-Requested-With": "XMLHttpRequest",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "sec-ch-ua-platform": "\"Windows\""
+  },
+  "postData": "facet.method=enum&facet.mincount=1&wt=json&indent=off&q=(licenziamento) AND ((kind:\"snciv\" OR kind:\"snpen\"))&fl=name&facet=true&facet.limit=257&facet.sort=false&facet.prefix=&facet.field=szdec",
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "Content-Length": "560",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "text/plain;charset=UTF-8",
+   "X-Powered-By": "ASP.NET",
+   "Server": "Microsoft-IIS/7.5"
+  }
+ },
+ {
+  "method": "POST",
+  "url": "https://www.italgiure.giustizia.it/sncass/isapi/hc.dll/sn.solr/sn-collection/select?app.facet",
+  "status": 200,
+  "mime": "text/plain",
+  "headers": {
+   "Accept": "*/*",
+   "Accept-Encoding": "gzip, deflate, br, zstd",
+   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+   "Connection": "keep-alive",
+   "Content-Length": "207",
+   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+   "Cookie": "cookiesession1=<omesso>",
+   "Host": "www.italgiure.giustizia.it",
+   "Origin": "https://www.italgiure.giustizia.it",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "Sec-Fetch-Dest": "empty",
+   "Sec-Fetch-Mode": "cors",
+   "Sec-Fetch-Site": "same-origin",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "X-Requested-With": "XMLHttpRequest",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "sec-ch-ua-platform": "\"Windows\""
+  },
+  "postData": "facet.method=enum&facet.mincount=1&wt=json&indent=off&q=(licenziamento) AND ((kind:\"snciv\" OR kind:\"snpen\"))&fl=name&facet=true&facet.limit=257&facet.sort=false&facet.prefix=&facet.field=anno",
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "Content-Length": "549",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "text/plain;charset=UTF-8",
+   "X-Powered-By": "ASP.NET",
+   "Server": "Microsoft-IIS/7.5"
+  }
+ },
+ {
+  "method": "GET",
+  "url": "https://www.italgiure.giustizia.it/sncass/pix/flip-top-right-multi2-18.png",
+  "status": 200,
+  "mime": "image/png",
+  "headers": {
+   "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+   "Accept-Encoding": "gzip, deflate, br, zstd",
+   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+   "Connection": "keep-alive",
+   "Cookie": "cookiesession1=<omesso>",
+   "Host": "www.italgiure.giustizia.it",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/z.css?v0",
+   "Sec-Fetch-Dest": "image",
+   "Sec-Fetch-Mode": "no-cors",
+   "Sec-Fetch-Site": "same-origin",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "sec-ch-ua-platform": "\"Windows\""
+  },
+  "postData": null,
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "ETag": "\"09416ba2748cf1:0\"",
+   "Accept-Ranges": "bytes",
+   "Content-Length": "505",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "image/png",
+   "Last-Modified": "Tue, 25 Mar 2014 12:42:48 GMT",
+   "Server": "Microsoft-IIS/7.5",
+   "X-Powered-By": "ASP.NET"
+  }
+ },
+ {
+  "method": "GET",
+  "url": "https://www.italgiure.giustizia.it/sncass/pix/flip-right-multi2-18.png",
+  "status": 200,
+  "mime": "image/png",
+  "headers": {
+   "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+   "Accept-Encoding": "gzip, deflate, br, zstd",
+   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+   "Connection": "keep-alive",
+   "Cookie": "cookiesession1=<omesso>",
+   "Host": "www.italgiure.giustizia.it",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/z.css?v0",
+   "Sec-Fetch-Dest": "image",
+   "Sec-Fetch-Mode": "no-cors",
+   "Sec-Fetch-Site": "same-origin",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "sec-ch-ua-platform": "\"Windows\""
+  },
+  "postData": null,
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "ETag": "\"0e8d3b32648cf1:0\"",
+   "Accept-Ranges": "bytes",
+   "Content-Length": "497",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "image/png",
+   "Last-Modified": "Tue, 25 Mar 2014 12:35:28 GMT",
+   "Server": "Microsoft-IIS/7.5",
+   "X-Powered-By": "ASP.NET"
+  }
+ },
+ {
+  "method": "GET",
+  "url": "https://www.italgiure.giustizia.it/sncass/pix/pdf.png",
+  "status": 200,
+  "mime": "image/png",
+  "headers": {
+   "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+   "Accept-Encoding": "gzip, deflate, br, zstd",
+   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+   "Connection": "keep-alive",
+   "Cookie": "cookiesession1=<omesso>",
+   "Host": "www.italgiure.giustizia.it",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "Sec-Fetch-Dest": "image",
+   "Sec-Fetch-Mode": "no-cors",
+   "Sec-Fetch-Site": "same-origin",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "sec-ch-ua-platform": "\"Windows\""
+  },
+  "postData": null,
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "ETag": "\"0a61af89c47cf1:0\"",
+   "Accept-Ranges": "bytes",
+   "Content-Length": "646",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "image/png",
+   "Last-Modified": "Mon, 24 Mar 2014 20:09:32 GMT",
+   "Server": "Microsoft-IIS/7.5",
+   "X-Powered-By": "ASP.NET"
+  }
+ },
+ {
+  "method": "GET",
+  "url": "https://www.italgiure.giustizia.it/sncass/pix/text.png",
+  "status": 200,
+  "mime": "image/png",
+  "headers": {
+   "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+   "Accept-Encoding": "gzip, deflate, br, zstd",
+   "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+   "Connection": "keep-alive",
+   "Cookie": "cookiesession1=<omesso>",
+   "Host": "www.italgiure.giustizia.it",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "Sec-Fetch-Dest": "image",
+   "Sec-Fetch-Mode": "no-cors",
+   "Sec-Fetch-Site": "same-origin",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "sec-ch-ua-platform": "\"Windows\""
+  },
+  "postData": null,
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "ETag": "\"0ab21603255d11:0\"",
+   "Accept-Ranges": "bytes",
+   "Content-Length": "486",
+   "Date": "Wed, 21 Oct 2026 10:10:10 GMT",
+   "Content-Type": "image/png",
+   "Last-Modified": "Fri, 22 Jan 2016 16:31:42 GMT",
+   "Server": "Microsoft-IIS/7.5",
+   "X-Powered-By": "ASP.NET"
+  }
+ },
+ {
+  "method": "GET",
+  "url": "https://www.italgiure.giustizia.it/sncass/pix/10x.png",
+  "status": 200,
+  "mime": "image/png",
+  "headers": {
+   "sec-ch-ua-platform": "\"Windows\"",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/z.css?v0",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0"
+  },
+  "postData": null,
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "ETag": "\"0bdfa7646c0cd1:0\"",
+   "Accept-Ranges": "bytes",
+   "Content-Length": "238",
+   "Date": "Wed, 21 Oct 2026 10:10:15 GMT",
+   "Content-Type": "image/png",
+   "Last-Modified": "Sun, 11 Nov 2012 19:55:14 GMT",
+   "Server": "Microsoft-IIS/7.5",
+   "X-Powered-By": "ASP.NET"
+  }
+ },
+ {
+  "method": "POST",
+  "url": "https://www.italgiure.giustizia.it/sncass/isapi/hc.dll/sn.solr/sn-collection/select",
+  "status": 200,
+  "mime": "text/plain",
+  "headers": {
+   "sec-ch-ua-platform": "\"Windows\"",
+   "Referer": "https://www.italgiure.giustizia.it/sncass/",
+   "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+   "sec-ch-ua-mobile": "?0",
+   "X-Requested-With": "XMLHttpRequest",
+   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+   "Accept": "*/*",
+   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+  },
+  "postData": "start=0&rows=1&q=(licenziamento) AND ((kind:\"snciv\" OR kind:\"snpen\"))&sort=pd desc,numdec desc&hl.q=nomatch AND (licenziamento)&wt=json&indent=off&fl=&hl=true&hl.fl=*&hl.fragsize=0&hl.simple.pre=<em class=\"hit\">&hl.simple.post=</em>",
+  "respHeaders": {
+   "X-Robots-Tag": "noindex",
+   "Content-Length": "54377",
+   "Date": "Wed, 21 Oct 2026 10:10:16 GMT",
+   "Content-Type": "text/plain;charset=UTF-8",
+   "X-Powered-By": "ASP.NET",
+   "Server": "Microsoft-IIS/7.5"
+  }
+ }
+]

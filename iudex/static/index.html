@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iudex</title>
+<meta name="description" content="Interfaccia locale per SentenzeWeb, la banca dati pubblica delle sentenze della Corte Suprema di Cassazione.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%237A1F2E'/%3E%3Ctext x='16' y='23' font-family='Palatino Linotype,Georgia,serif' font-size='20' text-anchor='middle' fill='%23F7F6F2'%3EI%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+<header class="testata">
+  <div class="marchio">
+    <a href="/" class="nome" title="Iudex: torna all'inizio">Iudex</a>
+    <span class="fonte">SentenzeWeb · Corte Suprema di Cassazione</span>
+    <span class="conteggio" id="conteggio-archivio" hidden></span>
+  </div>
+
+  <form id="ricerca" class="ricerca" autocomplete="off">
+    <div class="campo campo-testo">
+      <label for="testo">Parole o estremi</label>
+      <input id="testo" name="testo" type="search" spellcheck="false"
+             placeholder='licenziamento · "giusta causa" · 12345/2024 · sent. n. 99 del 2025'>
+    </div>
+    <div class="campo campo-rif">
+      <label for="rif">Riferimento normativo</label>
+      <input id="rif" name="rif" type="search" spellcheck="false" placeholder="art. 18 legge 300/1970">
+      <ul id="suggerimenti" class="suggerimenti" hidden></ul>
+    </div>
+    <div class="campo campo-ordina">
+      <label for="ordina">Ordina per</label>
+      <select id="ordina" name="ordina">
+        <option value="pubblicazione">data di pubblicazione</option>
+        <option value="udienza">data di udienza</option>
+        <option value="rilevanza">rilevanza</option>
+      </select>
+    </div>
+    <div class="campo campo-righe">
+      <label for="righe">Per pagina</label>
+      <select id="righe" name="righe">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+      </select>
+    </div>
+    <div class="campo campo-azioni">
+      <button type="submit" class="primario">Cerca</button>
+      <button type="button" id="aiuto-sintassi" class="discreto" aria-expanded="false" aria-controls="sintassi">Sintassi</button>
+    </div>
+  </form>
+
+  <div id="sintassi" class="sintassi" hidden>
+    <p><b>Parole:</b> più parole cercano la frase con distanza fino a 7 termini; <code>"giusta causa"</code> cerca la frase esatta; <code>licenz*</code> tronca; <code>AND</code>, <code>OR</code>, <code>NOT</code> combinano.</p>
+    <p><b>Estremi:</b> <code>12345/2024</code>, <code>n. 123 del 2025</code>, <code>sent. 99/24</code> (anche ord., dec.).</p>
+    <p><b>Riferimento normativo:</b> scrivi come lo citeresti (<code>art. 2043 c.c.</code>, <code>art. 18 legge 300/1970</code>); il server lo normalizza nelle varianti con cui le sentenze lo citano.</p>
+  </div>
+
+  <nav class="schede" aria-label="Sezioni">
+    <button type="button" class="scheda attiva" data-scheda="risultati">Risultati</button>
+    <button type="button" class="scheda" data-scheda="cronologia">Cronologia</button>
+    <button type="button" class="scheda" data-scheda="salvate">Ricerche salvate</button>
+    <button type="button" class="scheda" data-scheda="preferiti">Preferiti</button>
+    <button type="button" class="scheda" data-scheda="stato">Stato</button>
+    <span class="spazio"></span>
+    <button type="button" id="tema" class="discreto" title="Cambia tema">Tema</button>
+    <button type="button" id="densita" class="discreto" title="Righe più compatte">Compatta</button>
+  </nav>
+</header>
+
+<main class="corpo" id="corpo">
+  <aside class="filtri" id="filtri" aria-label="Filtri">
+    <div class="filtri-testa">
+      <h2>Filtri</h2>
+      <button type="button" id="azzera-filtri" class="discreto">Azzera</button>
+    </div>
+    <div id="elenco-filtri" class="elenco-filtri"></div>
+  </aside>
+
+  <section class="pannello" id="pannello-risultati">
+    <div class="barra" id="barra-risultati" hidden>
+      <div class="sommario" id="sommario"></div>
+      <div class="strumenti">
+        <button type="button" id="salva-ricerca" class="discreto">Salva ricerca</button>
+        <span class="separatore"></span>
+        <span class="etichetta">Esporta pagina</span>
+        <a id="export-csv" class="discreto" download>CSV</a>
+        <a id="export-json" class="discreto" download>JSON</a>
+        <a id="export-md" class="discreto" download>Markdown</a>
+      </div>
+    </div>
+    <form id="modulo-salva" class="modulo-salva" hidden>
+      <label for="nome-salva">Nome della ricerca</label>
+      <input id="nome-salva" type="text" maxlength="120">
+      <button type="submit" class="primario">Salva</button>
+    </form>
+    <div id="chip-filtri" class="chip-filtri"></div>
+    <div id="messaggio" class="messaggio" hidden></div>
+    <ol id="risultati" class="risultati"></ol>
+    <nav id="paginazione" class="paginazione" aria-label="Pagine" hidden></nav>
+    <section class="benvenuto" id="benvenuto">
+      <h1>Ricerca libera fra le sentenze della Corte</h1>
+      <p>Iudex interroga <a href="https://www.italgiure.giustizia.it/sncass/" target="_blank" rel="noopener">SentenzeWeb</a>, l'archivio pubblico delle sentenze civili e penali della Cassazione degli ultimi anni, con un'interfaccia pensata per leggere e confrontare, non solo per trovare.</p>
+      <ul>
+        <li>Una ricerca produce una sola richiesta al server della Corte; i filtri arrivano nella stessa risposta.</li>
+        <li>Ogni ricerca ha un indirizzo ricaricabile e finisce nella cronologia; i testi aperti restano in cache locale.</li>
+        <li>Esporta la pagina in CSV, JSON o Markdown; salva le sentenze fra i preferiti.</li>
+      </ul>
+      <p class="nota">I dati sono della Corte Suprema di Cassazione. Il Garante della privacy ha richiamato la Corte sui dati personali presenti nei testi: non usare questo strumento per cercare persone.</p>
+    </section>
+  </section>
+
+  <section class="pannello" id="pannello-cronologia" hidden>
+    <div class="barra"><div class="sommario">Cronologia delle ricerche</div>
+      <div class="strumenti"><button type="button" id="svuota-cronologia" class="discreto">Svuota</button></div></div>
+    <ol id="lista-cronologia" class="lista-voci"></ol>
+  </section>
+
+  <section class="pannello" id="pannello-salvate" hidden>
+    <div class="barra"><div class="sommario">Ricerche salvate</div></div>
+    <ol id="lista-salvate" class="lista-voci"></ol>
+  </section>
+
+  <section class="pannello" id="pannello-preferiti" hidden>
+    <div class="barra"><div class="sommario">Sentenze preferite</div></div>
+    <ol id="lista-preferiti" class="lista-voci"></ol>
+  </section>
+
+  <section class="pannello" id="pannello-stato" hidden>
+    <div class="barra"><div class="sommario">Stato del collegamento</div></div>
+    <div id="stato" class="stato"></div>
+  </section>
+
+  <aside class="fascicolo" id="fascicolo" hidden aria-label="Testo della sentenza">
+    <div class="fascicolo-testa">
+      <div class="fascicolo-estremi" id="fascicolo-estremi"></div>
+      <button type="button" id="chiudi-fascicolo" class="discreto" title="Chiudi (Esc)">Chiudi</button>
+    </div>
+    <div class="fascicolo-azioni">
+      <a id="fascicolo-pdf" class="discreto" target="_blank" rel="noopener">PDF ufficiale</a>
+      <button type="button" id="copia-citazione" class="discreto">Copia citazione</button>
+      <button type="button" id="preferito" class="discreto">Aggiungi ai preferiti</button>
+      <a id="fascicolo-md" class="discreto" download>Markdown</a>
+      <a id="fascicolo-json" class="discreto" download>JSON</a>
+      <span class="spazio"></span>
+      <span class="evidenziatore" id="evidenziatore" hidden>
+        <button type="button" id="hit-prec" title="Occorrenza precedente">‹</button>
+        <span id="hit-pos">0 / 0</span>
+        <button type="button" id="hit-succ" title="Occorrenza successiva">›</button>
+      </span>
+    </div>
+    <div class="fascicolo-corpo" id="fascicolo-corpo"></div>
+  </aside>
+</main>
+
+<footer class="pie">
+  <span>Fonte: Corte Suprema di Cassazione, Centro Elettronico di Documentazione, SentenzeWeb.</span>
+  <span id="pie-cache"></span>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
