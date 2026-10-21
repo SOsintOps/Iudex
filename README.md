@@ -7,7 +7,7 @@ Iudex non è un archivio e non copia la banca dati: ogni ricerca interroga il se
 Corte come farebbe il browser, ma con un'interfaccia pensata per leggere e confrontare,
 una cronologia, i preferiti, l'esportazione e una cache locale dei testi già aperti.
 
-![Iudex: pagina dei risultati con il pannello di lettura](docs/immagini/risultati.png)
+![Iudex: risultati in vista compatta con il filtro "Civile" attivo e il pannello di lettura aperto sul dispositivo di una sentenza](docs/immagini/risultati.png)
 
 ## Che cosa fa
 
@@ -29,6 +29,21 @@ una cronologia, i preferiti, l'esportazione e una cache locale dei testi già ap
   scuro, righe compatte, carattere regolabile, scorciatoie da tastiera, nessuna dipendenza
   esterna nel browser.
 - Pagine integrate di **domande frequenti**, **versioni** e **software simili**.
+
+## Schermate
+
+Vista compatta con tema scuro: solo estremi, date, presidente, relatore ed ECLI; i filtri a
+sinistra con le barre proporzionali.
+
+![Iudex: tema scuro, righe compatte](docs/immagini/tema-scuro.png)
+
+Le pagine informative integrate (domande frequenti, versioni, software simili) usano lo
+stesso stile e sono raggiungibili dal menu in alto a destra.
+
+![Iudex: pagina delle domande frequenti](docs/immagini/domande-frequenti.png)
+
+Le schermate mostrano ricerche reali; per rispetto delle persone citate nei provvedimenti
+sono state scelte viste senza nomi delle parti.
 
 ## Come interroga il sito (e perché è più leggero del sito stesso)
 
