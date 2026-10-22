@@ -175,6 +175,8 @@
       <dd>Sotto gli estremi, «Aperta <i>N</i> volte» con la data della prima apertura e le ricerche da cui l'hai aperta, cliccabili.</dd>
       <dt>Diario JSONL, Diario CSV</dt>
       <dd>Scaricano tutte le voci del diario, una per riga, con data e ora, parole, filtri, risultati e gli estremi delle sentenze aperte.</dd>
+      <dt>FollowTheMoney</dt>
+      <dd>Le sentenze consultate come entità <a href="https://followthemoney.tech/" target="_blank" rel="noopener">FollowTheMoney</a> in JSON a righe (file <code>.ftm</code>), il formato di Aleph e del comando <code>ftm</code>: per ogni sentenza un <code>CourtCase</code> (estremi, archivio, sezione, ECLI, materia e norme citate come parole chiave, dispositivo, la tua nota se è fra i preferiti), un <code>Document</code> con il testo e le date di decisione e deposito, e presidente e relatore come <code>Person</code> collegati con <code>CourtCaseParty</code>; lo stesso magistrato ha lo stesso identificativo in tutte le sentenze. Le parti del giudizio non vengono estratte: sono dati personali e stanno solo nel testo.</dd>
       <dt>Sentenze consultate (zip)</dt>
       <dd>Un archivio con due file per ogni sentenza aperta: <code>&lt;id&gt;.json</code>, la risposta del server con tutti i campi, e <code>&lt;id&gt;.txt</code>, il solo testo in paragrafi.</dd>
       <dt>Dati personali</dt>

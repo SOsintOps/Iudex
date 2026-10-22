@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
 import re
@@ -202,6 +203,120 @@ def _testo_grezzo(grezzo: dict) -> str:
     if isinstance(valore, list):
         valore = "\n".join(str(v) for v in valore)
     return paragrafa(_senza_tag(str(valore)))[0]
+
+
+# --- FollowTheMoney ------------------------------------------------------------------------
+
+# Prefisso degli id, come ``make_entity_id(*parti, key_prefix=...)`` di followthemoney: SHA-1
+# del prefisso e delle parti. Lo stesso magistrato ha lo stesso id in tutte le sentenze.
+PREFISSO_FTM = "iudex"
+EDITORE = "Corte Suprema di Cassazione, SentenzeWeb"
+ARCHIVI_FTM = {"snciv": "civile", "snpen": "penale"}
+
+
+def id_ftm(*parti: str) -> str:
+    digest = hashlib.sha1(PREFISSO_FTM.encode("utf-8"))  # noqa: S324 - id, non sicurezza
+    for parte in parti:
+        digest.update(str(parte).encode("utf-8"))
+    return digest.hexdigest()
+
+
+def _entita(id_: str, schema: str, proprieta: dict) -> dict:
+    """Un'entità FtM: id, schema e proprietà sempre in liste, senza valori vuoti."""
+    pulite = {}
+    for nome, valori in proprieta.items():
+        if not isinstance(valori, list | tuple):
+            valori = [valori]
+        valori = [str(v) for v in valori if v not in (None, "")]
+        if valori:
+            pulite[nome] = list(dict.fromkeys(valori))
+    return {"id": id_, "schema": schema, "properties": pulite}
+
+
+def entita_ftm(id_sentenza: str, doc: dict, grezzo: dict, nota: str | None = None) -> list[dict]:
+    """Le entità FollowTheMoney di una sentenza consultata.
+
+    - ``CourtCase``: il provvedimento (estremi, archivio, sezione, ECLI come nome alternativo,
+      materia e norme citate come parole chiave, dispositivo come sintesi);
+    - ``Document``: il testo integrale con le date di decisione e di deposito, collegato al
+      ``CourtCase`` con la proprietà ``proof``;
+    - ``Person`` e ``CourtCaseParty`` per presidente e relatore (campi strutturati del CED).
+
+    Le parti del giudizio non vengono estratte: stanno solo nel testo, in forma non
+    uniforme, e sono dati personali; restano leggibili nel ``bodyText``.
+    """
+    id_caso = id_ftm("caso", id_sentenza)
+    id_documento = id_ftm("documento", id_sentenza)
+    estremi = estremi_brevi(doc)
+    sezione = doc.get("sezione")
+    corte = "Corte Suprema di Cassazione" + (f", Sezione {sezione}" if sezione else "")
+    riferimenti = [r.get("testo") for r in doc.get("riferimenti_normativi") or [] if r.get("testo")]
+    entita = [
+        _entita(
+            id_documento,
+            "Document",
+            {
+                "fileName": (doc.get("filename") or f"{id_sentenza}.txt").rsplit("/", 1)[-1],
+                "title": estremi,
+                "bodyText": _testo_grezzo(grezzo),
+                "authoredAt": doc.get("data_decisione"),
+                "publishedAt": doc.get("data_deposito"),
+                "date": doc.get("data_deposito"),
+                "language": "ita",
+                "publisher": EDITORE,
+                "sourceUrl": doc.get("pdf"),
+            },
+        ),
+        _entita(
+            id_caso,
+            "CourtCase",
+            {
+                "name": estremi,
+                "caseNumber": f"{doc.get('numero')}/{doc.get('anno')}",
+                "court": corte,
+                "category": ARCHIVI_FTM.get(grezzo.get("kind"), doc.get("archivio")),
+                "type": doc.get("tipo"),
+                "alias": doc.get("ecli"),
+                "keywords": [*(doc.get("materia") or []), *riferimenti],
+                "summary": doc.get("massima"),
+                "notes": nota,
+                "country": "it",
+                "publisher": EDITORE,
+                "sourceUrl": doc.get("pdf"),
+                "proof": id_documento,
+            },
+        ),
+    ]
+    for ruolo, nome in (("presidente", doc.get("presidente")), ("relatore", doc.get("relatore"))):
+        if not nome:
+            continue
+        id_persona = id_ftm("persona", nome.strip().upper())
+        entita.append(_entita(id_persona, "Person", {"name": nome.strip()}))
+        entita.append(
+            _entita(
+                id_ftm("parte", id_sentenza, ruolo, id_persona),
+                "CourtCaseParty",
+                {"party": id_persona, "case": id_caso, "role": ruolo},
+            )
+        )
+    return entita
+
+
+def consultate_ftm(voci) -> str:
+    """Entità di tutte le sentenze consultate in JSON a righe (formato ``.ftm`` di ``ftm``).
+
+    ``voci``: tuple ``(id_sentenza, documento, grezzo, nota)``. Le persone comuni a più
+    sentenze compaiono una volta sola.
+    """
+    viste: set[str] = set()
+    righe = []
+    for id_sentenza, doc, grezzo, nota in voci:
+        for e in entita_ftm(id_sentenza, doc, grezzo, nota):
+            if e["id"] in viste:
+                continue
+            viste.add(e["id"])
+            righe.append(json.dumps(e, ensure_ascii=False))
+    return "\n".join(righe) + ("\n" if righe else "")
 
 
 def consultate_zip(coppie) -> bytes:

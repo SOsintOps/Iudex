@@ -638,9 +638,23 @@ async def esporta_diario(
 
 
 @app.get("/api/export/consultate")
-async def esporta_consultate(request: Request) -> Response:
+async def esporta_consultate(
+    request: Request, formato: str = Query("zip", pattern="^(zip|ftm)$")
+) -> Response:
+    """Zip con risposta e testo di ogni sentenza consultata, oppure entità FollowTheMoney
+    in JSON a righe (``.ftm``), da caricare con ``ftm`` o in Aleph."""
     archivio: Archivio = request.app.state.archivio
     marca = time.strftime("%Y%m%d-%H%M%S")
+    if formato == "ftm":
+        note = {p["id_sentenza"]: p.get("nota") for p in archivio.preferiti()}
+        documenti = {c["id_sentenza"]: c["documento"] for c in archivio.consultate()}
+        voci = (
+            (id_s, documenti.get(id_s, {}), grezzo, note.get(id_s))
+            for id_s, grezzo in archivio.grezzi_consultate()
+        )
+        return _allegato(
+            export.consultate_ftm(voci), f"iudex-consultate-{marca}.ftm", "application/x-ndjson"
+        )
     return _allegato(
         export.consultate_zip(archivio.grezzi_consultate()),
         f"iudex-consultate-{marca}.zip",

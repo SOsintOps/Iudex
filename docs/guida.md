@@ -120,7 +120,10 @@ stessa sentenza aperta in giorni diversi da ricerche diverse compare sotto ognun
 - Nel pannello di lettura: «Aperta *N* volte», data della prima apertura, ricerche di
   provenienza cliccabili.
 - Export: *Diario JSONL*, *Diario CSV* (tutte le voci); *Sentenze consultate (zip)* con
-  `<id>.json` (risposta del server, tutti i campi) e `<id>.txt` (solo testo in paragrafi).
+  `<id>.json` (risposta del server, tutti i campi) e `<id>.txt` (solo testo in paragrafi);
+  *FollowTheMoney*: file `.ftm` (JSON a righe, il formato di Aleph e di `ftm`) con un
+  `CourtCase` e un `Document` per sentenza e presidente e relatore come `Person` collegati
+  da `CourtCaseParty`. Le parti del giudizio non vengono estratte.
 - I testi contengono nomi, date di nascita e fatti di causa in chiaro: restano in
   `dati/iudex.sqlite` e da nessun'altra parte. Va custodito con la stessa riservatezza di un fascicolo di studio.
 
