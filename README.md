@@ -105,13 +105,18 @@ python -m venv .venv
 scripts\avvia.cmd
 ```
 
-`scripts\avvia.cmd` apre il browser su <http://127.0.0.1:8765/> e avvia il server; su Linux o
-macOS: `.venv/bin/python -m iudex`. I dati locali (cronologia, diario, preferiti, cache) sono
-archiviati in `dati/iudex.sqlite`.
+`scripts\avvia.cmd` avvia il server e apre il browser quando risponde (`python -m iudex
+--apri`), sulla porta configurata; se Iudex è già in esecuzione apre quello invece di
+avviarne un secondo. Su Linux o macOS: `.venv/bin/python -m iudex --apri`. I dati locali
+(cronologia, diario, preferiti, cache) sono archiviati in `dati/iudex.sqlite`; le voci di
+cache scadute vengono tolte a ogni avvio.
 
 Variabili d'ambiente: `IUDEX_PORTA` (8765), `IUDEX_HOST` (127.0.0.1), `IUDEX_DATI`
 (cartella dei dati), `IUDEX_INTERVALLO` (secondi fra le richieste), `IUDEX_TTL_RICERCHE`
-(secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`.
+(secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`. Iudex è pensato per
+`127.0.0.1`: le API accettano solo richieste con un `Host` locale, quindi un indirizzo
+diverso (per esempio `0.0.0.0` per la rete locale) va aggiunto anche come `IUDEX_HOST`, e
+in rete l'header `X-Iudex` da solo non è una protezione.
 
 ### Finestra nativa
 
