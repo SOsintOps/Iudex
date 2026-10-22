@@ -11,8 +11,10 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode
 
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from . import __version__, export
 from .cache import Archivio
@@ -46,6 +48,13 @@ async def ciclo_vita(app: FastAPI):
     app.state.archivio = Archivio(impostazioni.percorso_db)
     app.state.client = ClientSentenzeWeb(impostazioni)
     app.state.sigle = None
+    # Le voci di cache scadute non servono più: si tolgono all'avvio (diario e sentenze
+    # consultate restano).
+    rimosse = app.state.archivio.pulisci_scadute(
+        impostazioni.ttl_ricerche, impostazioni.ttl_estremi_giorni * SECONDI_GIORNO
+    )
+    if rimosse:
+        log.info("cache: %d voci scadute rimosse", rimosse)
     log.info(
         "Iudex %s in ascolto su http://%s:%s/", __version__, impostazioni.host, impostazioni.porta
     )
@@ -81,7 +90,27 @@ async def solo_interfaccia(request: Request, call_next):
 
 @app.exception_handler(ErroreRemoto)
 async def _errore_remoto(_: Request, exc: ErroreRemoto) -> JSONResponse:
-    return JSONResponse(status_code=502, content={"errore": str(exc), "stato_remoto": exc.stato})
+    stato = 503 if exc.stato in (403, 429) else 502
+    return JSONResponse(status_code=stato, content={"errore": str(exc), "stato_remoto": exc.stato})
+
+
+@app.exception_handler(RequestValidationError)
+async def _richiesta_non_valida(_: Request, exc: RequestValidationError) -> JSONResponse:
+    # Solo campo e messaggio: la documentazione di FastAPI sconsiglia di restituire str(exc).
+    dettagli = "; ".join(
+        f"{'.'.join(str(p) for p in e.get('loc', ()) if p != 'body') or 'corpo'}: {e.get('msg')}"
+        for e in exc.errors()
+    )
+    return JSONResponse(status_code=422, content={"errore": f"dati non validi ({dettagli})"})
+
+
+@app.exception_handler(Exception)
+async def _errore_interno(_: Request, exc: Exception) -> JSONResponse:
+    # Gestito da ServerErrorMiddleware: la risposta arriva alla pagina in JSON e Starlette
+    # rilancia comunque l'eccezione al server, che ne scrive la traccia nel registro.
+    return JSONResponse(
+        status_code=500, content={"errore": f"errore interno di Iudex ({type(exc).__name__})"}
+    )
 
 
 @app.get("/", include_in_schema=False)
@@ -444,11 +473,25 @@ async def salvate(request: Request) -> list[dict]:
     return request.app.state.archivio.ricerche_salvate()
 
 
+class NuovaSalvata(BaseModel):
+    nome: str = Field(min_length=1, max_length=120)
+    permalink: str = Field(min_length=1, max_length=4000)
+
+
+class NuovoPreferito(BaseModel):
+    id: str = Field(min_length=1, max_length=64)
+    estremi: dict = Field(default_factory=dict)
+    nota: str | None = Field(default=None, max_length=2000)
+
+
+class NotaPreferito(BaseModel):
+    nota: str | None = Field(default=None, max_length=2000)
+
+
 @app.post("/api/salvate")
-async def salva(request: Request) -> dict:
-    corpo = await request.json()
-    nome = (corpo.get("nome") or "").strip()
-    permalink = (corpo.get("permalink") or "").strip()
+async def salva(request: Request, corpo: NuovaSalvata) -> dict:
+    nome = corpo.nome.strip()
+    permalink = corpo.permalink.strip()
     if not nome or not permalink:
         raise HTTPException(400, "nome e permalink sono obbligatori")
     request.app.state.archivio.salva_ricerca(nome, permalink)
@@ -492,20 +535,14 @@ async def preferiti(request: Request) -> list[dict]:
 
 
 @app.post("/api/preferiti")
-async def aggiungi_preferito(request: Request) -> dict:
-    corpo = await request.json()
-    id_sentenza = corpo.get("id")
-    estremi = corpo.get("estremi") or {}
-    if not id_sentenza:
-        raise HTTPException(400, "id mancante")
-    request.app.state.archivio.aggiungi_preferito(id_sentenza, estremi, corpo.get("nota"))
+async def aggiungi_preferito(request: Request, corpo: NuovoPreferito) -> dict:
+    request.app.state.archivio.aggiungi_preferito(corpo.id, corpo.estremi, corpo.nota)
     return {"ok": True}
 
 
 @app.put("/api/preferiti/{id_sentenza}")
-async def nota_preferito(request: Request, id_sentenza: str) -> dict:
-    corpo = await request.json()
-    nota = (corpo.get("nota") or "").strip() or None
+async def nota_preferito(request: Request, id_sentenza: str, corpo: NotaPreferito) -> dict:
+    nota = (corpo.nota or "").strip() or None
     if not request.app.state.archivio.aggiorna_nota(id_sentenza, nota):
         raise HTTPException(404, "preferito non trovato")
     return {"ok": True, "nota": nota}
@@ -672,6 +709,7 @@ async def stato(request: Request) -> dict:
         "versione": __version__,
         "chiamate_remote": client.stat.chiamate,
         "intervallo_minimo_s": impostazioni.intervallo_minimo,
+        "pausa_residua_s": client.pausa_residua(),
         "sentenze_in_cache": archivio.conta_sentenze(),
         "risposte_in_cache": archivio.conta_risposte(),
         "voci_diario": archivio.conta_diario(),

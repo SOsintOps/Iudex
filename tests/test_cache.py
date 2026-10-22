@@ -9,6 +9,18 @@ def test_risposte_con_ttl():
     a.chiudi()
 
 
+def test_pulizia_delle_voci_scadute():
+    a = Archivio(":memory:")
+    a.scrivi_risposta("vecchia", {"n": 1})
+    a.scrivi_estremi("rif:x", "x")
+    a.annota_sentenza("id1", None)
+    assert a.pulisci_scadute(3600, 86400) == 0
+    assert a.pulisci_scadute(-1, -1) == 2
+    assert a.conta_risposte() == 0 and a.leggi_estremi("rif:x", 10**9) is None
+    assert a.conta_diario() == 1
+    a.chiudi()
+
+
 def test_sentenze_cronologia_preferiti(tmp_path):
     a = Archivio(tmp_path / "x.sqlite")
     a.scrivi_sentenza("id1", {"id": "id1"}, "testo")

@@ -8,8 +8,8 @@ import pytest
 import respx
 
 import iudex.client as modulo_client
-from iudex.client import ClientSentenzeWeb, ErroreRemoto
-from iudex.config import URL_SNCASS, URL_SOLR, Impostazioni
+from iudex.client import ClientSentenzeWeb, ErroreRemoto, secondi_retry_after
+from iudex.config import URL_ESTREMI, URL_SNCASS, URL_SOLR, Impostazioni
 
 RISPOSTA = {"responseHeader": {"QTime": 1}, "response": {"numFound": 0, "docs": []}}
 
@@ -58,11 +58,72 @@ async def test_ripete_una_volta_su_500(tmp_path, monkeypatch):
 
 
 @respx.mock
-async def test_non_insiste_su_429(tmp_path):
+async def test_non_insiste_su_429_e_rispetta_retry_after(tmp_path):
     respx.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
-    rotta = respx.post(URL_SOLR + "?app.query").mock(return_value=httpx.Response(429))
+    rotta = respx.post(URL_SOLR + "?app.query").mock(
+        return_value=httpx.Response(429, headers={"Retry-After": "120"})
+    )
     client = ClientSentenzeWeb(impostazioni_test(tmp_path, intervallo=0.0))
     with pytest.raises(ErroreRemoto) as errore:
         await client.cerca([("q", "a")])
     assert errore.value.stato == 429 and rotta.call_count == 1
+    assert "120 s" in str(errore.value) and 118 <= client.pausa_residua() <= 120
+    # Durante la pausa il rifiuto è locale: nessuna richiesta parte.
+    with pytest.raises(ErroreRemoto):
+        await client.cerca([("q", "b")])
+    assert rotta.call_count == 1
+    await client.chiudi()
+
+
+def test_secondi_retry_after():
+    assert secondi_retry_after("30") == 30
+    assert secondi_retry_after(None) is None and secondi_retry_after("domani") is None
+    # Data HTTP (RFC 9110): 90 secondi dopo l'istante di riferimento.
+    assert secondi_retry_after("Thu, 01 Jan 1970 00:01:30 GMT", adesso=0) == 90
+    assert secondi_retry_after("Thu, 01 Jan 1970 00:00:10 GMT", adesso=100) == 0
+
+
+@respx.mock
+async def test_403_senza_retry_after_pausa_e_sessione_da_riaprire(tmp_path):
+    pagina = respx.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
+    respx.post(URL_SOLR + "?app.query").mock(return_value=httpx.Response(403))
+    client = ClientSentenzeWeb(impostazioni_test(tmp_path, intervallo=0.0))
+    with pytest.raises(ErroreRemoto):
+        await client.cerca([("q", "a")])
+    assert client.pausa_residua() > 55 and client._sessione_pronta is False
+    assert pagina.call_count == 1
+    await client.chiudi()
+
+
+@respx.mock
+async def test_pagina_html_al_posto_del_json_riapre_la_sessione(tmp_path):
+    pagina = respx.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
+    respx.post(URL_SOLR + "?app.query").mock(
+        side_effect=[
+            httpx.Response(200, text="<html>sessione scaduta</html>"),
+            httpx.Response(200, json=RISPOSTA),
+        ]
+    )
+    client = ClientSentenzeWeb(impostazioni_test(tmp_path, intervallo=0.0))
+    with pytest.raises(ErroreRemoto):
+        await client.cerca([("q", "a")])
+    dati = await client.cerca([("q", "a")])
+    assert dati["response"]["numFound"] == 0 and pagina.call_count == 2
+    await client.chiudi()
+
+
+@respx.mock
+async def test_json_senza_documenti_e_estremi_html_sono_errori(tmp_path):
+    respx.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
+    respx.post(URL_SOLR + "?app.query").mock(return_value=httpx.Response(200, json={"x": 1}))
+    respx.get(URL_ESTREMI).mock(
+        return_value=httpx.Response(
+            200, text="<!DOCTYPE html><html></html>", headers={"content-type": "text/html"}
+        )
+    )
+    client = ClientSentenzeWeb(impostazioni_test(tmp_path, intervallo=0.0))
+    with pytest.raises(ErroreRemoto, match="inattesa"):
+        await client.cerca([("q", "a")])
+    with pytest.raises(ErroreRemoto, match="pagina"):
+        await client.normalizza_riferimento("art. 2043 c.c.")
     await client.chiudi()

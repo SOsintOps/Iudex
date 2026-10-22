@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS diario (
     trovati INTEGER
 );
 CREATE INDEX IF NOT EXISTS diario_sentenza ON diario (id_sentenza);
+CREATE INDEX IF NOT EXISTS risposte_quando ON risposte (quando);
+CREATE INDEX IF NOT EXISTS estremi_quando ON estremi (quando);
 CREATE TABLE IF NOT EXISTS consultate (
     id_sentenza TEXT PRIMARY KEY,
     prima_volta REAL NOT NULL,
@@ -137,6 +139,22 @@ class Archivio:
                 "INSERT OR REPLACE INTO risposte (chiave, quando, contenuto) VALUES (?, ?, ?)",
                 (chiave, time.time(), json.dumps(contenuto, ensure_ascii=False)),
             )
+
+    def pulisci_scadute(self, ttl_risposte: int, ttl_estremi: int) -> int:
+        """Toglie le risposte e le normalizzazioni scadute (la lettura le ignorava già).
+
+        SQLite non ha una scadenza automatica: le righe si cancellano con un DELETE sulla
+        colonna ``quando``, indicizzata. Diario, consultate e testi non sono toccati.
+        """
+        adesso = time.time()
+        with self._lock, self._conn:
+            n = self._conn.execute(
+                "DELETE FROM risposte WHERE quando < ?", (adesso - ttl_risposte,)
+            ).rowcount
+            n += self._conn.execute(
+                "DELETE FROM estremi WHERE quando < ?", (adesso - ttl_estremi,)
+            ).rowcount
+        return n
 
     def svuota_risposte(self) -> int:
         with self._lock, self._conn:

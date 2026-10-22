@@ -219,6 +219,38 @@ def test_diario_registra_ricerche_e_aperture(client):
     assert backup["ok"] and backup["percorso"].endswith(".sqlite")
 
 
+def test_errori_di_validazione_e_interni_in_json(client, monkeypatch):
+    c, _ = client
+    json_h = {**H, "Content-Type": "application/json"}
+    r = c.post("/api/salvate", content="non è json", headers=json_h)
+    assert r.status_code == 422 and "dati non validi" in r.json()["errore"]
+    r = c.post("/api/salvate", json={"nome": "", "permalink": "testo=a"}, headers=H)
+    assert r.status_code == 422 and "nome" in r.json()["errore"]
+    r = c.post("/api/preferiti", json=["lista"], headers=H)
+    assert r.status_code == 422
+    r = c.put("/api/preferiti/abc", json={"nota": "x" * 3000}, headers=H)
+    assert r.status_code == 422
+
+    def guasto():
+        raise RuntimeError("disco pieno")
+
+    # Starlette rilancia l'eccezione al server dopo la risposta: nel test va disattivato.
+    with TestClient(modulo_app.app, raise_server_exceptions=False) as c2:
+        c2.app.state.archivio.cronologia = guasto
+        r = c2.get("/api/cronologia", headers=H)
+    assert r.status_code == 500 and r.json() == {"errore": "errore interno di Iudex (RuntimeError)"}
+
+
+def test_429_del_server_diventa_503_con_pausa(client):
+    c, mock = client
+    mock.post(URL_SOLR + "?app.query").mock(
+        return_value=httpx.Response(429, headers={"Retry-After": "30"})
+    )
+    r = c.get("/api/cerca", params={"testo": "x"}, headers=H)
+    assert r.status_code == 503 and r.json()["stato_remoto"] == 429
+    assert 28 <= c.get("/api/stato", headers=H).json()["pausa_residua_s"] <= 30
+
+
 def test_preferiti_con_nota_e_svuota_cache(client):
     c, _ = client
     c.post("/api/preferiti", json={"id": "abc", "estremi": {"numero": "1"}}, headers=H)

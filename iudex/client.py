@@ -1,8 +1,10 @@
-"""Client HTTP verso SentenzeWeb con i limiti di cortesia di Iudex.
+"""Client HTTP verso SentenzeWeb con la limitazione delle richieste di Iudex.
 
 Regole: una sola richiesta alla volta, almeno ``intervallo_minimo`` secondi fra due
 richieste, un solo tentativo di ripetizione su errore di rete o 5xx, nessuna ripetizione
-su 403/429. Header identici a quelli che Chrome invia dal sito ufficiale.
+su 403/429, che impongono una pausa locale secondo ``Retry-After``. Una risposta HTML al
+posto del JSON (o un 403) fa riaprire la sessione alla richiesta successiva. Header
+identici a quelli che Chrome invia dal sito ufficiale.
 """
 
 from __future__ import annotations
@@ -10,10 +12,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
 import ssl
 import time
 from collections import deque
 from dataclasses import dataclass, field
+from datetime import UTC
+from email.utils import parsedate_to_datetime
 
 import certifi
 import httpx
@@ -94,13 +99,51 @@ class Statistiche:
     registro: deque[VoceRegistro] = field(default_factory=lambda: deque(maxlen=100))
 
 
+# Dopo un 403 o un 429 senza Retry-After Iudex non chiede nulla per un minuto; un
+# Retry-After più lungo di un'ora viene limitato a un'ora (RFC 9110, sezione 10.2.3).
+PAUSA_PREDEFINITA_S = 60
+PAUSA_MASSIMA_S = 3600
+
+
+def secondi_retry_after(valore: str | None, adesso: float | None = None) -> int | None:
+    """Secondi da attendere secondo ``Retry-After``: numero di secondi oppure data HTTP."""
+    if not valore:
+        return None
+    valore = valore.strip()
+    if valore.isdigit():
+        return int(valore)
+    try:
+        quando = parsedate_to_datetime(valore)
+    except (TypeError, ValueError):
+        return None
+    if quando.tzinfo is None:
+        quando = quando.replace(tzinfo=UTC)
+    adesso = time.time() if adesso is None else adesso
+    return max(0, round(quando.timestamp() - adesso))
+
+
 class ClientSentenzeWeb:
     def __init__(self, impostazioni: Impostazioni):
         self.imp = impostazioni
         self._lock = asyncio.Lock()
         self._client: httpx.AsyncClient | None = None
         self._sessione_pronta = False
+        self._pausa_fino: float = 0.0
         self.stat = Statistiche()
+
+    def pausa_residua(self) -> int:
+        """Secondi che mancano alla fine della pausa imposta dal server (0 se nessuna)."""
+        return max(0, math.ceil(self._pausa_fino - time.monotonic()))
+
+    def _imponi_pausa(self, risposta: httpx.Response) -> int:
+        secondi = secondi_retry_after(risposta.headers.get("retry-after"))
+        secondi = PAUSA_PREDEFINITA_S if secondi is None else min(secondi, PAUSA_MASSIMA_S)
+        self._pausa_fino = time.monotonic() + secondi
+        return secondi
+
+    def _azzera_sessione(self) -> None:
+        """La sessione va riaperta: la prossima richiesta ripassa dalla pagina del sito."""
+        self._sessione_pronta = False
 
     def _assicura_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -164,9 +207,14 @@ class ClientSentenzeWeb:
             )
             log.info("%s %s -> %s in %d ms", metodo, tipo, risposta.status_code, durata)
             if risposta.status_code in (403, 429):
+                # Nessuna ripetizione; pausa locale secondo Retry-After e, per il 403, sessione
+                # da riaprire (un cookie scaduto è la causa più probabile).
+                secondi = self._imponi_pausa(risposta)
+                if risposta.status_code == 403:
+                    self._azzera_sessione()
                 raise ErroreRemoto(
                     "il server ha rifiutato la richiesta "
-                    f"(HTTP {risposta.status_code}): attendi prima di riprovare",
+                    f"(HTTP {risposta.status_code}): Iudex riproverà fra {secondi} s",
                     risposta.status_code,
                 )
             if risposta.status_code >= 500 and tentativi < 2:
@@ -188,6 +236,12 @@ class ClientSentenzeWeb:
     ) -> httpx.Response:
         """Esegue una richiesta rispettando il lock, la sessione e l'intervallo minimo."""
         async with self._lock:
+            residua = self.pausa_residua()
+            if residua:
+                # Rifiuto locale: nessuna richiesta parte finché dura la pausa chiesta dal server.
+                raise ErroreRemoto(
+                    f"il server ha chiesto una pausa: riprova fra {residua} s", 429
+                )
             if not self._sessione_pronta:
                 await self._invia("GET", URL_SNCASS, tipo="pagina", headers=HEADER_PAGINA)
                 self._sessione_pronta = True
@@ -209,9 +263,18 @@ class ClientSentenzeWeb:
         try:
             dati = json.loads(risposta.text)
         except json.JSONDecodeError as exc:
+            # Di solito è la pagina HTML del sito al posto del JSON: sessione scaduta.
+            self._azzera_sessione()
             raise ErroreRemoto("risposta non in formato JSON") from exc
+        if not isinstance(dati, dict):
+            raise ErroreRemoto("risposta inattesa dal server")
         if "error" in dati:
-            raise ErroreRemoto(f"Solr: {dati['error'].get('msg', 'errore')}")
+            errore = dati["error"]
+            messaggio = errore.get("msg", "errore") if isinstance(errore, dict) else str(errore)
+            raise ErroreRemoto(f"Solr: {messaggio}")
+        risposta_solr = dati.get("response")
+        if not isinstance(risposta_solr, dict) or not isinstance(risposta_solr.get("docs"), list):
+            raise ErroreRemoto("risposta inattesa dal server (manca l'elenco dei documenti)")
         return dati
 
     async def cerca(self, parametri: list[tuple[str, str]], kind: str | None = None) -> dict:
@@ -225,17 +288,27 @@ class ClientSentenzeWeb:
     async def dettaglio(self, parametri: list[tuple[str, str]]) -> dict:
         return await self._solr(parametri, suffisso="", tipo="dettaglio")
 
+    def _testo_estremi(self, risposta: httpx.Response) -> str:
+        """Il servizio estremi risponde in testo semplice; una pagina HTML è un errore
+        (sessione scaduta) e non deve finire in cache né dentro una query."""
+        testo = risposta.text.strip()
+        tipo = risposta.headers.get("content-type", "")
+        if "html" in tipo or testo.lstrip().lower().startswith(("<!doctype", "<html")):
+            self._azzera_sessione()
+            raise ErroreRemoto("il servizio dei riferimenti normativi ha risposto con una pagina")
+        return testo
+
     async def lista_estremi(self) -> str:
         risposta = await self._richiesta(
             "GET", URL_ESTREMI, tipo="estremi-lista", headers=HEADER_XHR, params={"wat": "list"}
         )
-        return risposta.text
+        return self._testo_estremi(risposta)
 
     async def normalizza_riferimento(self, testo: str) -> str:
         risposta = await self._richiesta(
             "GET", URL_ESTREMI, tipo="estremi", headers=HEADER_XHR, params={"wat": testo}
         )
-        return risposta.text.strip()
+        return self._testo_estremi(risposta)
 
     async def telemetria(self, azione: str, valore: str, kind: str | None = None) -> None:
         """Replica facoltativa della chiamata di tracciamento del sito (disattiva di default)."""
