@@ -15,7 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["ruff", "pytest", "pytest-asyncio", "respx"]
 mcp = ["mcp>=2.0"]
-desktop = ["pywebview>=5"]
+desktop = ["pywebview>=6.2.1"]
 
 [project.scripts]
 iudex = "iudex.__main__:main"
