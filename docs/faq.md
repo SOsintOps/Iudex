@@ -73,21 +73,27 @@ browser. Svuotamento dalla scheda Stato; per azzerare, chiudi Iudex ed elimina i
 **Iudex salva le mie ricerche?** Sì, nel Diario: ogni ricerca (parole, filtri, risultati) e
 ogni sentenza aperta, con la ricerca di provenienza. Delle sentenze aperte conserva la
 risposta intera del server, testo compreso; dei risultati non aperti solo il conteggio. Il
-diario non si svuota con i pulsanti della cache; si esporta in JSONL, CSV o zip, e *Copia di
-sicurezza* salva il database intero.
+diario non si svuota con i pulsanti della cache; si esporta in JSONL, CSV, zip o
+FollowTheMoney (`.ftm`), e *Copia di sicurezza* salva il database intero.
 
 **Colonne:** trascina le linee fra i pannelli o fra le intestazioni delle tabelle; doppio
 clic ripristina; da tastiera, focus sulla maniglia e frecce.
 
 ## Problemi
 
-- **HTTP 403/429:** il server limita le richieste; aspetta. Alza `IUDEX_INTERVALLO` se
-  succede spesso.
+- **HTTP 403/429:** il server limita le richieste. Iudex non ne manda altre per il tempo
+  indicato da `Retry-After` (un minuto se manca) e risponde subito «riprova fra N s»; la
+  scheda Stato mostra quanto manca; dopo un 403 riapre la sessione. Alza `IUDEX_INTERVALLO`
+  se succede spesso.
 - **Errore di certificato:** il server invia una catena incompleta; Iudex include
   l'intermedio in `iudex/certs/`. Se il messaggio compare, reinstalla o apri una segnalazione.
 - **"Richiesta non proveniente dall'interfaccia di Iudex":** le API accettano solo le
   chiamate della pagina (header `X-Iudex: 1`).
-- **La ricerca non risponde:** il server locale non è avviato (`scripts\avvia.cmd`).
+- **La ricerca non risponde:** il server locale non è avviato (`scripts\avvia.cmd` o
+  `python -m iudex --apri`). Porta occupata da un altro programma: cambia `IUDEX_PORTA`; se
+  è già aperto un altro Iudex, l'avvio apre quello.
+- **"Errore interno di Iudex":** errore imprevisto (per esempio disco pieno); la traccia è
+  nella finestra del server.
 
 ## Oltre il browser
 

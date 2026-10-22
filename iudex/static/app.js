@@ -10,8 +10,8 @@
   // solo valore e non è un campo di Solr: i conteggi arrivano da facet.query.
   const CAMPI_FILTRO = ["segnale", ...CAMPI_FACET];
   const SEGNALI = {
-    contrasto: "Segnalano un contrasto",
-    conformita: "Richiamano un orientamento consolidato",
+    contrasto: "Contrasto",
+    conformita: "Orientamento consolidato",
   };
   const SEPARATORI = { materia: ";" };
   const TITOLI_FACET = {
@@ -643,7 +643,7 @@
     const orari = window.IudexTema ? window.IudexTema.leggiOrari() : { inizio: 19, fine: 7 };
     $("#stato").innerHTML = `
       <p>Iudex ${escapa(s.versione)} · richieste al server della Corte in questa sessione: <b>${s.chiamate_remote}</b> ·
-         intervallo minimo fra richieste: ${s.intervallo_minimo_s} s</p>
+         intervallo minimo fra richieste: ${s.intervallo_minimo_s} s${s.pausa_residua_s ? ` · <b>pausa chiesta dal server: ancora ${s.pausa_residua_s} s</b>` : ""}</p>
       <p>Cache locale: <b>${s.sentenze_in_cache}</b> testi di sentenze, <b>${s.risposte_in_cache}</b> risposte di ricerca · archivio: <code>${escapa(s.percorso_dati)}</code></p>
       <p>Diario: <b>${numero(s.voci_diario)}</b> voci, <b>${numero(s.sentenze_consultate)}</b> sentenze consultate con il testo conservato (non vengono toccate dai pulsanti della cache).</p>
       <div class="orari"><span class="etichetta">Tema scuro automatico</span>

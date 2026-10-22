@@ -100,13 +100,15 @@
     <h2 id="problemi">Problemi</h2>
     <dl>
       <dt>"Il server ha rifiutato la richiesta (HTTP 403 o 429)"</dt>
-      <dd>Il server della Corte sta limitando le richieste. Iudex non insiste: aspetta qualche minuto. Se succede spesso, alza l'intervallo con la variabile <code>IUDEX_INTERVALLO</code> (secondi).</dd>
+      <dd>Il server della Corte sta limitando le richieste. Iudex non insiste: per il tempo indicato dal server (intestazione <code>Retry-After</code>; un minuto se manca) non manda altre richieste e risponde subito «riprova fra N s»; la scheda Stato mostra quanto manca. Dopo un 403 riapre anche la sessione con il sito. Se succede spesso, alza l'intervallo con la variabile <code>IUDEX_INTERVALLO</code> (secondi).</dd>
       <dt>"Errore di rete" o "certificate verify failed"</dt>
       <dd>Il server della Corte invia una catena di certificati incompleta. Iudex include l'intermedio mancante in <code>iudex/certs/</code>; se il messaggio compare, il certificato non è stato trovato (reinstalla con <code>pip install -e .</code>) oppure la Corte ha cambiato certificato: apri una segnalazione.</dd>
       <dt>"Ricerca non riuscita: richiesta non proveniente dall'interfaccia di Iudex"</dt>
       <dd>Le API accettano solo le chiamate della pagina di Iudex. Il messaggio compare se chiami gli indirizzi <code>/api/…</code> da un'altra pagina o da uno script senza l'header <code>X-Iudex: 1</code>.</dd>
       <dt>La pagina si apre ma la ricerca non risponde</dt>
-      <dd>Il server locale non è in esecuzione: avvialo con <code>scripts\avvia.cmd</code> (o <code>python -m iudex</code>) e ricarica la pagina.</dd>
+      <dd>Il server locale non è in esecuzione: avvialo con <code>scripts\avvia.cmd</code> (o <code>python -m iudex --apri</code>) e ricarica la pagina. Se all'avvio compare «La porta 8765 è occupata da un altro programma», scegli un'altra porta con la variabile <code>IUDEX_PORTA</code>; se è già aperto un altro Iudex, l'avvio apre quello.</dd>
+      <dt>"Errore interno di Iudex"</dt>
+      <dd>Un errore imprevisto nel programma (per esempio il disco pieno): la traccia completa è nella finestra del server. Apri una segnalazione con quel testo.</dd>
     </dl>
 
     <h2 id="oltre">Oltre il browser</h2>
