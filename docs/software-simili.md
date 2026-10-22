@@ -33,7 +33,9 @@ Server MCP con oltre duecento strumenti per il diritto italiano. Per la Cassazio
 stesso Solr con il parser edismax, pesi sui campi, `fq` separati e facet; rilassa o
 restringe da solo la query; stima gli orientamenti contando frasi segnale. Risultati non
 coincidenti con il sito. Verifica TLS disattivata, nessun intervallo fra richieste, fonti
-in parallelo.
+in parallelo. Iudex ne riprende l'idea dei **segnali di orientamento** (stesse frasi, una
+sola OR per gruppo, «discostarsi» escluso) come `facet.query` nella ricerca, senza
+cambiarne i risultati.
 
 ## giurisprudenza-db (Synthos-Logic, CC BY 4.0 / MIT)
 

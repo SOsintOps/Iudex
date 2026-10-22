@@ -22,11 +22,14 @@ from .client import ClientSentenzeWeb, ErroreRemoto
 from .config import impostazioni
 from .query import (
     CAMPI_FACET,
+    ETICHETTE_SEGNALI,
     ORDINAMENTI,
+    SEGNALI,
     costruisci_query,
     formatta_riferimenti,
     normalizza_documento,
     normalizza_facet,
+    normalizza_segnali,
     parametri_dettaglio,
     parametri_ricerca,
 )
@@ -133,7 +136,9 @@ def _lista(campo: str, valore: str | None) -> list[str]:
     return [v.strip() for v in (valore or "").split(sep) if v.strip()]
 
 
-def _filtri(kind, tipoprov, szdec, anno, ssz, materia) -> dict[str, list[str]]:
+def _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale=None) -> dict[str, list[str]]:
+    """Filtri della ricerca; ``segnale`` (contrasto/conformita) viaggia con loro, così finisce
+    nel permalink, nella cronologia e nel diario come ogni altro filtro."""
     grezzi = {
         "kind": kind,
         "tipoprov": tipoprov,
@@ -142,9 +147,12 @@ def _filtri(kind, tipoprov, szdec, anno, ssz, materia) -> dict[str, list[str]]:
         "ssz": ssz,
         "materia": materia,
     }
-    return {
+    filtri = {
         campo: _lista(campo, grezzi[campo]) for campo in CAMPI_FACET if _lista(campo, grezzi[campo])
     }
+    if segnale in SEGNALI:
+        filtri["segnale"] = [segnale]
+    return filtri
 
 
 def _permalink(testo, rif, filtri, ordina, righe, pagina) -> str:
@@ -156,6 +164,8 @@ def _permalink(testo, rif, filtri, ordina, righe, pagina) -> str:
     for campo in CAMPI_FACET:
         if filtri.get(campo):
             coppie.append((campo, SEPARATORI.get(campo, ",").join(filtri[campo])))
+    if filtri.get("segnale"):
+        coppie.append(("segnale", filtri["segnale"][0]))
     if ordina != "pubblicazione":
         coppie.append(("ordina", ordina))
     if righe != impostazioni.righe_predefinite:
@@ -178,6 +188,7 @@ def _da_permalink(permalink: str) -> dict:
             p.get("anno"),
             p.get("ssz"),
             p.get("materia"),
+            p.get("segnale"),
         ),
         "ordina": p.get("ordina", "pubblicazione"),
     }
@@ -190,7 +201,10 @@ def _descrizione(testo, rif, filtri) -> str:
     if rif:
         parti.append(f"rif. {rif}")
     for campo, valori in filtri.items():
-        parti.append(f"{campo}={','.join(valori)}")
+        if campo == "segnale":
+            parti.append(ETICHETTE_SEGNALI.get(valori[0], valori[0]))
+        else:
+            parti.append(f"{campo}={','.join(valori)}")
     return " · ".join(parti) or "tutte le sentenze"
 
 
@@ -217,7 +231,8 @@ async def _esegui_ricerca(request: Request, testo, rif, filtri, ordina, pagina, 
         ordina = "pubblicazione"
     inizio = (pagina - 1) * righe
     rif_norm = await _riferimento_normalizzato(request, rif)
-    q, hl_q = costruisci_query(testo, rif_norm, filtri)
+    segnale = (filtri.get("segnale") or [None])[0]
+    q, hl_q = costruisci_query(testo, rif_norm, filtri, segnale)
     chiave = json.dumps([q, hl_q, inizio, righe, ordina])
     risposta = archivio.leggi_risposta(chiave, impostazioni.ttl_ricerche)
     dalla_cache = risposta is not None
@@ -233,6 +248,7 @@ async def _esegui_ricerca(request: Request, testo, rif, filtri, ordina, pagina, 
             "trovati": dati["response"]["numFound"],
             "documenti": documenti,
             "facet": normalizza_facet(dati.get("facet_counts", {}).get("facet_fields", {})),
+            "segnali": normalizza_segnali(dati.get("facet_counts", {}).get("facet_queries")),
             "tempo_solr_ms": dati.get("responseHeader", {}).get("QTime"),
         }
         archivio.scrivi_risposta(chiave, risposta)
@@ -272,11 +288,12 @@ async def cerca(
     anno: str | None = None,
     ssz: str | None = None,
     materia: str | None = None,
+    segnale: str | None = Query(None, pattern="^(contrasto|conformita)$"),
     ordina: str = "pubblicazione",
     pagina: int = Query(1, ge=1),
     righe: int = Query(impostazioni.righe_predefinite, ge=1, le=impostazioni.righe_massime),
 ) -> dict:
-    filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia)
+    filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale)
     risposta = await _esegui_ricerca(request, testo, rif, filtri, ordina, pagina, righe)
     archivio: Archivio = request.app.state.archivio
     if pagina == 1:
@@ -643,13 +660,14 @@ async def esporta(
     anno: str | None = None,
     ssz: str | None = None,
     materia: str | None = None,
+    segnale: str | None = Query(None, pattern="^(contrasto|conformita)$"),
     ordina: str = "pubblicazione",
     pagina: int = Query(1, ge=1),
     righe: int = Query(impostazioni.righe_predefinite, ge=1, le=impostazioni.righe_massime),
     massimo: int | None = Query(None, ge=1, le=100),
 ) -> Response:
     """Esporta la pagina corrente oppure, con ``massimo``, i primi N risultati (al più 100)."""
-    filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia)
+    filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale)
     if massimo:
         per_pagina = min(impostazioni.righe_massime, massimo)
         risposta = None

@@ -6,6 +6,13 @@
   const $$ = (sel, radice) => Array.from((radice || document).querySelectorAll(sel));
 
   const CAMPI_FACET = ["kind", "tipoprov", "szdec", "anno", "ssz", "materia"];
+  // Il segnale nel testo viaggia come un filtro (indirizzo, cronologia, diario) ma ha un
+  // solo valore e non è un campo di Solr: i conteggi arrivano da facet.query.
+  const CAMPI_FILTRO = ["segnale", ...CAMPI_FACET];
+  const SEGNALI = {
+    contrasto: "Segnalano un contrasto",
+    conformita: "Richiamano un orientamento consolidato",
+  };
   const SEPARATORI = { materia: ";" };
   const TITOLI_FACET = {
     kind: "Archivio",
@@ -14,6 +21,7 @@
     anno: "Anno di decisione",
     ssz: "Sottosezione",
     materia: "Materia",
+    segnale: "Segnali nel testo",
   };
   const FACET_CON_BARRE = ["szdec", "anno", "materia"];
   const MATERIE_VISIBILI = 15;
@@ -142,7 +150,7 @@
     const p = new URLSearchParams();
     if (stato.testo) p.set("testo", stato.testo);
     if (stato.rif) p.set("rif", stato.rif);
-    CAMPI_FACET.forEach((c) => {
+    CAMPI_FILTRO.forEach((c) => {
       if (stato.filtri[c] && stato.filtri[c].length) p.set(c, stato.filtri[c].join(SEPARATORI[c] || ","));
     });
     if (stato.ordina !== "pubblicazione") p.set("ordina", stato.ordina);
@@ -161,7 +169,7 @@
     stato.testo = p.get("testo") || "";
     stato.rif = p.get("rif") || "";
     stato.filtri = {};
-    CAMPI_FACET.forEach((c) => {
+    CAMPI_FILTRO.forEach((c) => {
       const v = p.get(c);
       if (v) stato.filtri[c] = v.split(SEPARATORI[c] || ",").filter(Boolean);
     });
@@ -196,6 +204,7 @@
       const dati = await api("/api/cerca?" + parametriRicerca().toString());
       stato.risposta = dati;
       stato.facetUltimi = dati.facet;
+      stato.segnaliUltimi = dati.segnali || null;
       disegnaRisultati(dati);
       disegnaFacet(dati.facet);
       disegnaChip();
@@ -265,7 +274,7 @@
   function disegnaFacet(facet) {
     const cont = $("#elenco-filtri");
     if (!facet) { cont.innerHTML = '<p class="vuoto">I filtri compaiono dopo la prima ricerca.</p>'; return; }
-    cont.innerHTML = CAMPI_FACET.map((campo) => {
+    cont.innerHTML = gruppoSegnali() + CAMPI_FACET.map((campo) => {
       let voci = facet[campo] || [];
       const scelte = stato.filtri[campo] || [];
       const massimo = Math.max(1, ...voci.map((v) => v.conteggio));
@@ -288,12 +297,27 @@
     }).join("");
   }
 
+  function gruppoSegnali() {
+    const conteggi = stato.segnaliUltimi;
+    if (!conteggi) return "";
+    const scelto = (stato.filtri.segnale || [])[0];
+    const righe = Object.keys(SEGNALI).map((codice) => {
+      const n = conteggi[codice];
+      if (n === undefined) return "";
+      return `<label title="${escapa(SEGNALI[codice])}"><input type="checkbox" data-campo="segnale" value="${codice}" ${scelto === codice ? "checked" : ""}>
+        <span class="nome-voce">${escapa(SEGNALI[codice])}</span><span class="n">${numero(n)}</span></label>`;
+    }).join("");
+    if (!righe) return "";
+    return `<div class="gruppo gruppo-segnali"><h3>${TITOLI_FACET.segnale}</h3>${righe}
+      <p class="nota-segnali">Conteggio delle frasi con cui il provvedimento lo dichiara («contrasto giurisprudenziale», «orientamento consolidato»…): un segnale testuale, non una classificazione.</p></div>`;
+  }
+
   function disegnaChip() {
     const cont = $("#chip-filtri");
     const pezzi = [];
-    CAMPI_FACET.forEach((campo) => {
+    CAMPI_FILTRO.forEach((campo) => {
       (stato.filtri[campo] || []).forEach((codice) => {
-        let etichetta = codice;
+        let etichetta = campo === "segnale" ? (SEGNALI[codice] || codice) : codice;
         const voce = ((stato.facetUltimi || {})[campo] || []).find((v) => v.codice === codice);
         if (voce) etichetta = voce.etichetta;
         pezzi.push(`<span class="chip">${TITOLI_FACET[campo]}: ${escapa(etichetta)}<button type="button" data-campo="${campo}" data-codice="${escapa(codice)}" title="Togli il filtro">×</button></span>`);
@@ -394,7 +418,7 @@
     if (!permalink) return "";
     const p = new URLSearchParams(permalink);
     const v = { testo: p.get("testo"), riferimenti: p.get("rif"), filtri: {} };
-    CAMPI_FACET.forEach((c) => { const x = p.get(c); if (x) v.filtri[c] = x.split(SEPARATORI[c] || ","); });
+    CAMPI_FILTRO.forEach((c) => { const x = p.get(c); if (x) v.filtri[c] = x.split(SEPARATORI[c] || ","); });
     const ordina = p.get("ordina");
     return descriviVoce(v) + (ordina && ordina !== "pubblicazione" ? ` (per ${ordina})` : "");
   }
@@ -510,7 +534,9 @@
     const parti = [];
     if (v.testo) parti.push(v.testo);
     if (v.riferimenti) parti.push("rif. " + v.riferimenti);
-    Object.keys(v.filtri || {}).forEach((k) => parti.push(`${TITOLI_FACET[k] || k}: ${v.filtri[k].join(", ")}`));
+    Object.keys(v.filtri || {}).forEach((k) => parti.push(k === "segnale"
+      ? v.filtri[k].map((c) => SEGNALI[c] || c).join(", ")
+      : `${TITOLI_FACET[k] || k}: ${v.filtri[k].join(", ")}`));
     return parti.join(" · ") || "tutte le sentenze";
   }
 
@@ -796,7 +822,8 @@
     const cb = e.target;
     if (cb.type !== "checkbox") return;
     const campo = cb.dataset.campo;
-    const lista = new Set(stato.filtri[campo] || []);
+    // Il segnale ha un solo valore: sceglierne uno toglie l'altro.
+    const lista = new Set(campo === "segnale" ? [] : (stato.filtri[campo] || []));
     if (cb.checked) lista.add(cb.value); else lista.delete(cb.value);
     stato.filtri[campo] = Array.from(lista);
     if (!stato.filtri[campo].length) delete stato.filtri[campo];

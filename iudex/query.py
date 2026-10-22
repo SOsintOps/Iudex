@@ -32,6 +32,19 @@ ORDINAMENTI = {
 
 CAMPI_FACET = ("kind", "tipoprov", "szdec", "anno", "ssz", "materia")
 
+# Frasi con cui un provvedimento dichiara nel testo un contrasto o la conformità a un
+# orientamento. Sono un segnale testuale, non una classificazione della giurisprudenza.
+# "discostarsi" è escluso di proposito: compare soprattutto in "non vi sono ragioni per
+# discostarsi", che dichiara conformità (misura riportata da mcp-legal-it, Apache-2.0).
+SEGNALI = {
+    "contrasto": ("contrasto giurisprudenziale", "difforme orientamento"),
+    "conformita": ("orientamento consolidato", "in senso conforme"),
+}
+ETICHETTE_SEGNALI = {
+    "contrasto": "segnalano un contrasto",
+    "conformita": "richiamano un orientamento consolidato",
+}
+
 # Tipi di atto nei campi "rnc-sp" dei provvedimenti (codici del CED, parziali).
 TIPI_ATTO = {
     "LS": "legge",
@@ -266,15 +279,35 @@ def _clausola_filtro(campo: str, valori: list[str]) -> str:
     return termini[0] if len(termini) == 1 else "(" + " OR ".join(termini) + ")"
 
 
+def clausola_segnale(gruppo: str) -> str:
+    """``ocr:("frase 1" OR "frase 2")``: un'unica clausola per gruppo, così una decisione che
+    usa entrambe le frasi è contata una volta sola."""
+    frasi = SEGNALI[gruppo]
+    return "ocr:(" + " OR ".join(f'"{f}"' for f in frasi) + ")"
+
+
+def normalizza_segnali(facet_queries: dict | None) -> dict[str, int]:
+    """Da ``facet_counts.facet_queries`` (chiave = la query) ai conteggi per gruppo."""
+    facet_queries = facet_queries or {}
+    return {
+        gruppo: int(facet_queries[clausola_segnale(gruppo)])
+        for gruppo in SEGNALI
+        if clausola_segnale(gruppo) in facet_queries
+    }
+
+
 def costruisci_query(
     testo: str | None,
     riferimenti_normalizzati: str | None,
     filtri: dict[str, list[str]] | None = None,
+    segnale: str | None = None,
 ) -> tuple[str, str]:
     """Restituisce ``(q, hl.q)`` nel formato che il server si aspetta.
 
     ``q`` = testo, riferimenti, archivi e filtri uniti da ``AND``; ``hl.q`` = ``nomatch``
-    più le stesse parti tranne gli estremi, che non vanno evidenziati.
+    più le stesse parti tranne gli estremi, che non vanno evidenziati. ``segnale``
+    (``contrasto`` o ``conformita``) restringe ai provvedimenti che usano quelle frasi e le
+    evidenzia; senza segnale la query è identica a quella del sito.
     """
     filtri = filtri or {}
     parti: list[str] = []
@@ -287,6 +320,9 @@ def costruisci_query(
     parti.append(f"({QUERY_INIZIALE})")
     clausole_filtri = [_clausola_filtro(campo, filtri.get(campo, [])) for campo in CAMPI_FACET]
     parti.extend(c for c in clausole_filtri if c)
+    clausola_s = clausola_segnale(segnale) if segnale in SEGNALI else ""
+    if clausola_s:
+        parti.append(clausola_s)
     q = " AND ".join(parti)
 
     parti_hl: list[str] = ["nomatch"]
@@ -296,6 +332,8 @@ def costruisci_query(
     if rif_q:
         parti_hl.append(f"({rif_q})")
     parti_hl.extend(c for c in clausole_filtri if c)
+    if clausola_s:
+        parti_hl.append(clausola_s)
     return q, " AND ".join(parti_hl)
 
 
@@ -336,6 +374,9 @@ def parametri_ricerca(
             ("f.materia.facet.sort", "count"),
         ]
         parametri += [("facet.field", campo) for campo in CAMPI_FACET]
+        # Conteggi dei segnali nella stessa risposta (facet_counts.facet_queries): nessuna
+        # richiesta in più e nessun effetto su risultati e ordinamento.
+        parametri += [("facet.query", clausola_segnale(gruppo)) for gruppo in SEGNALI]
     return parametri
 
 

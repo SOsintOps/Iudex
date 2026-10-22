@@ -60,6 +60,14 @@ Più valori dello stesso filtro si sommano (civile *o* penale), filtri diversi s
 incrociano (sezione Lavoro *e* anno 2026). Ogni filtro attivo compare come etichetta
 sopra i risultati; la crocetta lo toglie, *Azzera* li toglie tutti.
 
+**Segnali nel testo**, in cima alla colonna: quanti provvedimenti fra i risultati dichiarano
+un contrasto («contrasto giurisprudenziale», «difforme orientamento») o richiamano un
+orientamento consolidato («orientamento consolidato», «in senso conforme»). La spunta
+mostra solo quei provvedimenti, con le frasi evidenziate. Conteggi nella stessa risposta
+della ricerca, nessuna richiesta in più; senza spunta i risultati coincidono con il sito. È
+un segnale testuale, non una classificazione. Idea ed elenco delle frasi da
+[mcp-legal-it](https://github.com/capazme/mcp-legal-it).
+
 Filtri: archivio (civile/penale), tipo di provvedimento, sezione, anno di decisione,
 sottosezione, materia (classificazione del CED; nell'indirizzo i valori sono separati da
 punto e virgola).

@@ -105,6 +105,27 @@ def test_ricerca_con_facet_materia_e_cache(client):
     assert len(cron) == 1 and cron[0]["filtri"] == {"materia": ["LAVORO SUBORDINATO"]}
 
 
+def test_segnali_nella_ricerca_e_nel_permalink(client):
+    c, mock = client
+    risposta = _risposta([_doc(1)], trovati=1)
+    risposta["facet_counts"]["facet_queries"] = {
+        'ocr:("contrasto giurisprudenziale" OR "difforme orientamento")': 2,
+        'ocr:("orientamento consolidato" OR "in senso conforme")': 7,
+    }
+    rotta = mock.post(URL_SOLR + "?app.query").mock(return_value=httpx.Response(200, json=risposta))
+    d = c.get("/api/cerca", params={"testo": "mobbing"}, headers=H).json()
+    assert d["segnali"] == {"contrasto": 2, "conformita": 7}
+    corpo = rotta.calls[0].request.content.decode()
+    assert corpo.count("facet.query=") == 2
+    d = c.get("/api/cerca", params={"testo": "mobbing", "segnale": "contrasto"}, headers=H).json()
+    assert d["permalink"] == "testo=mobbing&segnale=contrasto"
+    assert d["query"].endswith('ocr:("contrasto giurisprudenziale" OR "difforme orientamento")')
+    assert "segnalano un contrasto" in d["descrizione"]
+    assert c.get("/api/cronologia", headers=H).json()[0]["filtri"] == {"segnale": ["contrasto"]}
+    r = c.get("/api/cerca", params={"testo": "x", "segnale": "boh"}, headers=H)
+    assert r.status_code == 422
+
+
 def test_sentenza_paragrafi_riferimenti_ed_evidenziazione(client):
     c, mock = client
     doc = _doc(5)

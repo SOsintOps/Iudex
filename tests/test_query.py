@@ -2,12 +2,14 @@
 sintassi del sito tradisce l'intenzione: NOT, caratteri speciali con gli operatori)."""
 
 from iudex.query import (
+    clausola_segnale,
     controlla_estremi,
     costruisci_query,
     escape_solr,
     formatta_riferimenti,
     normalizza_documento,
     normalizza_facet,
+    normalizza_segnali,
     parametri_ricerca,
     query_evidenziazione,
     query_riferimenti,
@@ -130,6 +132,26 @@ def test_parametri_ricerca_contengono_i_facet():
     ]
     assert coppie["f.materia.facet.limit"] == "60"
     assert dict(parametri_ricerca("q", "hl", 0, 10, "rilevanza")).get("sort") is None
+    assert [v for k, v in parametri if k == "facet.query"] == [
+        'ocr:("contrasto giurisprudenziale" OR "difforme orientamento")',
+        'ocr:("orientamento consolidato" OR "in senso conforme")',
+    ]
+    senza = parametri_ricerca("q", "hl", 0, 10, "udienza", con_facet=False)
+    assert not [k for k, _ in senza if k.startswith("facet")]
+
+
+def test_segnali_query_e_conteggi():
+    # Senza segnale la query resta quella del sito; con il segnale si aggiunge la clausola,
+    # anche all'evidenziazione.
+    base = costruisci_query("mobbing", None, {})[0]
+    assert base == costruisci_query("mobbing", None, {}, None)[0]
+    q, hl = costruisci_query("mobbing", None, {}, "contrasto")
+    assert q.endswith(" AND " + clausola_segnale("contrasto"))
+    assert hl.endswith(clausola_segnale("contrasto"))
+    assert costruisci_query("mobbing", None, {}, "altro")[0] == base
+    risposta = {clausola_segnale("contrasto"): 3, clausola_segnale("conformita"): 54, "x": 1}
+    assert normalizza_segnali(risposta) == {"contrasto": 3, "conformita": 54}
+    assert normalizza_segnali(None) == {}
 
 
 def test_formatta_riferimenti():
