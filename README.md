@@ -147,7 +147,11 @@ dalla cache e dalla limitazione della frequenza delle richieste. Esempio per LM 
 
 Serve un modello che sappia chiamare strumenti; gli strumenti sono tre, quindi anche un
 modello piccolo li gestisce. Le istruzioni del server chiedono all'assistente di non
-ripetere ricerche identiche e di non scorrere molte pagine.
+ripetere ricerche identiche e di non scorrere molte pagine. `cerca_sentenze` accetta il
+filtro `segnale` (contrasto o conformità) e riporta i conteggi dei segnali; `leggi_sentenza`
+alla prima lettura di un testo lungo restituisce l'inizio e la parte dal P.Q.M., indicando
+i caratteri omessi. Gli errori (Iudex spento, pausa chiesta dal server) arrivano al modello
+come errori dello strumento, con il messaggio leggibile. Richiede `mcp` 2.x.
 
 ### Certificato TLS
 
