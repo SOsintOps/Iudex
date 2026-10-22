@@ -9,6 +9,18 @@ def test_risposte_con_ttl():
     a.chiudi()
 
 
+def test_pulizia_compatta_il_file(tmp_path):
+    a = Archivio(tmp_path / "c.sqlite")
+    for i in range(300):
+        a.scrivi_risposta(f"k{i}", {"testo": "x" * 4000})
+    a._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    prima = (tmp_path / "c.sqlite").stat().st_size
+    assert a.pulisci_scadute(-1, -1) == 300
+    a._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    assert (tmp_path / "c.sqlite").stat().st_size < prima / 4
+    a.chiudi()
+
+
 def test_pulizia_delle_voci_scadute():
     a = Archivio(":memory:")
     a.scrivi_risposta("vecchia", {"n": 1})

@@ -207,8 +207,10 @@ class ClientSentenzeWeb:
             )
             log.info("%s %s -> %s in %d ms", metodo, tipo, risposta.status_code, durata)
             if risposta.status_code in (403, 429):
-                # Nessuna ripetizione; pausa locale secondo Retry-After e, per il 403, sessione
-                # da riaprire (un cookie scaduto è la causa più probabile).
+                # Nessuna ripetizione automatica (RFC 9110 15.5.4: non ripetere con le stesse
+                # credenziali); pausa locale secondo Retry-After, facoltativo nel 429 (RFC 6585
+                # 4), e per il 403 sessione da riaprire: la richiesta successiva dell'utente
+                # parte con un cookie nuovo, come la RFC consente.
                 secondi = self._imponi_pausa(risposta)
                 if risposta.status_code == 403:
                     self._azzera_sessione()

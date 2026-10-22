@@ -154,6 +154,12 @@ class Archivio:
             n += self._conn.execute(
                 "DELETE FROM estremi WHERE quando < ?", (adesso - ttl_estremi,)
             ).rowcount
+        if n:
+            # Come requests-cache dopo la pulizia: senza VACUUM le pagine liberate restano
+            # nel file e il contenuto cancellato resta recuperabile (documentazione SQLite,
+            # "VACUUM"). Va eseguito fuori da una transazione.
+            with self._lock:
+                self._conn.execute("VACUUM")
         return n
 
     def svuota_risposte(self) -> int:
