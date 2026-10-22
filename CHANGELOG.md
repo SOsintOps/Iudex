@@ -1,5 +1,42 @@
 # Registro delle modifiche
 
+## 0.6.0 — 2026-10-22
+
+### Ricerca
+- **Segnali di orientamento**: in cima ai filtri, quanti provvedimenti fra i risultati
+  dichiarano un contrasto («contrasto giurisprudenziale», «difforme orientamento») o
+  richiamano un orientamento consolidato («orientamento consolidato», «in senso conforme»).
+  I conteggi sono `facet.query` nella stessa richiesta della ricerca; la spunta filtra e
+  evidenzia le frasi. Senza spunta i risultati restano quelli del sito. Idea ed elenco delle
+  frasi da mcp-legal-it (capazme, Apache-2.0).
+
+### Esportazione
+- **FollowTheMoney**: le sentenze consultate come entità `.ftm` (CourtCase, Document,
+  Person, CourtCaseParty), per `ftm` e Aleph; validato con followthemoney 4.11.1.
+
+### Server MCP
+- Errori come `ToolError` (il modello legge il messaggio), annotazioni di sola lettura,
+  parametri con valori ammessi nello schema, filtro `segnale` e conteggi dei segnali.
+- `leggi_sentenza` alla prima lettura di un testo lungo restituisce l'inizio e la parte
+  dal P.Q.M., con i caratteri omessi indicati. Richiede `mcp` 2.x.
+- Test in memoria con `Client(mcp)`; la CI installa l'extra `mcp`.
+
+### Robustezza
+- Dopo un 403 o un 429 Iudex non manda richieste per il tempo di `Retry-After` (secondi o
+  data HTTP; un minuto se manca, al più un'ora) e lo mostra nella scheda Stato; il 403 e
+  una pagina HTML al posto del JSON fanno riaprire la sessione.
+- Risposte del server senza l'elenco dei documenti e risposte HTML del servizio dei
+  riferimenti normativi sono errori espliciti e non finiscono in cache.
+- Errori imprevisti in JSON («errore interno di Iudex»), dati non validi con 422 e campo;
+  corpi di POST e PUT validati con Pydantic.
+- Voci di cache scadute tolte all'avvio (indici su `quando`).
+- `python -m iudex --apri` apre il browser quando il server risponde, sulla porta di
+  `IUDEX_PORTA`; se Iudex è già avviato apre quello. `avvia.cmd` lo usa.
+
+### Documentazione
+- Revisione terminologica dei testi; guida, domande frequenti e README aggiornati;
+  anteprima social `docs/immagini/anteprima-social.png`.
+
 ## 0.5.0 — 2026-10-21
 
 ### Diario delle consultazioni

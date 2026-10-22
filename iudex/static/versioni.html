@@ -31,6 +31,7 @@
 
 <main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v060">0.6.0 — 22 ottobre 2026</a>
     <a href="#v050">0.5.0 — 21 ottobre 2026</a>
     <a href="#v040">0.4.0 — 21 ottobre 2026</a>
     <a href="#v031">0.3.1 — 21 ottobre 2026</a>
@@ -42,6 +43,26 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v060">0.6.0 <span class="data">— 22 ottobre 2026</span></h2>
+    <h3>Ricerca</h3>
+    <ul>
+      <li><b>Segnali di orientamento</b> in cima ai filtri: quanti provvedimenti dichiarano un contrasto o richiamano un orientamento consolidato, contati nella stessa richiesta della ricerca. La spunta filtra ed evidenzia le frasi; senza spunta i risultati restano quelli del sito.</li>
+    </ul>
+    <h3>Esportazione</h3>
+    <ul>
+      <li><b>FollowTheMoney</b>: le sentenze consultate come entità <code>.ftm</code> (CourtCase, Document, Person, CourtCaseParty) per <code>ftm</code> e Aleph.</li>
+    </ul>
+    <h3>Server MCP</h3>
+    <ul>
+      <li>Errori leggibili dal modello, annotazioni di sola lettura, filtro per segnale; la prima lettura di una sentenza lunga mostra inizio e P.Q.M.</li>
+    </ul>
+    <h3>Robustezza</h3>
+    <ul>
+      <li>Pausa secondo <code>Retry-After</code> dopo un 403 o un 429, visibile nella scheda Stato; sessione riaperta quando il sito risponde con una pagina al posto dei dati.</li>
+      <li>Errori imprevisti e dati non validi spiegati in chiaro; cache scaduta tolta all'avvio.</li>
+      <li><code>python -m iudex --apri</code> apre il browser quando il server è pronto e riusa un Iudex già avviato.</li>
+    </ul>
 
     <h2 id="v050">0.5.0 <span class="data">— 21 ottobre 2026</span></h2>
     <h3>Diario delle consultazioni</h3>

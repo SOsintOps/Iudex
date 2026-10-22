@@ -16,7 +16,7 @@ Iudex non è un archivio e non copia la banca dati: ogni ricerca interroga il se
 Corte come farebbe il browser, ma con un'interfaccia pensata per leggere e confrontare,
 una cronologia, i preferiti, l'esportazione e una cache locale dei testi già aperti.
 
-![Iudex: risultati in vista compatta con il filtro "Civile" attivo e il pannello di lettura aperto sul dispositivo di una sentenza](docs/immagini/risultati.png)
+![Iudex: risultati in vista compatta con il filtro "Civile" attivo, i segnali di orientamento e i filtri con i conteggi](docs/immagini/risultati.png)
 
 ## Che cosa fa
 
@@ -51,9 +51,15 @@ una cronologia, i preferiti, l'esportazione e una cache locale dei testi già ap
 ## Schermate
 
 Vista compatta con il tema scuro, che si attiva da solo la sera: solo estremi, date,
-presidente, relatore ed ECLI; i filtri a sinistra con le barre proporzionali.
+presidente, relatore ed ECLI; a sinistra i segnali di orientamento (qui il filtro
+«Orientamento consolidato» attivo) e i filtri con le barre proporzionali.
 
-![Iudex: tema scuro, righe compatte](docs/immagini/tema-scuro.png)
+![Iudex: tema scuro, righe compatte, filtro sui provvedimenti che richiamano un orientamento consolidato](docs/immagini/tema-scuro.png)
+
+Il Diario conserva, giorno per giorno, le ricerche e le sentenze aperte da ciascuna, con il
+testo; da qui si esporta in JSONL, CSV, zip o FollowTheMoney.
+
+![Iudex: scheda Diario con le ricerche di un giorno e le sentenze aperte da ciascuna](docs/immagini/diario.png)
 
 Le pagine informative integrate (domande frequenti, versioni, software simili) usano lo
 stesso stile e sono raggiungibili dal menu Help della barra di navigazione.
