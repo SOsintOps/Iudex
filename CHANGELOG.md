@@ -29,7 +29,8 @@
   riferimenti normativi sono errori espliciti e non finiscono in cache.
 - Errori imprevisti in JSON («errore interno di Iudex»), dati non validi con 422 e campo;
   corpi di POST e PUT validati con Pydantic.
-- Voci di cache scadute tolte all'avvio (indici su `quando`).
+- Voci di cache scadute tolte all'avvio (indici su `quando`), seguite da `VACUUM` così
+  il file si riduce e i dati cancellati non restano recuperabili.
 - `python -m iudex --apri` apre il browser quando il server risponde, sulla porta di
   `IUDEX_PORTA`; se Iudex è già avviato apre quello. `avvia.cmd` lo usa.
 
