@@ -174,16 +174,16 @@ disattivare la verifica.
 ### Da dietro una VPN
 
 Il server della Corte non risponde alle connessioni che arrivano dagli indirizzi di uscita
-delle VPN commerciali (e, in generale, dai datacenter): il collegamento TCP alla porta 443
-resta senza risposta fino al timeout, e Iudex segnala «errore di rete». Non è un limite di
-Iudex, né un blocco delle richieste: lo stesso succede aprendo il sito nel browser.
+delle VPN commerciali: il collegamento alla porta 443 resta senza risposta, e Iudex segnala
+«errore di rete». Non è un limite di Iudex, né un blocco delle richieste: lo stesso succede
+aprendo il sito nel browser.
 
-Il rimedio è lasciare fuori dal tunnel solo il traffico verso il sito della Corte, con lo
-*split tunneling* della VPN per **indirizzo IP** (`www.italgiure.giustizia.it`, oggi
-81.126.56.168, rete Telecom Italia). Così tutto il resto resta nella VPN, mentre le ricerche
-e i PDF ufficiali, che si aprono nel browser sullo stesso sito, raggiungono la Corte in modo
-diretto: la Corte vede quindi l'indirizzo reale per quelle richieste. Escludere invece
-l'eseguibile di Iudex funziona per le ricerche ma non per i PDF, che apre il browser.
+Il rimedio è lasciare fuori dal tunnel solo il traffico verso il sito della Corte, con
+l'esclusione dal tunnel (*split tunneling*) per **indirizzo IP** (`www.italgiure.giustizia.it`,
+oggi 81.126.56.168, rete Telecom Italia). Così tutto il resto resta nella VPN, mentre le
+ricerche e i PDF ufficiali, che si aprono nel browser sullo stesso sito, raggiungono la Corte
+in modo diretto: la Corte vede quindi l'indirizzo reale per quelle richieste. Escludere
+invece l'eseguibile di Iudex funziona per le ricerche ma non per i PDF, che apre il browser.
 
 ## Sviluppo
 

@@ -87,9 +87,9 @@ clic ripristina; da tastiera, focus sulla maniglia e frecce.
   se succede spesso.
 - **Errore di certificato:** il server invia una catena incompleta; Iudex include
   l'intermedio in `iudex/certs/`. Se il messaggio compare, reinstalla o apri una segnalazione.
-- **«Errore di rete» con la VPN attiva:** il server della Corte non risponde agli indirizzi
-  di uscita delle VPN (il collegamento resta senza risposta fino al timeout). Escludi dal
-  tunnel l'indirizzo di `www.italgiure.giustizia.it` con lo split tunneling della VPN; i
+- **"Errore di rete" con la VPN attiva:** il server della Corte non risponde agli indirizzi
+  di uscita delle VPN (il collegamento resta senza risposta). Escludi dal tunnel l'indirizzo
+  di `www.italgiure.giustizia.it` con l'esclusione per IP della VPN (*split tunneling*); i
   dettagli nel README, sezione «Da dietro una VPN».
 - **"Richiesta non proveniente dall'interfaccia di Iudex":** le API accettano solo le
   chiamate della pagina (header `X-Iudex: 1`).
