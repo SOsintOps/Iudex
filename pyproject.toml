@@ -14,7 +14,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["ruff", "pytest", "pytest-asyncio", "respx"]
-mcp = ["mcp>=2.0"]
+mcp = ["mcp>=2.3.0"]
 desktop = ["pywebview>=5"]
 
 [project.scripts]
