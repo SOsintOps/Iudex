@@ -1,5 +1,14 @@
 # Registro delle modifiche
 
+## Da rilasciare
+
+### Manutenzione
+- Versioni minime delle dipendenze alzate: `fastapi` ≥0.146, `httpx` ≥0.28.1, `mcp` ≥2.3,
+  `pywebview` ≥6.2.1, `setuptools` ≥84; nella CI `actions/checkout` e `actions/setup-python` v7.
+- La versione del pacchetto si legge da `iudex/__init__.py`: `pyproject.toml` diceva
+  ancora 0.4.0.
+- Dependabot raggruppa gli aggiornamenti: una PR al mese per pip e una per le Actions.
+
 ## 0.6.0 — 2026-10-22
 
 ### Ricerca

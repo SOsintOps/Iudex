@@ -1,6 +1,6 @@
 [project]
 name = "iudex"
-version = "0.4.0"
+dynamic = ["version"]
 description = "Interfaccia locale per interrogare SentenzeWeb, la banca dati pubblica delle sentenze della Corte Suprema di Cassazione"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -25,6 +25,9 @@ iudex-mcp = "iudex.mcp_server:main"
 [build-system]
 requires = ["setuptools>=84.0.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "iudex.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["iudex*"]
