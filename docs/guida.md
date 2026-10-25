@@ -32,7 +32,7 @@ salvate, preferiti e una cache dei testi già aperti.
 | Diario | l'archivio personale permanente: per giorno, le ricerche e le sentenze aperte da ciascuna, con il testo conservato |
 | Ricerche salvate | le interrogazioni conservate, con il controllo delle novità su richiesta |
 | Preferiti | i singoli provvedimenti segnati, con le note |
-| Stato | versione, richieste fatte al server, cache, orari del tema scuro, registro delle chiamate |
+| Stato | versione, richieste fatte al server, identità dichiarata, cache, orari del tema scuro, registro delle chiamate |
 | Help | guida, domande frequenti, versioni, software simili, licenza |
 | Compatta | una riga per risultato (estremi, date, presidente, relatore, ECLI); un secondo clic torna alla vista con i frammenti |
 | Sole e luna | tema chiaro o scuro; un secondo clic sull'icona attiva torna all'automatico per orario (19-7 per impostazione predefinita) |
@@ -138,7 +138,8 @@ stessa sentenza aperta in giorni diversi da ricerche diverse compare sotto ognun
 
 ## Stato
 
-Richieste fatte al server e intervallo minimo (2 s); testi e risposte in cache, voci del
+Richieste fatte al server e intervallo minimo (2 s); identità dichiarata oggi (il browser
+Windows scelto dal giorno, o quello fissato con `IUDEX_IMPRONTA`); testi e risposte in cache, voci del
 diario e sentenze consultate, percorso dell'archivio, con *Svuota cache ricerche* e *Svuota
 testi in cache* (preferiti e diario restano) e *Copia di sicurezza* (copia pulita del
 database in `dati/iudex-AAAAMMGG-HHMMSS.sqlite`); orari del tema scuro automatico; registro

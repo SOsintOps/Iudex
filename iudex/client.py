@@ -3,8 +3,9 @@
 Regole: una sola richiesta alla volta, almeno ``intervallo_minimo`` secondi fra due
 richieste, un solo tentativo di ripetizione su errore di rete o 5xx, nessuna ripetizione
 su 403/429, che impongono una pausa locale secondo ``Retry-After``. Una risposta HTML al
-posto del JSON (o un 403) fa riaprire la sessione alla richiesta successiva. Header
-identici a quelli che Chrome invia dal sito ufficiale.
+posto del JSON (o un 403) fa riaprire la sessione alla richiesta successiva. Gli header
+sono quelli di uno dei browser di ``impronte.py``, scelto dal giorno del calendario (o fissato
+con ``IUDEX_IMPRONTA``); quando il giorno cambia la sessione si riapre con l'impronta nuova.
 """
 
 from __future__ import annotations
@@ -17,21 +18,14 @@ import ssl
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import UTC
+from datetime import UTC, date
 from email.utils import parsedate_to_datetime
 
 import certifi
 import httpx
 
-from .config import (
-    SEC_CH_UA,
-    URL_ESTREMI,
-    URL_SNCASS,
-    URL_SOLR,
-    URL_TELEMETRIA,
-    USER_AGENT,
-    Impostazioni,
-)
+from .config import URL_ESTREMI, URL_SNCASS, URL_SOLR, URL_TELEMETRIA, Impostazioni
+from .impronte import Impronta, impronta_del_giorno
 from .query import codifica_corpo
 
 log = logging.getLogger("iudex.rete")
@@ -53,14 +47,6 @@ def contesto_ssl(certificato_intermedio) -> ssl.SSLContext:
     return ctx
 
 
-HEADER_COMUNI = {
-    "User-Agent": USER_AGENT,
-    "Accept-Language": "it-IT,it;q=0.9,en;q=0.8",
-    "sec-ch-ua": SEC_CH_UA,
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"Windows"',
-}
-
 HEADER_XHR = {
     "Accept": "*/*",
     "Origin": "https://www.italgiure.giustizia.it",
@@ -70,18 +56,6 @@ HEADER_XHR = {
     "Sec-Fetch-Mode": "cors",
     "Sec-Fetch-Site": "same-origin",
 }
-
-HEADER_PAGINA = {
-    "Accept": (
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
-    ),
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-    "Upgrade-Insecure-Requests": "1",
-}
-
 
 @dataclass
 class VoceRegistro:
@@ -129,7 +103,12 @@ class ClientSentenzeWeb:
         self._client: httpx.AsyncClient | None = None
         self._sessione_pronta = False
         self._pausa_fino: float = 0.0
+        self._impronta: Impronta | None = None
         self.stat = Statistiche()
+
+    def impronta_corrente(self) -> Impronta:
+        """L'impronta browser da dichiarare oggi (o quella fissata nelle impostazioni)."""
+        return impronta_del_giorno(date.today(), self.imp.impronta)
 
     def pausa_residua(self) -> int:
         """Secondi che mancano alla fine della pausa imposta dal server (0 se nessuna)."""
@@ -146,10 +125,12 @@ class ClientSentenzeWeb:
         self._sessione_pronta = False
 
     def _assicura_client(self) -> httpx.AsyncClient:
+        if self._impronta is None:
+            self._impronta = self.impronta_corrente()
         if self._client is None:
             self._client = httpx.AsyncClient(
                 verify=contesto_ssl(self.imp.certificato_intermedio),
-                headers=HEADER_COMUNI,
+                headers=self._impronta.header_comuni(),
                 timeout=httpx.Timeout(self.imp.timeout, connect=10.0),
                 follow_redirects=True,
                 limits=httpx.Limits(max_connections=1, max_keepalive_connections=1),
@@ -244,8 +225,16 @@ class ClientSentenzeWeb:
                 raise ErroreRemoto(
                     f"il server ha chiesto una pausa: riprova fra {residua} s", 429
                 )
+            impronta = self.impronta_corrente()
+            if impronta != self._impronta:
+                # Giorno nuovo, browser nuovo: cookie e header ripartono da zero.
+                await self.chiudi()
+                self._impronta = impronta
+                log.info("impronta del giorno: %s", impronta.nome)
             if not self._sessione_pronta:
-                await self._invia("GET", URL_SNCASS, tipo="pagina", headers=HEADER_PAGINA)
+                await self._invia(
+                    "GET", URL_SNCASS, tipo="pagina", headers=self._impronta.header_pagina()
+                )
                 self._sessione_pronta = True
             return await self._invia(
                 metodo, url, tipo=tipo, headers=headers, content=content, params=params

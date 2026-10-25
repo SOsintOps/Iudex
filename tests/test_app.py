@@ -67,7 +67,9 @@ def client(tmp_path, monkeypatch):
 def test_api_rifiuta_senza_header(client):
     c, _ = client
     assert c.get("/api/stato").status_code == 403
-    assert c.get("/api/stato", headers=H).status_code == 200
+    stato = c.get("/api/stato", headers=H)
+    assert stato.status_code == 200
+    assert "su Windows" in stato.json()["impronta"] and stato.json()["impronta_fissa"] is False
     assert c.get("/api/stato", headers={**H, "Host": "evil.example.com:8765"}).status_code == 403
     assert c.get("/").status_code == 200
 

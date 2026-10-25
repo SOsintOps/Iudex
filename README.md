@@ -88,7 +88,7 @@ nella stessa richiesta della ricerca. Inoltre:
 | Esportazioni | pagina corrente: nessuna richiesta; primi 50: al più una; primi 100: al più due |
 | PDF | non scaricati da Iudex: il collegamento apre il documento sul sito della Corte |
 | Telemetria del sito (`xway`) | non replicata (`IUDEX_TELEMETRIA=1` per replicarla) |
-| Identità dichiarata | User-Agent e header di Chrome, come dal sito ufficiale |
+| Identità dichiarata | User-Agent e header di un browser installato su Windows (Chrome, Edge o Firefox), scelto dal giorno del calendario; `IUDEX_IMPRONTA` ne fissa uno. Cambiano solo gli header: l'impronta TLS resta quella di Python |
 | API locali | rispondono solo all'interfaccia di Iudex (header `X-Iudex: 1`): un altro sito aperto nel browser non può usarle |
 
 Non c'è alcuna funzione di scaricamento massivo o di scansione dell'archivio, e non va
@@ -119,7 +119,9 @@ cache scadute vengono tolte a ogni avvio.
 
 Variabili d'ambiente: `IUDEX_PORTA` (8765), `IUDEX_HOST` (127.0.0.1), `IUDEX_DATI`
 (cartella dei dati), `IUDEX_INTERVALLO` (secondi fra le richieste), `IUDEX_TTL_RICERCHE`
-(secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`. Iudex è pensato per
+(secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`, `IUDEX_IMPRONTA`
+(`chrome`, `edge` o `firefox` per dichiarare sempre lo stesso browser invece di quello del
+giorno; la scheda Stato mostra quale). Iudex è pensato per
 `127.0.0.1`: le API accettano solo richieste con un `Host` locale, quindi un indirizzo
 diverso (per esempio `0.0.0.0` per la rete locale) va aggiunto anche come `IUDEX_HOST`, e
 in rete l'header `X-Iudex` da solo non è una protezione.

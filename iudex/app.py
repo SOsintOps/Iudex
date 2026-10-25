@@ -58,6 +58,8 @@ async def ciclo_vita(app: FastAPI):
     )
     if rimosse:
         log.info("cache: %d voci scadute rimosse", rimosse)
+    # Un valore sbagliato di IUDEX_IMPRONTA ferma l'avvio con il messaggio dei codici ammessi.
+    log.info("identità dichiarata oggi: %s", app.state.client.impronta_corrente().nome)
     log.info(
         "Iudex %s in ascolto su http://%s:%s/", __version__, impostazioni.host, impostazioni.porta
     )
@@ -742,6 +744,8 @@ async def stato(request: Request) -> dict:
         "chiamate_remote": client.stat.chiamate,
         "intervallo_minimo_s": impostazioni.intervallo_minimo,
         "pausa_residua_s": client.pausa_residua(),
+        "impronta": client.impronta_corrente().nome,
+        "impronta_fissa": bool(impostazioni.impronta),
         "sentenze_in_cache": archivio.conta_sentenze(),
         "risposte_in_cache": archivio.conta_risposte(),
         "voci_diario": archivio.conta_diario(),

@@ -63,7 +63,10 @@ controllo registra il punto di partenza.
 **Esportazioni:** pagina corrente = nessuna richiesta; primi 50 = al più una; primi 100 = al
 più due.
 
-**Identità:** gli stessi header del browser Chrome che usa il sito ufficiale.
+**Identità:** gli header di un browser installato su Windows (Chrome, Edge o Firefox),
+scelto dal giorno del calendario: lo stesso per tutta la giornata, un altro il giorno dopo,
+quando Iudex riapre anche la sessione. `IUDEX_IMPRONTA` ne fissa uno; la scheda Stato mostra
+quello in uso. Cambiano solo gli header: l'impronta TLS resta quella di Python.
 
 ## I dati locali
 

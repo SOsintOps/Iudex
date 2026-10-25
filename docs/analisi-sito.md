@@ -181,7 +181,10 @@ Vedi sopra: forma canonica chiesta al server, ogni variante come frase con dista
 `User-Agent` di Chrome, `Accept: */*`, `Origin` e `Referer` del sito,
 `X-Requested-With: XMLHttpRequest`, `Sec-Fetch-Dest: empty`, `Sec-Fetch-Mode: cors`,
 `Sec-Fetch-Site: same-origin`, `sec-ch-ua*`, `Accept-Language`, cookie di sessione.
-Iudex invia gli stessi header.
+Iudex invia gli stessi header; `User-Agent`, `Accept-Language`, `sec-ch-ua*` e l'`Accept`
+della pagina sono quelli del browser del giorno (`iudex/impronte.py`: Chrome, Edge o Firefox
+su Windows; Firefox non invia i `sec-ch-ua*`). I `sec-ch-ua` di Chromium sono calcolati con
+l'algoritmo del browser dalla versione maggiore e coincidono con la cattura per Chrome 155.
 
 ## Dimensioni dell'archivio (21 ottobre 2026)
 

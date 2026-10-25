@@ -2,6 +2,15 @@
 
 ## Da rilasciare
 
+### Rete
+- **Impronta browser del giorno**: Iudex dichiara gli header (User-Agent, Accept-Language,
+  client hints, Accept della pagina) di un browser installato su Windows, Chrome 155, Edge
+  157 o Firefox 158, scelto dalla data del calendario: lo stesso per tutta la giornata anche
+  riavviando, un altro a mezzanotte, quando la sessione (cookie) si riapre. `IUDEX_IMPRONTA`
+  (`chrome`, `edge`, `firefox`) ne fissa uno; la scheda Stato e `/api/stato` mostrano quello
+  in uso. I `sec-ch-ua` di Chromium si calcolano dalla versione con l'algoritmo del browser
+  (`iudex/impronte.py`). Cambiano solo gli header: l'impronta TLS resta quella di Python.
+
 ### Manutenzione
 - Versioni minime delle dipendenze alzate: `fastapi` ≥0.157, `uvicorn[standard]` ≥0.54,
   `httpx` ≥0.28.1, `mcp` ≥2.3, `pywebview` ≥6.2.1, `setuptools` ≥84.2.1; nella CI `actions/checkout` e `actions/setup-python` v7.

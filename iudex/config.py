@@ -18,14 +18,6 @@ URL_ESTREMI = f"{BASE}/sncass/isapi/hc.dll/sn/estremi"
 URL_PDF = f"{BASE}/xway/application/nif/clean/hc.dll"
 URL_TELEMETRIA = f"{BASE}/xway/application/nif/isapishare/hc.dll"
 
-# Identità dichiarata: Chrome stabile su Windows, come richiesto dall'utente.
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36"
-)
-SEC_CH_UA = '"Google Chrome";v="155", "Chromium";v="155", "Not(A:Brand";v="24"'
-
-
 def _env_int(nome: str, predefinito: int) -> int:
     valore = os.environ.get(nome)
     return int(valore) if valore and valore.isdigit() else predefinito
@@ -56,6 +48,9 @@ class Impostazioni:
     ttl_estremi_giorni: int = 30
     # Per impostazione predefinita Iudex non replica le chiamate di telemetria "xway" del sito.
     replica_telemetria: bool = os.environ.get("IUDEX_TELEMETRIA", "0") == "1"
+    # Identità dichiarata: per impostazione predefinita il browser del giorno fra quelli di
+    # ``impronte.py``; un codice (chrome, edge, firefox) la fissa.
+    impronta: str | None = os.environ.get("IUDEX_IMPRONTA") or None
 
     @property
     def percorso_db(self) -> Path:

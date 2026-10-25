@@ -1,6 +1,7 @@
 """Il client rispetta l'intervallo minimo, ripete una volta sola e non insiste su 429."""
 
 import time
+from datetime import date
 from pathlib import Path
 
 import httpx
@@ -10,12 +11,15 @@ import respx
 import iudex.client as modulo_client
 from iudex.client import ClientSentenzeWeb, ErroreRemoto, secondi_retry_after
 from iudex.config import URL_ESTREMI, URL_SNCASS, URL_SOLR, Impostazioni
+from iudex.impronte import impronta_del_giorno
 
 RISPOSTA = {"responseHeader": {"QTime": 1}, "response": {"numFound": 0, "docs": []}}
 
 
-def impostazioni_test(tmp_path: Path, intervallo=0.3) -> Impostazioni:
-    return Impostazioni(cartella_dati=tmp_path, intervallo_minimo=intervallo, timeout=5)
+def impostazioni_test(tmp_path: Path, intervallo=0.3, impronta="chrome") -> Impostazioni:
+    return Impostazioni(
+        cartella_dati=tmp_path, intervallo_minimo=intervallo, timeout=5, impronta=impronta
+    )
 
 
 @respx.mock
@@ -35,6 +39,35 @@ async def test_prima_la_pagina_poi_la_query_con_intervallo(tmp_path):
     assert "Chrome/" in richiesta.headers["User-Agent"]
     assert richiesta.headers["Referer"] == URL_SNCASS
     assert richiesta.content == b"q=a"
+    await client.chiudi()
+
+
+@respx.mock
+async def test_cambio_di_giorno_riapre_la_sessione_con_il_browser_nuovo(tmp_path, monkeypatch):
+    pagina = respx.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
+    solr = respx.post(URL_SOLR + "?app.query").mock(return_value=httpx.Response(200, json=RISPOSTA))
+    giorni = iter([date(2026, 10, 25), date(2026, 10, 25), date(2026, 10, 26)])
+
+    class Oggi(date):
+        @classmethod
+        def today(cls):
+            return next(giorni)
+
+    monkeypatch.setattr(modulo_client, "date", Oggi)
+    client = ClientSentenzeWeb(impostazioni_test(tmp_path, intervallo=0.0, impronta=None))
+    await client.cerca([("q", "a")])
+    await client.cerca([("q", "b")])
+    await client.cerca([("q", "c")])
+    # Stesso giorno: una sola apertura di sessione; giorno nuovo: pagina e client nuovi.
+    assert pagina.call_count == 2 and solr.call_count == 3
+    prima, seconda, terza = (c.request.headers for c in solr.calls)
+    assert prima["User-Agent"] == seconda["User-Agent"] != terza["User-Agent"]
+    attesa = impronta_del_giorno(date(2026, 10, 26))
+    assert terza["User-Agent"] == attesa.user_agent
+    assert pagina.calls[1].request.headers["Accept"] == attesa.accept_pagina
+    # Firefox non manda i client hints; Chromium sì.
+    for intestazioni in (prima, terza):
+        assert ("sec-ch-ua" in intestazioni) == ("Firefox" not in intestazioni["User-Agent"])
     await client.chiudi()
 
 
