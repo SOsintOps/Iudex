@@ -134,8 +134,16 @@ scripts\avvia-finestra.cmd
 ```
 
 Apre Iudex in una finestra propria (componente WebView2 di Windows 11; WebKitGTK su Linux,
-WebKit su macOS) e ferma il server quando la chiudi. Un eseguibile autonomo con PyInstaller
-è possibile ma non è fornito.
+WebKit su macOS), con un'icona nell'area di notifica (Apri, Mantieni in esecuzione, Esci), e
+ferma il server quando la chiudi. Se Iudex è già acceso su quella porta, la finestra apre
+quello invece di avviarne un secondo; se la porta è occupata da un altro programma, usa la
+successiva libera. `--data-dir` e `--port` scelgono cartella dei dati e porta.
+
+Come backend di un'altra app, `python -m iudex --data-dir CARTELLA --port PORTA --parent-pid
+PID` avvia solo il server e lo chiude quando termina il processo `PID`; `GET /health`
+risponde `{"app": "iudex", "versione", "pid"}` senza l'header delle API, così chi lo avvia
+riconosce la propria istanza. Il log va in `log/iudex.log` nella cartella dei dati, con
+rotazione.
 
 ### Con un assistente o un LLM locale (MCP)
 
@@ -211,6 +219,7 @@ Struttura:
 | `iudex/app.py` | server FastAPI, API JSON, protezione delle API |
 | `iudex/mcp_server.py` | server MCP (extra `mcp`) |
 | `iudex/desktop.py` | finestra nativa (extra `desktop`) |
+| `iudex/autonoma/` | app autonoma: cartelle dei dati per sistema, server con `/health`, porta e sorveglianza del processo genitore, finestra con icona nell'area di notifica |
 | `iudex/static/` | interfaccia e pagine di aiuto (HTML, CSS, JavaScript senza dipendenze), font, icone |
 | `tests/` | test automatici (senza rete) |
 | `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini |

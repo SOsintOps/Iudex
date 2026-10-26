@@ -1,57 +1,62 @@
-"""Iudex come app locale: server in un thread e finestra nativa (pywebview).
+"""Iudex come app locale: server in un thread e finestra nativa con icona nell'area di
+notifica (``iudex.autonoma``).
 
 Su Windows usa il componente WebView2 già presente in Windows 11; su Linux WebKitGTK, su
 macOS WebKit. Richiede l'extra ``[desktop]`` (``pip install -e .[desktop]``).
-Avvio: ``python -m iudex.desktop`` oppure ``scripts\avvia-finestra.cmd``.
+Avvio: ``python -m iudex.desktop`` oppure ``scripts\\avvia-finestra.cmd``; nell'installer è
+l'eseguibile ``Iudex``. Se Iudex è già acceso (``/health`` risponde ``"iudex"``) la
+finestra apre quello invece di avviarne un secondo.
 """
 
 from __future__ import annotations
 
+import argparse
 import logging
-import threading
-import time
-import urllib.request
+from pathlib import Path
 
-import uvicorn
-
-from . import __version__
-from .config import impostazioni
+from . import __version__, config
+from .autonoma.cartelle import applica_avvio, prepara
+from .autonoma.server import ServerInThread, log_su_file, scegli_porta
 
 try:
-    import webview
+    import webview  # noqa: F401 - controlla che l'extra sia installato
 except ImportError as exc:  # pragma: no cover - dipende dall'extra installato
     raise SystemExit("Installa l'extra desktop: pip install -e .[desktop]") from exc
 
 
-def _attendi_server(url: str, secondi: float = 15.0) -> bool:
-    scadenza = time.monotonic() + secondi
-    while time.monotonic() < scadenza:
-        try:
-            with urllib.request.urlopen(url, timeout=1):  # noqa: S310 - indirizzo locale
-                return True
-        except OSError:
-            time.sleep(0.2)
-    return False
-
-
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(prog="iudex-finestra", description=f"Iudex {__version__}")
+    parser.add_argument("--data-dir", help="cartella dei dati (altrimenti IUDEX_DATI)")
+    parser.add_argument("--port", type=int, help="porta (altrimenti IUDEX_PORTA)")
+    args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
-    configurazione = uvicorn.Config(
-        "iudex.app:app", host=impostazioni.host, port=impostazioni.porta, log_level="info"
+    config.impostazioni = impostazioni = applica_avvio(
+        "IUDEX", config.impostazioni, args.data_dir, args.port
     )
-    server = uvicorn.Server(configurazione)
-    thread = threading.Thread(target=server.run, name="iudex-server", daemon=True)
-    thread.start()
-    url = f"http://{impostazioni.host}:{impostazioni.porta}/"
-    if not _attendi_server(url):
-        raise SystemExit("il server non è partito: la porta è occupata?")
-    webview.create_window(
-        f"Iudex {__version__}", url, width=1480, height=940, min_size=(900, 600), text_select=True
-    )
-    webview.start()
-    # La finestra è stata chiusa: si ferma il server.
-    server.should_exit = True
-    thread.join(timeout=10)
+    prepara(impostazioni.cartella_dati)
+    log_su_file(impostazioni.cartella_dati, "iudex")
+
+    from .autonoma.finestra import Guscio
+
+    porta, gia_attivo = scegli_porta(impostazioni.host, impostazioni.porta, "iudex")
+    server = None
+    if gia_attivo:
+        url = f"http://{impostazioni.host}:{porta}/"
+    else:
+        config.impostazioni = impostazioni = applica_avvio("IUDEX", impostazioni, None, porta)
+        from .app import app
+
+        server = ServerInThread(app, impostazioni.host, porta)
+        if not server.avvia():
+            raise SystemExit("il server non è partito: vedi log/iudex.log nella cartella dei dati")
+        url = server.url
+    icona = Path(__file__).resolve().parent / "static" / "favicon.png"
+    Guscio(
+        url,
+        f"Iudex {__version__}",
+        icona=icona,
+        all_uscita=server.ferma if server else None,
+    ).avvia()
 
 
 if __name__ == "__main__":

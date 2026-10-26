@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import __version__, export
+from .autonoma.server import aggiungi_health
 from .cache import Archivio
 from .client import ClientSentenzeWeb, ErroreRemoto
 from .config import impostazioni
@@ -72,6 +73,7 @@ app = FastAPI(
     title="Iudex", version=__version__, lifespan=ciclo_vita, docs_url=None, redoc_url=None
 )
 app.mount("/static", StaticFiles(directory=str(STATICA)), name="static")
+aggiungi_health(app, "iudex", __version__)
 
 
 @app.middleware("http")
@@ -634,9 +636,7 @@ async def esporta_diario(
     marca = time.strftime("%Y%m%d-%H%M%S")
     if formato == "csv":
         return _allegato(export.diario_csv(voci), f"iudex-diario-{marca}.csv", "text/csv")
-    return _allegato(
-        export.diario_jsonl(voci), f"iudex-diario-{marca}.jsonl", "application/jsonl"
-    )
+    return _allegato(export.diario_jsonl(voci), f"iudex-diario-{marca}.jsonl", "application/jsonl")
 
 
 @app.get("/api/export/consultate")

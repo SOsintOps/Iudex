@@ -2,6 +2,18 @@
 
 ## Da rilasciare
 
+### App autonoma
+- Pacchetto `iudex/autonoma/`, usato anche da Praeco: cartella dei dati per sistema quando
+  Iudex gira da un eseguibile (`%APPDATA%\Iudex`, `~/Library/Application Support/Iudex`,
+  `~/.local/share/iudex`; dai sorgenti resta `dati/`), con le sottocartelle `backup/` e
+  `log/`; `GET /health` riconoscibile (`{"app": "iudex", "versione", "pid"}`); scelta della
+  porta (riuso dell'istanza già accesa, altrimenti la prima porta libera); sorveglianza del
+  processo genitore; log su file con rotazione.
+- `python -m iudex` accetta `--data-dir`, `--port` e `--parent-pid` (backend di un'app, come
+  in Voicebox).
+- La finestra nativa (`python -m iudex.desktop`) ha un'icona nell'area di notifica con Apri,
+  Mantieni in esecuzione ed Esci; l'extra `desktop` aggiunge `pystray` e `pillow`.
+
 ### Rete
 - **Impronta browser del giorno**: Iudex dichiara gli header (User-Agent, Accept-Language,
   client hints, Accept della pagina) di un browser installato su Windows, Chrome 155, Edge
