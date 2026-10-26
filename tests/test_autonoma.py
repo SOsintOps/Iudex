@@ -8,6 +8,7 @@ import socket
 import threading
 from pathlib import Path
 
+import respx
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -79,3 +80,62 @@ def test_argomenti_del_backend(monkeypatch, tmp_path):
         monkeypatch.delenv("IUDEX_DATI", raising=False)
         monkeypatch.delenv("IUDEX_PORTA", raising=False)
         avvio.config.impostazioni = avvio.impostazioni = prima
+
+
+def test_backup_settimanale_e_rotazione(tmp_path):
+    import sqlite3
+    import time as tempo
+
+    from iudex.autonoma import backup
+
+    db = tmp_path / "x.sqlite"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE t (a)")
+    con.execute("INSERT INTO t VALUES (1)")
+    con.commit()
+
+    def copia(destinazione):
+        con.execute("VACUUM INTO ?", (str(destinazione),))
+
+    cartella = tmp_path / "backup"
+    prima = backup.se_serve(copia, cartella, "x")
+    assert prima and sqlite3.connect(prima).execute("SELECT a FROM t").fetchone() == (1,)
+    assert backup.se_serve(copia, cartella, "x") is None  # meno di sette giorni
+    assert backup.serve(cartella, "x", adesso=tempo.time() + 8 * 86400)
+    for _ in range(10):
+        backup.esegui(copia, cartella, "x", conserva=8)
+    assert len(backup.copie(cartella, "x")) == 8
+
+
+@respx.mock
+async def test_aggiornamenti(tmp_path):
+    import hashlib
+
+    import httpx
+    import pytest
+
+    from iudex.autonoma import aggiornamenti as agg
+
+    assert agg.tupla_versione("v0.10.1-beta") == (0, 10, 1) > agg.tupla_versione("0.9.9")
+    installer = b"installer finto"
+    pacchetto = {
+        "url": "https://esempio.test/Iudex-9.0.0-setup.exe",
+        "sha256": hashlib.sha256(installer).hexdigest(),
+    }
+    respx.get("https://esempio.test/latest.json").mock(
+        return_value=httpx.Response(
+            200, json={"versione": "9.0.0", "note": "prova", agg.piattaforma(): pacchetto}
+        )
+    )
+    info = await agg.controlla("https://esempio.test/latest.json", "0.7.0")
+    assert info["disponibile"] and info["versione"] == "9.0.0"
+    assert not (await agg.controlla("https://esempio.test/latest.json", "9.0.0"))["disponibile"]
+    respx.get(pacchetto["url"]).mock(return_value=httpx.Response(200, content=installer))
+    percorso = await agg.scarica(pacchetto, tmp_path)
+    assert percorso.read_bytes() == installer
+    with pytest.raises(agg.ErroreAggiornamento, match="sha256"):
+        await agg.scarica({**pacchetto, "sha256": "0" * 64}, tmp_path / "altro")
+    assert not any((tmp_path / "altro").iterdir())
+    respx.get("https://esempio.test/rotto.json").mock(return_value=httpx.Response(404))
+    with pytest.raises(agg.ErroreAggiornamento):
+        await agg.controlla("https://esempio.test/rotto.json", "0.7.0")

@@ -646,18 +646,25 @@
          intervallo minimo fra richieste: ${s.intervallo_minimo_s} s${s.pausa_residua_s ? ` · <b>pausa chiesta dal server: ancora ${s.pausa_residua_s} s</b>` : ""} ·
          identità dichiarata oggi: <b>${escapa(s.impronta)}</b>${s.impronta_fissa ? " (fissa)" : ""}</p>
       <p>Cache locale: <b>${s.sentenze_in_cache}</b> testi di sentenze, <b>${s.risposte_in_cache}</b> risposte di ricerca · archivio: <code>${escapa(s.percorso_dati)}</code></p>
+      ${s.aggiornamento && s.aggiornamento.disponibile ? `<p class="aggiornamento">È disponibile Iudex <b>${escapa(s.aggiornamento.versione)}</b> (in uso ${escapa(s.aggiornamento.attuale)})${s.aggiornamento.note ? ": " + escapa(s.aggiornamento.note) : ""}. <button type="button" id="installa-aggiornamento">Scarica e installa</button> <span class="dettaglio">l'installer si avvia dopo il controllo dello sha256 e chiude Iudex</span></p>` : ""}
       <p>Diario: <b>${numero(s.voci_diario)}</b> voci, <b>${numero(s.sentenze_consultate)}</b> sentenze consultate con il testo conservato (non vengono toccate dai pulsanti della cache).</p>
       <div class="orari"><span class="etichetta">Tema scuro automatico</span>
         dalle <input id="tema-inizio" class="input-field" type="number" min="0" max="23" value="${orari.inizio}"> alle
         <input id="tema-fine" class="input-field" type="number" min="0" max="23" value="${orari.fine}">
         <span class="dettaglio">(ora del computer; le icone sole e luna in alto scelgono il tema, un secondo clic sull'icona attiva torna all'automatico)</span></div>
       <table><thead><tr><th>Ora</th><th>Tipo</th><th>Stato</th><th>Durata</th><th>Note</th></tr></thead><tbody>${righe || '<tr><td colspan="5">Nessuna richiesta ancora.</td></tr>'}</tbody></table>`;
+    const pulsante = $("#installa-aggiornamento");
+    if (pulsante) pulsante.addEventListener("click", async () => {
+      pulsante.disabled = true;
+      try { const r = await api("/api/aggiornamento/installa", { method: "POST" }); messaggio(`Installer di Iudex ${r.versione} avviato.`); }
+      catch (e) { messaggio(e.message || String(e)); pulsante.disabled = false; }
+    });
   }
 
   async function aggiornaPie() {
     try {
       const s = await api("/api/stato");
-      $("#pie-versione").textContent = `Iudex ${s.versione}`;
+      $("#pie-versione").textContent = `Iudex ${s.versione}` + (s.aggiornamento && s.aggiornamento.disponibile ? ` · disponibile la ${s.aggiornamento.versione} (scheda Stato)` : "");
     } catch (e) { /* silenzioso */ }
   }
 

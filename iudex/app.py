@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import math
@@ -17,10 +18,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import __version__, export
+from .autonoma import aggiornamenti, backup
+from .autonoma.cartelle import congelata
 from .autonoma.server import aggiungi_health
 from .cache import Archivio
 from .client import ClientSentenzeWeb, ErroreRemoto
-from .config import impostazioni
+from .config import URL_AGGIORNAMENTI, impostazioni
 from .query import (
     CAMPI_FACET,
     ETICHETTE_SEGNALI,
@@ -47,6 +50,15 @@ SEPARATORI = {"materia": ";"}
 HEADERS_HOST_VALIDI = {"127.0.0.1", "localhost", "testserver"}
 
 
+async def _controlla_aggiornamenti(app: FastAPI) -> None:
+    try:
+        app.state.aggiornamento = await aggiornamenti.controlla(URL_AGGIORNAMENTI, __version__)
+        if app.state.aggiornamento["disponibile"]:
+            log.info("disponibile Iudex %s", app.state.aggiornamento["versione"])
+    except aggiornamenti.ErroreAggiornamento as exc:
+        log.info("controllo degli aggiornamenti non riuscito: %s", exc)
+
+
 @asynccontextmanager
 async def ciclo_vita(app: FastAPI):
     app.state.archivio = Archivio(impostazioni.percorso_db)
@@ -59,6 +71,19 @@ async def ciclo_vita(app: FastAPI):
     )
     if rimosse:
         log.info("cache: %d voci scadute rimosse", rimosse)
+    # Copia di sicurezza settimanale in backup/ (le ultime otto).
+    try:
+        backup.se_serve(
+            app.state.archivio.copia_di_sicurezza, impostazioni.cartella_dati / "backup", "iudex"
+        )
+    except Exception as exc:  # noqa: BLE001 - un backup mancato non ferma l'avvio
+        log.warning("copia di sicurezza non riuscita: %s", exc)
+    app.state.aggiornamento = None
+    controlla = impostazioni.aggiornamenti == "1" or (
+        impostazioni.aggiornamenti != "0" and congelata()
+    )
+    if controlla:
+        app.state.controllo_aggiornamenti = asyncio.create_task(_controlla_aggiornamenti(app))
     # Un valore sbagliato di IUDEX_IMPRONTA ferma l'avvio con il messaggio dei codici ammessi.
     log.info("identità dichiarata oggi: %s", app.state.client.impronta_corrente().nome)
     log.info(
@@ -606,6 +631,22 @@ async def grezzo_consultata(request: Request, id_sentenza: str) -> dict:
     return grezzo
 
 
+@app.post("/api/aggiornamento/installa")
+async def installa_aggiornamento(request: Request) -> dict:
+    """Scarica l'installer della versione nuova, ne controlla lo sha256 e lo avvia."""
+    info = request.app.state.aggiornamento
+    if not info or not info.get("disponibile"):
+        raise HTTPException(409, "nessun aggiornamento disponibile")
+    try:
+        percorso = await aggiornamenti.scarica(
+            info["pacchetto"], impostazioni.cartella_dati / "aggiornamenti"
+        )
+    except aggiornamenti.ErroreAggiornamento as exc:
+        raise HTTPException(502, str(exc)) from exc
+    aggiornamenti.avvia_installer(percorso)
+    return {"ok": True, "percorso": str(percorso), "versione": info["versione"]}
+
+
 @app.post("/api/backup")
 async def copia_di_sicurezza(request: Request) -> dict:
     marca = time.strftime("%Y%m%d-%H%M%S")
@@ -751,6 +792,7 @@ async def stato(request: Request) -> dict:
         "voci_diario": archivio.conta_diario(),
         "sentenze_consultate": archivio.conta_consultate(),
         "percorso_dati": str(impostazioni.percorso_db),
+        "aggiornamento": getattr(request.app.state, "aggiornamento", None),
         "registro": [
             {
                 "quando": time.strftime("%H:%M:%S", time.localtime(v.quando)),

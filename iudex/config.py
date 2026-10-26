@@ -19,6 +19,8 @@ URL_SOLR = f"{BASE}/sncass/isapi/hc.dll/sn.solr/sn-collection/select"
 URL_ESTREMI = f"{BASE}/sncass/isapi/hc.dll/sn/estremi"
 URL_PDF = f"{BASE}/xway/application/nif/clean/hc.dll"
 URL_TELEMETRIA = f"{BASE}/xway/application/nif/isapishare/hc.dll"
+# Aggiornamenti dell'app installata: latest.json della release più recente.
+URL_AGGIORNAMENTI = "https://github.com/SOsintOps/Iudex/releases/latest/download/latest.json"
 
 
 def _env_int(nome: str, predefinito: int) -> int:
@@ -56,6 +58,10 @@ class Impostazioni:
     # Identità dichiarata: per impostazione predefinita il browser del giorno fra quelli di
     # ``impronte.py``; un codice (chrome, edge, firefox) la fissa.
     impronta: str | None = os.environ.get("IUDEX_IMPRONTA") or None
+    # Controllo degli aggiornamenti all'avvio: per impostazione predefinita solo nell'app
+    # installata (dai sorgenti si aggiorna con git); IUDEX_AGGIORNAMENTI=0 lo spegne, =1 lo
+    # accende anche dai sorgenti.
+    aggiornamenti: str = os.environ.get("IUDEX_AGGIORNAMENTI", "")
 
     @property
     def percorso_db(self) -> Path:

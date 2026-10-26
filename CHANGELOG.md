@@ -11,6 +11,13 @@
   processo genitore; log su file con rotazione.
 - `python -m iudex` accetta `--data-dir`, `--port` e `--parent-pid` (backend di un'app, come
   in Voicebox).
+- Copia di sicurezza settimanale del database con `VACUUM INTO` in `backup/` nella cartella dei
+  dati (le ultime otto), all'avvio.
+- Aggiornamenti dell'app installata: all'avvio Iudex legge `latest.json` della release più
+  recente su GitHub e, se c'è una versione nuova, lo dice nella scheda Stato e nel piè di
+  pagina; "Scarica e installa" prende l'installer, ne controlla lo sha256 pubblicato in
+  `latest.json` e lo avvia. Niente aggiornamenti silenziosi. Dai sorgenti il controllo è
+  spento (si aggiorna con git); `IUDEX_AGGIORNAMENTI=0` lo spegne anche nell'app installata.
 - La finestra nativa (`python -m iudex.desktop`) ha un'icona nell'area di notifica con Apri,
   Mantieni in esecuzione ed Esci; l'extra `desktop` aggiunge `pystray` e `pillow`.
 

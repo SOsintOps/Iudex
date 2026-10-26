@@ -117,9 +117,17 @@ avviarne un secondo. Su Linux o macOS: `.venv/bin/python -m iudex --apri`. I dat
 (cronologia, diario, preferiti, cache) sono archiviati in `dati/iudex.sqlite`; le voci di
 cache scadute vengono tolte a ogni avvio.
 
+Ogni settimana, all'avvio, Iudex fa una copia di sicurezza del database in `backup/` nella
+cartella dei dati (`VACUUM INTO`, le ultime otto). L'app installata controlla all'avvio se
+c'è una versione nuova (una richiesta a GitHub per `latest.json` della release più recente,
+senza altri dati) e lo segnala nella scheda Stato; l'installer si scarica e si avvia solo
+premendo "Scarica e installa", dopo il controllo dello sha256. `IUDEX_AGGIORNAMENTI=0` spegne
+il controllo.
+
 Variabili d'ambiente: `IUDEX_PORTA` (8765), `IUDEX_HOST` (127.0.0.1), `IUDEX_DATI`
 (cartella dei dati), `IUDEX_INTERVALLO` (secondi fra le richieste), `IUDEX_TTL_RICERCHE`
-(secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`, `IUDEX_IMPRONTA`
+(secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`, `IUDEX_AGGIORNAMENTI` (`0`
+spegne il controllo degli aggiornamenti, `1` lo accende anche dai sorgenti), `IUDEX_IMPRONTA`
 (`chrome`, `edge` o `firefox` per dichiarare sempre lo stesso browser invece di quello del
 giorno; la scheda Stato mostra quale). Iudex è pensato per
 `127.0.0.1`: le API accettano solo richieste con un `Host` locale, quindi un indirizzo
