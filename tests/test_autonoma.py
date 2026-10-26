@@ -56,6 +56,13 @@ def test_scelta_della_porta(monkeypatch):
         assert server.scegli_porta("127.0.0.1", porta, "iudex")[0] != porta
 
 
+def test_flussi_sicuri_senza_console(monkeypatch):
+    monkeypatch.setattr(server.sys, "stdout", None)
+    monkeypatch.setattr(server.sys, "stderr", None)
+    server.flussi_sicuri()
+    assert server.sys.stdout.isatty() is False and server.sys.stderr is not None
+
+
 def test_sorveglianza_del_genitore():
     assert server.processo_vivo(os.getpid())
     assert not server.processo_vivo(0)

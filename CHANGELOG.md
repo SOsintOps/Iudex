@@ -6,6 +6,11 @@
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).
 
+### Correzioni
+- L'eseguibile senza console si fermava all'avvio del server ("Unable to configure formatter
+  'default'": uvicorn chiama `sys.stdout.isatty()` e senza console `sys.stdout` è `None`):
+  stdout e stderr vanno su `os.devnull`, i log restano nel file.
+
 ## 0.7.0 — 2026-10-26
 
 ### App autonoma

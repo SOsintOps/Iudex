@@ -118,6 +118,16 @@ def log_su_file(cartella: Path, nome: str) -> Path:
     return percorso
 
 
+def flussi_sicuri() -> None:
+    """Un eseguibile senza console (PyInstaller, finestra) ha ``sys.stdout`` e ``sys.stderr``
+    a ``None``: il formatter di uvicorn chiama ``sys.stdout.isatty()`` e l'avvio fallisce.
+    Qui vanno su ``os.devnull`` (i log restano nel file di ``log_su_file``)."""
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")  # noqa: SIM115
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")  # noqa: SIM115
+
+
 def attendi(url: str, secondi: float = 20.0) -> bool:
     """Aspetta che ``url`` risponda (il server è partito)."""
     scadenza = time.monotonic() + secondi
@@ -136,6 +146,7 @@ class ServerInThread:
     def __init__(self, app, host: str, porta: int):
         import uvicorn
 
+        flussi_sicuri()
         self.host, self.porta = host, porta
         self.server = uvicorn.Server(uvicorn.Config(app, host=host, port=porta, log_level="info"))
         self.thread = threading.Thread(target=self.server.run, name="server", daemon=True)
