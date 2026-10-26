@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Iudex
+Comment=Interfaccia locale per SentenzeWeb (Corte Suprema di Cassazione)
+Exec=iudex
+Icon=iudex
+Categories=Office;
+Terminal=false

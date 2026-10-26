@@ -1,3 +1,3 @@
 """Iudex: interfaccia locale per SentenzeWeb (Corte Suprema di Cassazione)."""
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"

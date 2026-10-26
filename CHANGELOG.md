@@ -1,8 +1,12 @@
 # Registro delle modifiche
 
-## Da rilasciare
+## 0.7.0 — 2026-10-26
 
 ### App autonoma
+- Installer per Windows (PyInstaller in una cartella + Inno Setup: per l'utente, senza
+  amministratore, collegamenti, disinstallazione che lascia i dati) e AppImage per Linux
+  (server e browser predefinito); workflow `Rilascio` sui soli tag `v*` che costruisce i
+  pacchetti, calcola gli sha256 e pubblica `latest.json` nella release.
 - Pacchetto `iudex/autonoma/`, usato anche da Praeco: cartella dei dati per sistema quando
   Iudex gira da un eseguibile (`%APPDATA%\Iudex`, `~/Library/Application Support/Iudex`,
   `~/.local/share/iudex`; dai sorgenti resta `dati/`), con le sottocartelle `backup/` e

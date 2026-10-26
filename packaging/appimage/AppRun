@@ -1,0 +1,4 @@
+#!/bin/sh
+# Avvia Iudex dall'AppImage: server locale e browser predefinito.
+QUI="$(dirname "$(readlink -f "$0")")"
+exec "$QUI/usr/lib/iudex/iudex" "$@"

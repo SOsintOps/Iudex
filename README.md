@@ -101,6 +101,21 @@ le risposte alle domande più comuni in [docs/faq.md](docs/faq.md); i progetti a
 
 ## Installazione
 
+### Con l'installer (consigliato)
+
+Dalla pagina delle [release](https://github.com/SOsintOps/Iudex/releases/latest):
+
+- **Windows**: `Iudex-X.Y.Z-setup.exe`. Si installa per l'utente, senza diritti di
+  amministratore, in `%LOCALAPPDATA%\Programs\Iudex`; apre Iudex in una finestra propria
+  (componente WebView2 di Windows 11) con un'icona nell'area di notifica. I dati stanno in
+  `%APPDATA%\Iudex` e restano anche dopo la disinstallazione. L'installer non è firmato con
+  un certificato di firma del codice: Windows SmartScreen può chiedere conferma ("Ulteriori
+  informazioni", "Esegui comunque"); lo sha256 di ogni file è in `latest.json` nella release.
+- **Linux**: `Iudex-X.Y.Z-x86_64.AppImage` (renderlo eseguibile con `chmod +x`): avvia il
+  server e apre il browser predefinito; dati in `~/.local/share/iudex`.
+
+### Dai sorgenti
+
 Serve Python 3.11 o successivo.
 
 ```bat

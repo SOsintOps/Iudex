@@ -1,0 +1,72 @@
+name: Rilascio
+
+# Solo sui tag di versione: installer per Windows (PyInstaller + Inno Setup), AppImage per
+# Linux, latest.json con gli sha256 per il controllo degli aggiornamenti dell'app.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Dipendenze
+        run: python -m pip install -e .[desktop] pyinstaller==6.22.3
+      - name: Eseguibile
+        run: python -m PyInstaller --noconfirm --distpath build/dist --workpath build/lavoro packaging/iudex.spec
+      - name: Installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          $versione = "${{ github.ref_name }}".TrimStart("v")
+          & $iscc "/DVersione=$versione" packaging\iudex.iss
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: build/installer/*.exe
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Dipendenze
+        run: python -m pip install -e . pyinstaller==6.22.3
+      - name: Eseguibile
+        run: python -m PyInstaller --noconfirm --distpath build/dist --workpath build/lavoro packaging/iudex.spec
+      - name: AppImage
+        run: sh packaging/costruisci_appimage.sh "${GITHUB_REF_NAME#v}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux
+          path: build/installer/*.AppImage
+
+  pubblica:
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          path: artefatti
+          merge-multiple: true
+      - name: latest.json e caricamento nella release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          python packaging/latest_json.py "${TAG#v}" artefatti \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}" > artefatti/latest.json
+          cat artefatti/latest.json
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Iudex ${TAG#v}" --notes "Vedi CHANGELOG.md."
+          gh release upload "$TAG" artefatti/* --clobber
