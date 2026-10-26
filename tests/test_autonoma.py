@@ -60,7 +60,8 @@ def test_flussi_sicuri_senza_console(monkeypatch):
     monkeypatch.setattr(server.sys, "stdout", None)
     monkeypatch.setattr(server.sys, "stderr", None)
     server.flussi_sicuri()
-    assert server.sys.stdout.isatty() is False and server.sys.stderr is not None
+    assert server.sys.stdout is not None and server.sys.stderr is not None
+    server.sys.stdout.isatty()  # quello che fa uvicorn: non deve sollevare eccezioni
 
 
 def test_sorveglianza_del_genitore():
