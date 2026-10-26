@@ -27,10 +27,14 @@ class Guscio:
         *,
         icona: Path | None = None,
         resta_attivo: bool = False,
+        nascosto: bool = False,
         all_uscita: Callable[[], None] | None = None,
     ):
         self.url, self.titolo, self.icona = url, titolo, icona
         self.resta_attivo = resta_attivo
+        # Parte solo come icona nell'area di notifica (avvio con il sistema); non su macOS,
+        # dove l'icona manca e la finestra non si potrebbe riaprire.
+        self.nascosto = nascosto and sys.platform != "darwin"
         self.all_uscita = all_uscita
         self.finestra = None
         self._icona_tray = None
@@ -93,7 +97,13 @@ class Guscio:
         import webview
 
         self.finestra = webview.create_window(
-            self.titolo, self.url, width=1480, height=940, min_size=(900, 600), text_select=True
+            self.titolo,
+            self.url,
+            width=1480,
+            height=940,
+            min_size=(900, 600),
+            text_select=True,
+            hidden=self.nascosto,
         )
         self.finestra.events.closing += self._alla_chiusura
         threading.Thread(target=self._crea_tray, name="tray", daemon=True).start()

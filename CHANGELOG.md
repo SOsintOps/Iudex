@@ -1,5 +1,11 @@
 # Registro delle modifiche
 
+## Da rilasciare
+
+### App autonoma
+- `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
+  (avvio con il sistema, usato da Praeco).
+
 ## 0.7.0 — 2026-10-26
 
 ### App autonoma
