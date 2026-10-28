@@ -22,6 +22,6 @@ jobs:
       - name: Installa
         run: python -m pip install -e .[dev,mcp]
       - name: Ruff
-        run: python -m ruff check iudex tests
+        run: python -m ruff check src tests packaging
       - name: Test
         run: python -m pytest -q

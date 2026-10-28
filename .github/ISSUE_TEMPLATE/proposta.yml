@@ -1,0 +1,24 @@
+name: Proposta
+description: Un'idea o una funzione nuova
+labels: ["funzione"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Quale problema risolve
+      description: Che cosa vuoi fare oggi con Iudex e non riesci a fare.
+    validations:
+      required: true
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Che cosa proponi
+      description: Come dovrebbe funzionare, dal punto di vista di chi usa l'app.
+    validations:
+      required: true
+  - type: checkboxes
+    id: server
+    attributes:
+      label: Richieste al server della Corte
+      options:
+        - label: La proposta non aggiunge richieste al server della Corte (scaricamenti in blocco, scansioni e ricerche per nome di persona non sono accettati).

@@ -19,15 +19,15 @@ nascosti += collect_submodules("pystray")
 esclusi = ["tkinter", "pytest", "ruff"]
 if not WINDOWS:
     # Backend GTK di pywebview: i moduli gi vengono dal pacchetto, le librerie WebKitGTK
-    # restano quelle del sistema (se mancano, il messaggio in iudex/desktop.py).
+    # restano quelle del sistema (se mancano, il messaggio in src/iudex/desktop.py).
     nascosti += ["gi", "gi.repository.Gtk", "gi.repository.WebKit2"]
 
 a = Analysis(
     [SPECPATH + "/avvio.py"],
-    pathex=[RADICE],
+    pathex=[RADICE + "/src"],
     datas=[
-        (RADICE + "/iudex/static", "iudex/static"),
-        (RADICE + "/iudex/certs", "iudex/certs"),
+        (RADICE + "/src/iudex/static", "iudex/static"),
+        (RADICE + "/src/iudex/certs", "iudex/certs"),
     ],
     hiddenimports=nascosti,
     excludes=esclusi,
@@ -40,6 +40,6 @@ exe = EXE(
     exclude_binaries=True,
     name="Iudex" if WINDOWS else "iudex",
     console=not WINDOWS,
-    icon=RADICE + "/iudex/static/favicon.ico" if WINDOWS else None,
+    icon=RADICE + "/src/iudex/static/favicon.ico" if WINDOWS else None,
 )
 coll = COLLECT(exe, a.binaries, a.datas, name="Iudex")

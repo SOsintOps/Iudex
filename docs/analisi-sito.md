@@ -17,7 +17,7 @@ di osservazione passiva con il Chrome DevTools Protocol (cattura in
 - Nessun `robots.txt` leggibile (risponde 401) e nessuna pagina di condizioni d'uso sul sito.
 - Catena TLS incompleta: il server invia un certificato intermedio sbagliato (TI Trust DV al
   posto di OV). I browser lo risolvono da soli; i client Python no, per questo Iudex include
-  l'intermedio corretto in `iudex/certs/ti_trust_ov_ca.pem`.
+  l'intermedio corretto in `src/iudex/certs/ti_trust_ov_ca.pem`.
 
 ## Chiamate che il sito fa per una ricerca
 
@@ -120,12 +120,12 @@ pubblico e di una pagina di dettaglio.
 
 Nota: l'intestazione di `index.js` dichiara la licenza **GPL versione 3**
 (`http://www.maas.ccr.it/z.licence`, "This file is part of Z"). Iudex non contiene né
-traduce quel codice: `iudex/query.py` è scritto dalla specifica della sezione "Sintassi del
+traduce quel codice: `src/iudex/query.py` è scritto dalla specifica della sezione "Sintassi del
 campo" qui sotto e riproduce solo il formato delle richieste, che è un'interfaccia.
 
 ## Sintassi del campo "Parole o Numero/Anno sentenza"
 
-Questa sezione è la **specifica** da cui è scritto `iudex/query.py`: descrive che cosa il
+Questa sezione è la **specifica** da cui è scritto `src/iudex/query.py`: descrive che cosa il
 sito fa con il testo digitato (comportamento osservato provando le ricerche e leggendo le
 richieste inviate), non come lo fa. Iudex riproduce le stesse clausole e, nei tre casi
 segnati, fa di meglio.
@@ -185,7 +185,7 @@ Vedi sopra: forma canonica chiesta al server, ogni variante come frase con dista
 `X-Requested-With: XMLHttpRequest`, `Sec-Fetch-Dest: empty`, `Sec-Fetch-Mode: cors`,
 `Sec-Fetch-Site: same-origin`, `sec-ch-ua*`, `Accept-Language`, cookie di sessione.
 Iudex invia gli stessi header; `User-Agent`, `Accept-Language`, `sec-ch-ua*` e l'`Accept`
-della pagina sono quelli del browser del giorno (`iudex/impronte.py`: Chrome, Edge o Firefox
+della pagina sono quelli del browser del giorno (`src/iudex/impronte.py`: Chrome, Edge o Firefox
 su Windows; Firefox non invia i `sec-ch-ua*`). I `sec-ch-ua` di Chromium sono calcolati con
 l'algoritmo del browser dalla versione maggiore e coincidono con la cattura per Chrome 155.
 

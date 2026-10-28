@@ -4,9 +4,9 @@ Legge ``iudex-logo-originale.jpg`` (sfondo bianco) e scrive:
 
 - ``docs/immagini/logo.png`` e ``logo-scuro.png``: logo intero con sfondo trasparente,
   linee scure per il tema chiaro e linee chiare per il tema scuro (README);
-- ``iudex/static/marchio.png`` e ``marchio-scuro.png``: bilancia con corona, 128 px,
+- ``src/iudex/static/marchio.png`` e ``marchio-scuro.png``: bilancia con corona, 128 px,
   per la barra di navigazione;
-- ``iudex/static/favicon.ico`` (16, 32, 48, 64 px) e ``favicon.png`` (256 px): tratti
+- ``src/iudex/static/favicon.ico`` (16, 32, 48, 64 px) e ``favicon.png`` (256 px): tratti
   bianchi su quadrato blu ``#0066ff``; a 16 e 32 px solo la bilancia, senza corona.
 
 Dipendenze: Pillow, numpy, scipy (non servono all'app: ``pip install pillow numpy scipy``).
@@ -25,7 +25,7 @@ QUI = Path(__file__).resolve().parent
 RADICE = QUI.parent.parent
 ORIGINALE = QUI / "iudex-logo-originale.jpg"
 IMMAGINI = RADICE / "docs" / "immagini"
-STATICA = RADICE / "iudex" / "static"
+STATICA = RADICE / "src" / "iudex" / "static"
 
 BLU = (0, 102, 255)
 # Centro e raggio del cerchio tratteggiato nell'originale (2048 px): le componenti con

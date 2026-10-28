@@ -17,6 +17,6 @@ cp -r build/dist/Iudex/. "$APPDIR/usr/lib/iudex/"
 cp packaging/appimage/AppRun "$APPDIR/AppRun"
 chmod +x "$APPDIR/AppRun"
 cp packaging/appimage/iudex.desktop "$APPDIR/iudex.desktop"
-cp iudex/static/favicon.png "$APPDIR/iudex.png"
+cp src/iudex/static/favicon.png "$APPDIR/iudex.png"
 mkdir -p build/installer
 ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 build/appimage/appimagetool "$APPDIR" "build/installer/Iudex-$VERSIONE-x86_64.AppImage"

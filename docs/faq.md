@@ -104,7 +104,7 @@ clic ripristina; da tastiera, focus sulla maniglia e frecce.
   scheda Stato mostra quanto manca; dopo un 403 riapre la sessione. Alza `IUDEX_INTERVALLO`
   se succede spesso.
 - **Errore di certificato:** il server invia una catena incompleta; Iudex include
-  l'intermedio in `iudex/certs/`. Se il messaggio compare, reinstalla o apri una segnalazione.
+  l'intermedio in `src/iudex/certs/`. Se il messaggio compare, reinstalla o apri una segnalazione.
 - **"Errore di rete" con la VPN attiva:** il server della Corte non risponde agli indirizzi
   di uscita delle VPN (il collegamento resta senza risposta). Escludi dal tunnel l'indirizzo
   di `www.italgiure.giustizia.it` con l'esclusione per IP della VPN (*split tunneling*); i

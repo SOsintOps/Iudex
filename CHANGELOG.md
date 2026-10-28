@@ -1,11 +1,20 @@
 # Registro delle modifiche
 
-## Da rilasciare
+## 0.8.1 — 2026-10-28
+
+Nessun cambiamento nell'uso dell'app: riordino del repository.
+
+### Repository
+- Codice nella cartella `src/` (layout `src`, consigliato per i pacchetti Python): i test
+  girano sul pacchetto installato. Import, comandi e cartella dei dati non cambiano.
+- `pyproject.toml` con autori, parole chiave, classificatori, collegamenti e licenza nel
+  formato PEP 639.
+- Codice di condotta (`CODE_OF_CONDUCT.md`) e modello "Proposta" per le richieste di funzioni.
+- Il repository contiene solo il materiale per chi usa e sviluppa l'app: tolti piani di
+  lavoro, avanzamento e liste di prova interne.
 
 ### Documentazione
 - Domande frequenti: nuova sezione "Lo sviluppo" sull'uso dell'intelligenza artificiale.
-- Il repository contiene solo il materiale per chi usa e sviluppa l'app: tolti piani di
-  lavoro, avanzamento e liste di prova interne.
 
 ## 0.8.0 — 2026-10-28
 

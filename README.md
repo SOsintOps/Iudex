@@ -251,7 +251,7 @@ come errori dello strumento, con il messaggio leggibile. Richiede `mcp` 2.x.
 
 Il server della Corte invia una catena di certificati incompleta (manca l'intermedio
 "TI Trust Technologies OV CA"). I browser la completano da soli, Python no: Iudex include
-l'intermedio in `iudex/certs/ti_trust_ov_ca.pem` e lo aggiunge al contesto TLS, senza
+l'intermedio in `src/iudex/certs/ti_trust_ov_ca.pem` e lo aggiunge al contesto TLS, senza
 disattivare la verifica.
 
 ### Da dietro una VPN
@@ -271,11 +271,12 @@ escludere il solo eseguibile di Iudex basta, perché i PDF li scarica Iudex e no
 ## Sviluppo
 
 Le regole per contribuire sono in [CONTRIBUTING.md](CONTRIBUTING.md), la segnalazione
-delle vulnerabilità in [SECURITY.md](SECURITY.md).
+delle vulnerabilità in [SECURITY.md](SECURITY.md), il codice di condotta in
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ```bat
 .venv\Scripts\python.exe -m pip install -e .[dev]
-.venv\Scripts\python.exe -m ruff check iudex tests
+.venv\Scripts\python.exe -m ruff check src tests packaging
 .venv\Scripts\python.exe -m pytest
 ```
 
@@ -285,21 +286,22 @@ Struttura:
 
 | Modulo | Compito |
 |--------|---------|
-| `iudex/query.py` | costruzione delle query Solr secondo la sintassi del sito (implementazione propria); riferimenti normativi |
-| `iudex/client.py` | client HTTP con la limitazione delle richieste e il contesto TLS |
-| `iudex/cache.py` | SQLite con schema versionato e migrazioni: cronologia, esecuzioni e risultati, ricerche salvate, preferiti, testi, cache, diario, sentenze consultate, PDF, impostazioni, macchine; unione di un altro archivio |
-| `iudex/export.py` | CSV, JSON, Markdown, JSONL, zip (anche dello storico); ricostruzione dei paragrafi |
-| `iudex/importazione.py` | lettura di un pacchetto ZIP, di un JSONL o di una copia del database di un altro Iudex |
-| `iudex/pdf.py` | cartella, nome e apertura dei PDF salvati |
-| `iudex/preferenze.py` | impostazioni della scheda Impostazioni: predefinite, convalida, variabili d'ambiente |
-| `iudex/impronte.py` | impronte del browser predefinite e personalizzate |
-| `iudex/accesso.py` | token di accesso della finestra e del server MCP |
-| `iudex/app.py` | server FastAPI, API JSON, protezione delle pagine e delle API |
-| `iudex/mcp_server.py` | server MCP (extra `mcp`) |
-| `iudex/desktop.py` | finestra nativa (extra `desktop`) |
-| `iudex/autonoma/` | app autonoma: cartelle dei dati per sistema, server con `/health`, porta e sorveglianza del processo genitore, finestra con icona nell'area di notifica |
-| `iudex/static/` | interfaccia e pagine di aiuto (HTML, CSS, JavaScript senza dipendenze), font, icone |
+| `src/iudex/query.py` | costruzione delle query Solr secondo la sintassi del sito (implementazione propria); riferimenti normativi |
+| `src/iudex/client.py` | client HTTP con la limitazione delle richieste e il contesto TLS |
+| `src/iudex/cache.py` | SQLite con schema versionato e migrazioni: cronologia, esecuzioni e risultati, ricerche salvate, preferiti, testi, cache, diario, sentenze consultate, PDF, impostazioni, macchine; unione di un altro archivio |
+| `src/iudex/export.py` | CSV, JSON, Markdown, JSONL, zip (anche dello storico); ricostruzione dei paragrafi |
+| `src/iudex/importazione.py` | lettura di un pacchetto ZIP, di un JSONL o di una copia del database di un altro Iudex |
+| `src/iudex/pdf.py` | cartella, nome e apertura dei PDF salvati |
+| `src/iudex/preferenze.py` | impostazioni della scheda Impostazioni: predefinite, convalida, variabili d'ambiente |
+| `src/iudex/impronte.py` | impronte del browser predefinite e personalizzate |
+| `src/iudex/accesso.py` | token di accesso della finestra e del server MCP |
+| `src/iudex/app.py` | server FastAPI, API JSON, protezione delle pagine e delle API |
+| `src/iudex/mcp_server.py` | server MCP (extra `mcp`) |
+| `src/iudex/desktop.py` | finestra nativa (extra `desktop`) |
+| `src/iudex/autonoma/` | app autonoma: cartelle dei dati per sistema, server con `/health`, porta e sorveglianza del processo genitore, finestra con icona nell'area di notifica |
+| `src/iudex/static/` | interfaccia e pagine di aiuto (HTML, CSS, JavaScript senza dipendenze), font, icone |
 | `tests/` | test automatici (senza rete) |
+| `packaging/` | installer: PyInstaller, Inno Setup (Windows), AppImage (Linux), `latest.json` |
 | `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini |
 | `assets/logo/` | logo originale e script che generano logo, marchio, favicon e anteprima social (`docs/immagini/anteprima-social.png`) |
 | `scripts/` | avviatori per Windows |

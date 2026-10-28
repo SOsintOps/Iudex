@@ -11,7 +11,9 @@ from pathlib import Path
 
 from .autonoma.cartelle import cartella_predefinita
 
-RADICE = Path(__file__).resolve().parent.parent
+PACCHETTO = Path(__file__).resolve().parent
+# Radice dei sorgenti (dove sta ``dati/``): con il layout ``src/`` è due livelli sopra.
+RADICE = PACCHETTO.parent.parent if PACCHETTO.parent.name == "src" else PACCHETTO.parent
 
 BASE = "https://www.italgiure.giustizia.it"
 URL_SNCASS = f"{BASE}/sncass/"
@@ -69,7 +71,7 @@ class Impostazioni:
 
     @property
     def certificato_intermedio(self) -> Path:
-        return RADICE / "iudex" / "certs" / "ti_trust_ov_ca.pem"
+        return PACCHETTO / "certs" / "ti_trust_ov_ca.pem"
 
 
 impostazioni = Impostazioni()
