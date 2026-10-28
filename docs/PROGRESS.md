@@ -33,9 +33,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   finestra GTK su Linux, scelta della cartella al primo avvio, `docs/prova-installazione.md`);
   installer Windows compilato con Inno Setup 6.7.3; AppImage costruita e provata su Debian 13
   (VM `london`, Xvfb); da fare la prova dell'installer su una VM Windows
-- [~] 9. Documentazione e versione 0.8.0 (tag solo su conferma): fatti README, guida e FAQ
-  (Markdown e pagine dell'app); da fare al rilascio `__version__`, `versioni.html` (0.7.0 e
-  0.8.0), la nota su Iudex in `docs/architettura.md` di Praeco e il tag
+- [~] 9. Documentazione e versione 0.8.0: README, guida e FAQ (Markdown e pagine dell'app),
+  `__version__` 0.8.0, CHANGELOG e `versioni.html` (0.7.0 e 0.8.0) fatti; restano la nota su
+  Iudex in `docs/architettura.md` di Praeco e il tag `v0.8.0` (su conferma dell'utente)
 
 ## Fasi successive
 

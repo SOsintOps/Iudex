@@ -1,6 +1,6 @@
 # Registro delle modifiche
 
-## Da rilasciare
+## 0.8.0 — 2026-10-28
 
 ### Archivio
 - Versione dello schema in `PRAGMA user_version` con migrazioni numerate; prima di migrare un

@@ -36,6 +36,8 @@
 
 <main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v080">0.8.0 — 28 ottobre 2026</a>
+    <a href="#v070">0.7.0 — 26 ottobre 2026</a>
     <a href="#v060">0.6.0 — 22 ottobre 2026</a>
     <a href="#v050">0.5.0 — 21 ottobre 2026</a>
     <a href="#v040">0.4.0 — 21 ottobre 2026</a>
@@ -48,6 +50,46 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v080">0.8.0 <span class="data">— 28 ottobre 2026</span></h2>
+    <h3>Memoria permanente</h3>
+    <ul>
+      <li>Ogni ricerca e ogni pagina di risultati vista restano registrate, con le sentenze mostrate, la loro posizione, l'ora e il computer; la cronologia dice quante volte hai fatto una ricerca.</li>
+      <li>Badge <b>già vista</b> nei risultati, nei preferiti e nelle novità delle ricerche salvate: al passaggio del mouse, quando l'hai consultata (testo o PDF), da quali ricerche e in quali è uscita.</li>
+      <li>Si può spegnere nelle Impostazioni: spento, Iudex non registra niente.</li>
+    </ul>
+    <h3>PDF</h3>
+    <ul>
+      <li>Il PDF ufficiale si scarica alla prima apertura e si salva nella cartella dei PDF (scelta nell'installer o nelle Impostazioni); poi si apre dalla copia locale, nella finestra o con il programma PDF del computer.</li>
+    </ul>
+    <h3>Esportazione e importazione</h3>
+    <ul>
+      <li>Lo storico si esporta dalla Cronologia in CSV per Excel, JSONL o un pacchetto ZIP con i PDF, e si importa in un altro Iudex senza duplicati (anche da una copia del database).</li>
+    </ul>
+    <h3>Impostazioni</h3>
+    <ul>
+      <li>Nuova scheda: storico, cartella e apertura dei PDF, impronta del browser (a rotazione, fissa, personalizzata o personalizzate a rotazione, con il pulsante Prova), orari del tema scuro, nome del computer, importazione.</li>
+    </ul>
+    <h3>Solo finestra</h3>
+    <ul>
+      <li>Iudex si usa solo dalla sua finestra, come Voicebox: pagine e API rispondono solo con il token della cartella dei dati; niente più modalità browser. La finestra ha l'icona di Iudex.</li>
+      <li>Linux: l'AppImage apre la finestra con WebKitGTK del sistema; l'installer per Windows chiede la cartella dei PDF e avvisa se manca WebView2.</li>
+    </ul>
+    <h3>Correzioni e archivio</h3>
+    <ul>
+      <li>Schema del database versionato, con una copia di sicurezza prima di ogni migrazione e di ogni importazione.</li>
+      <li>Un'apertura fallita (rete caduta) non rende più una sentenza "già vista"; l'export del diario non si ferma più a 5000 voci; menu in alto più piccolo e completo anche nelle pagine di aiuto.</li>
+    </ul>
+
+    <h2 id="v070">0.7.0 <span class="data">— 26 ottobre 2026</span></h2>
+    <h3>App autonoma</h3>
+    <ul>
+      <li>Installer per Windows e AppImage per Linux; finestra nativa con icona nell'area di notifica; cartella dei dati per sistema; copia di sicurezza settimanale; controllo degli aggiornamenti nell'app installata.</li>
+    </ul>
+    <h3>Rete</h3>
+    <ul>
+      <li>Identità dichiarata: gli header di un browser installato su Windows (Chrome, Edge o Firefox), scelto dal giorno del calendario.</li>
+    </ul>
 
     <h2 id="v060">0.6.0 <span class="data">— 22 ottobre 2026</span></h2>
     <h3>Ricerca</h3>
