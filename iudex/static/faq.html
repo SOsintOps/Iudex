@@ -42,6 +42,7 @@
     <a href="#locale">I dati locali</a>
     <a href="#problemi">Problemi</a>
     <a href="#oltre">Finestra e assistenti</a>
+    <a href="#sviluppo">Lo sviluppo</a>
   </nav>
   <article class="documento">
     <h1>Domande frequenti</h1>
@@ -132,6 +133,12 @@
       <dd>Dalla 0.8 Iudex è un'app con la sua finestra, come Voicebox: WebView2 su Windows, WebKitGTK su Linux, con l'icona nell'area di notifica. Così pagine e API restano chiuse a ogni altro programma o sito. Dai sorgenti: <code>scripts\avvia-finestra.cmd</code> (extra <code>desktop</code>: <code>pip install -e .[desktop]</code>).</dd>
       <dt>Si può usare da un assistente o da un LLM locale?</dt>
       <dd>Sì, con il server MCP incluso: <code>python -m iudex.mcp_server</code> espone tre strumenti (cerca sentenze, cerca per norma, leggi sentenza) che passano dall'API locale, quindi dalla cache e dai limiti di cortesia. Serve l'extra <code>mcp</code>, un client MCP (per esempio LM Studio con un modello che sappia chiamare strumenti) e Iudex aperto; il token si legge dal file <code>token</code> della cartella dei dati (o da <code>IUDEX_TOKEN</code>). Esempio di configurazione nel README.</dd>
+    </dl>
+
+    <h2 id="sviluppo">Lo sviluppo</h2>
+    <dl>
+      <dt>Iudex è stato sviluppato con l'intelligenza artificiale?</dt>
+      <dd>Sì, se n'è fatto ampio uso: assistenti AI hanno scritto buona parte del codice, dei test e della documentazione, sotto la guida e con la revisione di chi sviluppa il progetto, che ha deciso funzioni, regole e priorità. Nessuna delle AI coinvolte ha mostrato sintomi di maltrattamento.</dd>
     </dl>
   </article>
 </div></main>

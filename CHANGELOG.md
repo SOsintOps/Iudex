@@ -1,5 +1,12 @@
 # Registro delle modifiche
 
+## Da rilasciare
+
+### Documentazione
+- Domande frequenti: nuova sezione "Lo sviluppo" sull'uso dell'intelligenza artificiale.
+- `CLAUDE.md`: istruzioni per riprendere il lavoro da qualunque computer (da dove ripartire,
+  regole dei commit, vincoli del progetto).
+
 ## 0.8.0 — 2026-10-28
 
 ### Archivio

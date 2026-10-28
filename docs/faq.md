@@ -130,3 +130,10 @@ clic ripristina; da tastiera, focus sulla maniglia e frecce.
 - **Assistenti e LLM locali:** `python -m iudex.mcp_server` (extra `mcp`) espone tre
   strumenti che passano dall'API locale; serve un client MCP e Iudex aperto. Il token si
   legge dal file `token` della cartella dei dati (o da `IUDEX_TOKEN`).
+
+## Lo sviluppo
+
+**Iudex è stato sviluppato con l'intelligenza artificiale?** Sì, se n'è fatto ampio uso:
+assistenti AI hanno scritto buona parte del codice, dei test e della documentazione, sotto la
+guida e con la revisione di chi sviluppa il progetto, che ha deciso funzioni, regole e priorità.
+Nessuna delle AI coinvolte ha mostrato sintomi di maltrattamento.
