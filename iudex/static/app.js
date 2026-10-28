@@ -701,7 +701,6 @@
   async function caricaStato() {
     const s = await api("/api/stato");
     const righe = s.registro.map((r) => `<tr><td>${r.quando}</td><td>${escapa(r.tipo)}</td><td>${r.stato === null ? "rete" : r.stato}</td><td>${r.durata_ms} ms</td><td>${escapa(r.dettaglio)}</td></tr>`).join("");
-    const orari = window.IudexTema ? window.IudexTema.leggiOrari() : { inizio: 19, fine: 7 };
     $("#stato").innerHTML = `
       <p>Iudex ${escapa(s.versione)} · richieste al server della Corte in questa sessione: <b>${s.chiamate_remote}</b> ·
          intervallo minimo fra richieste: ${s.intervallo_minimo_s} s${s.pausa_residua_s ? ` · <b>pausa chiesta dal server: ancora ${s.pausa_residua_s} s</b>` : ""} ·
@@ -710,10 +709,6 @@
       ${s.aggiornamento && s.aggiornamento.disponibile ? `<p class="aggiornamento">È disponibile Iudex <b>${escapa(s.aggiornamento.versione)}</b> (in uso ${escapa(s.aggiornamento.attuale)})${s.aggiornamento.note ? ": " + escapa(s.aggiornamento.note) : ""}. <button type="button" id="installa-aggiornamento">Scarica e installa</button> <span class="dettaglio">l'installer si avvia dopo il controllo dello sha256 e chiude Iudex</span></p>` : ""}
       <p>Diario: <b>${numero(s.voci_diario)}</b> voci, <b>${numero(s.sentenze_consultate)}</b> sentenze consultate con il testo conservato (non vengono toccate dai pulsanti della cache) · <b>${numero(s.esecuzioni)}</b> pagine di risultati ricordate.</p>
       <p>PDF salvati: <b>${numero(s.pdf_salvati)}</b> in <code>${escapa(s.cartella_pdf)}</code></p>
-      <div class="orari"><span class="etichetta">Tema scuro automatico</span>
-        dalle <input id="tema-inizio" class="input-field" type="number" min="0" max="23" value="${orari.inizio}"> alle
-        <input id="tema-fine" class="input-field" type="number" min="0" max="23" value="${orari.fine}">
-        <span class="dettaglio">(ora del computer; le icone sole e luna in alto scelgono il tema, un secondo clic sull'icona attiva torna all'automatico)</span></div>
       <table><thead><tr><th>Ora</th><th>Tipo</th><th>Stato</th><th>Durata</th><th>Note</th></tr></thead><tbody>${righe || '<tr><td colspan="5">Nessuna richiesta ancora.</td></tr>'}</tbody></table>`;
     const pulsante = $("#installa-aggiornamento");
     if (pulsante) pulsante.addEventListener("click", async () => {
@@ -766,6 +761,9 @@
 
   async function caricaImpostazioni() {
     esitoImpostazioni("");
+    const orari = window.IudexTema ? window.IudexTema.leggiOrari() : { inizio: 19, fine: 7 };
+    $("#tema-inizio").value = orari.inizio;
+    $("#tema-fine").value = orari.fine;
     try { compilaImpostazioni(await api("/api/impostazioni")); }
     catch (e) { esitoImpostazioni(e.message || String(e)); }
   }
@@ -1310,13 +1308,14 @@
   const carattere = memoria("iudex.carattere");
   if (carattere) applicaCarattere(carattere);
 
-  // Orari del tema automatico (campi nella scheda Stato).
-  $("#stato").addEventListener("change", (e) => {
+  // Orari del tema automatico (scheda Impostazioni, gruppo Aspetto): valgono subito e restano
+  // memorizzati nella finestra, senza passare dal pulsante Salva.
+  $("#pannello-impostazioni").addEventListener("change", (e) => {
     if (!e.target.matches("#tema-inizio, #tema-fine") || !window.IudexTema) return;
     const inizio = Math.max(0, Math.min(23, parseInt($("#tema-inizio").value, 10) || 0));
     const fine = Math.max(0, Math.min(23, parseInt($("#tema-fine").value, 10) || 0));
     window.IudexTema.impostaOrari(inizio, fine);
-    messaggio(`Tema scuro automatico dalle ${inizio}:00 alle ${fine}:00.`);
+    esitoImpostazioni(`Tema scuro automatico dalle ${inizio}:00 alle ${fine}:00.`);
   });
 
   // Le voci della barra rispondono anche a Invio e barra spaziatrice.

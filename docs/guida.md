@@ -39,11 +39,11 @@ sul Desktop; su Linux l'AppImage).
 | Diario | l'archivio personale permanente: per giorno, le ricerche e le sentenze aperte da ciascuna (testo e PDF), con il testo conservato |
 | Ricerche salvate | le interrogazioni conservate, con il controllo delle novità su richiesta |
 | Preferiti | i singoli provvedimenti segnati, con le note |
-| Stato | versione, richieste fatte al server, identità dichiarata, cache, PDF salvati, orari del tema scuro, registro delle chiamate |
-| Impostazioni | storico, PDF, impronta del browser, nome del computer, importazione di uno storico |
+| Stato | versione, richieste fatte al server, identità dichiarata, cache, PDF salvati, registro delle chiamate |
+| Impostazioni | storico, PDF, impronta del browser, orari del tema scuro, nome del computer, importazione di uno storico |
 | Help | guida, domande frequenti, versioni, software simili, licenza |
 | Compatta | una riga per risultato (estremi, date, presidente, relatore, ECLI); un secondo clic torna alla vista con i frammenti |
-| Sole e luna | tema chiaro o scuro; un secondo clic sull'icona attiva torna all'automatico per orario (19-7 per impostazione predefinita) |
+| Sole e luna | tema chiaro o scuro; un secondo clic sull'icona attiva torna all'automatico per orario (19-7 per impostazione predefinita, orari nelle Impostazioni) |
 
 ## La ricerca
 
@@ -172,6 +172,8 @@ ognuna.
   nome, lo User-Agent e le lingue di un browser vero; Iudex controlla che sia coerente e per
   Chrome ed Edge ricava `sec-ch-ua`. *Prova* mostra gli header senza contattare la Corte.
   `IUDEX_IMPRONTA`, se impostata, vince e il campo resta bloccato.
+- **Aspetto**: le ore di inizio e di fine del tema scuro automatico (ora del computer); valgono
+  subito.
 - **Questo computer**: il nome che compare accanto a ricerche e consultazioni negli export.
 - **Importa uno storico**: unisce allo storico di questo computer il pacchetto ZIP, il JSONL
   o una copia del database (`.sqlite`) di un altro Iudex. Niente viene duplicato né
@@ -184,8 +186,7 @@ Richieste fatte al server e intervallo minimo (2 s); identità dichiarata ora; t
 in cache, voci del diario, sentenze consultate, pagine di risultati ricordate, PDF salvati e
 la loro cartella, percorso dell'archivio, con *Svuota cache ricerche* e *Svuota testi in
 cache* (preferiti, diario e storico restano) e *Copia di sicurezza* (copia pulita del
-database nella cartella dei dati); orari del tema scuro automatico; registro delle ultime
-chiamate con esito e durata.
+database nella cartella dei dati); registro delle ultime chiamate con esito e durata.
 
 ## Tastiera
 

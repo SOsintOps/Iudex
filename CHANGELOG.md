@@ -22,6 +22,12 @@
   richiesta successiva riapre la sessione. `ClientSentenzeWeb` accetta `scegli_impronta`
   (senza, il comportamento di prima, usato da Praeco).
 - Nome di questo computer modificabile nelle Impostazioni (compare negli export).
+- Gli orari del tema scuro automatico passano dalla scheda Stato alla scheda Impostazioni
+  (gruppo Aspetto).
+
+### Interfaccia
+- Voci del menu in alto più piccole di circa due punti (1,5 rem, 1,15 rem sotto i 1400 px),
+  così ci stanno tutte, Impostazioni compresa.
 
 ### Memoria delle ricerche
 - Ogni pagina di risultati vista (anche servita dalla cache, anche con "Controlla novità") è
