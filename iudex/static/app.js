@@ -779,6 +779,7 @@
       corpo[k] = campo.type === "checkbox" ? campo.checked : (campo.value.trim() || null);
     });
     corpo.impronte_personalizzate = leggiImpronte();
+    corpo.cartella_pdf_scelta = true;
     if (f.nome_macchina.value.trim()) corpo.nome_macchina = f.nome_macchina.value.trim();
     try {
       compilaImpostazioni(await api("/api/impostazioni", {
@@ -1335,8 +1336,29 @@
 
   // ---------- avvio ----------
 
+  // Primo avvio senza installer (Linux, sorgenti): la cartella dei PDF si sceglie qui.
+  async function chiediCartellaPdf() {
+    try {
+      const r = await api("/api/impostazioni");
+      if (!r.cartella_pdf_da_scegliere) return;
+      $("#primo-avvio-cartella").value = r.cartella_pdf_predefinita;
+      $("#primo-avvio").hidden = false;
+    } catch (e) { /* silenzioso: resta la cartella predefinita */ }
+  }
+  $("#primo-avvio-conferma").addEventListener("click", async () => {
+    try {
+      await api("/api/impostazioni", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cartella_pdf: $("#primo-avvio-cartella").value.trim() || null, cartella_pdf_scelta: true }),
+      });
+      $("#primo-avvio").hidden = true;
+    } catch (e) { messaggio("Cartella non utilizzabile: " + (e.message || String(e))); }
+  });
+
   disegnaFacet(null);
   aggiornaPie();
+  chiediCartellaPdf();
   if (leggiHash()) cerca(stato.pagina);
   else $("#testo").focus();
 })();

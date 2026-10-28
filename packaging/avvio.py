@@ -1,13 +1,8 @@
-"""Punto di ingresso dell'eseguibile (PyInstaller): la finestra di Iudex o, dove la finestra
-nativa non è inclusa (AppImage per Linux), il server con il browser predefinito."""
+"""Punto di ingresso dell'eseguibile (PyInstaller): la finestra di Iudex, su Windows (WebView2)
+come su Linux (WebKitGTK di sistema). Non c'è più il ripiego sul browser: Iudex si usa solo
+dalla sua finestra."""
 
-import sys
+from iudex.desktop import main
 
 if __name__ == "__main__":
-    try:
-        from iudex.desktop import main
-    except (ImportError, SystemExit):  # pywebview non incluso: server e browser
-        from iudex.__main__ import main as main_server
-
-        sys.exit(main_server(["--apri", *sys.argv[1:]]))
     main()

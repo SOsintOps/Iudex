@@ -41,7 +41,12 @@ jobs:
         with:
           python-version: "3.13"
       - name: Dipendenze
-        run: python -m pip install -e . pyinstaller==6.22.3
+        # Finestra pywebview con GTK: PyGObject si compila con le intestazioni di sistema;
+        # WebKitGTK serve qui per la costruzione, a chi usa l'AppImage lo fornisce il sistema.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgirepository1.0-dev libcairo2-dev gir1.2-webkit2-4.1
+          python -m pip install -e .[desktop] PyGObject pyinstaller==6.22.3
       - name: Eseguibile
         run: python -m PyInstaller --noconfirm --distpath build/dist --workpath build/lavoro packaging/iudex.spec
       - name: AppImage

@@ -660,6 +660,25 @@ def test_importazione_unisce_senza_duplicati(tmp_path, monkeypatch):
             assert b.post("/api/importa", headers=H, content=corpo).status_code == 422
 
 
+def test_primo_avvio_chiede_la_cartella_dei_pdf(client):
+    c, _ = client
+    assert c.get("/api/impostazioni", headers=H).json()["cartella_pdf_da_scegliere"] is True
+    c.put("/api/impostazioni", headers=H, json={"cartella_pdf": None, "cartella_pdf_scelta": True})
+    r = c.get("/api/impostazioni", headers=H).json()
+    assert r["cartella_pdf_da_scegliere"] is False and r["valori"]["cartella_pdf"] is None
+
+
+def test_installazione_ini_in_codifica_di_windows(tmp_path):
+    from iudex import pdf
+
+    (tmp_path / "installazione.ini").write_bytes(
+        "[pdf]\ncartella = C:\\Sentenze è qui\n".encode("cp1252")
+    )
+    assert pdf.da_installazione(tmp_path) == "C:\\Sentenze è qui"
+    (tmp_path / "installazione.ini").write_text("non è un ini", encoding="utf-8")
+    assert pdf.da_installazione(tmp_path) is None
+
+
 def test_cartella_pdf_dall_installer(tmp_path, monkeypatch):
     (tmp_path / "installazione.ini").write_text(
         "[pdf]\ncartella = D:\\Sentenze\n", encoding="utf-8"
@@ -668,8 +687,9 @@ def test_cartella_pdf_dall_installer(tmp_path, monkeypatch):
         modulo_app, "impostazioni", Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0)
     )
     with ClientIudex(modulo_app.app) as c:
-        valori = c.get("/api/impostazioni", headers=H).json()["valori"]
-        assert valori["cartella_pdf"] == "D:\\Sentenze"
+        r = c.get("/api/impostazioni", headers=H).json()
+        assert r["valori"]["cartella_pdf"] == "D:\\Sentenze"
+        assert r["cartella_pdf_da_scegliere"] is False  # scelta nell'installer
 
 
 def test_errori_di_validazione_e_interni_in_json(client, monkeypatch):

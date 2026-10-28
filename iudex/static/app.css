@@ -567,6 +567,10 @@ em.hit, mark { font-style: normal; background: var(--evidenziatore); color: inhe
 .visore-barra { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 .visore-pdf { width: 100%; height: calc(100vh - var(--navbar) - 170px); min-height: 420px; border: 1px solid var(--bordo-input); border-radius: 4px; background: var(--superficie); }
 
+/* ---------- primo avvio e pagina senza accesso ---------- */
+.primo-avvio .riga { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.senza-accesso .documento { max-width: 640px; margin: 15vh auto; padding: 0 16px; }
+
 /* ---------- fascicolo (testo della sentenza) ---------- */
 
 .fascicolo {

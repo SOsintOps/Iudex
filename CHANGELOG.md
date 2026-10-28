@@ -84,6 +84,15 @@
 - Tolti `--apri` e `scripts/avvia.cmd` (la modalità browser): `python -m iudex` resta come
   backend senza finestra per chi integra Iudex; la finestra è `python -m iudex.desktop`.
 
+### Installazione
+- Installer per Windows: nuova pagina "Cartella dei PDF" (scritta in
+  `%APPDATA%\Iudex\installazione.ini`, letta al primo avvio) e avviso se manca WebView2
+  (Windows 10).
+- AppImage per Linux: la finestra pywebview con GTK e WebKitGTK del sistema al posto del
+  browser; se WebKitGTK manca, un messaggio con il comando per installarlo.
+- Senza installer (Linux, sorgenti) la finestra chiede al primo avvio dove conservare i PDF.
+- Lista delle prove degli installer su macchina virtuale: `docs/prova-installazione.md`.
+
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).

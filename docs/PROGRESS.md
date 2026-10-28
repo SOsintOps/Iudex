@@ -16,6 +16,7 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - [x] 3b. Solo finestra: API e pagine con token (cookie per la finestra, header per MCP),
   niente più modalità browser (`iudex/accesso.py`) — `4eceed2`
 - [x] 4. Impronte: fissa, personalizzata, più personalizzate in rotazione; nome del computer
+  — `33db07e`
 - [x] 5. Memoria delle ricerche e provenienza (`esecuzioni`, `risultati`); storico spento
   rispettato — `6faf807`
 - [x] 6. Consultazioni (testo e PDF) e badge "già vista" con tooltip; riapertura dal grezzo
@@ -27,7 +28,10 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   `uid` (schema 5) per l'importazione — `8fe2415`
 - [x] 8c. Importazione con unione e controllo dei duplicati (ZIP, JSONL, copia del database)
   — `0966dab`
-- [ ] 8b. Installazione su Windows (Inno Setup) e Linux (AppImage) adattata e provata su VM
+- [~] 8b. Installazione su Windows (Inno Setup) e Linux (AppImage) adattata e provata su VM:
+  fatto il codice (pagina della cartella dei PDF e controllo di WebView2 nell'installer,
+  finestra GTK su Linux, scelta della cartella al primo avvio, `docs/prova-installazione.md`);
+  da fare la compilazione con Inno Setup e le prove su VM
 - [ ] 9. Documentazione e versione 0.8.0 (tag solo su conferma)
 
 ## Fasi successive
@@ -82,3 +86,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   il venv di Praeco sul PC importa Iudex da `C:\scripts\Iudex`, e la suite di Praeco passa
   con l'Iudex di questo passo (93 test; uno fallisce solo per il `.env` locale di Praeco, copia
   di `.env.example` con `PRAECO_LLM_URL`, e passa senza). Prossimo: passo 8b (installer), poi 9.
+- 2026-10-28: passo 8b, prima parte. Eseguibile Windows costruito sul PC con PyInstaller
+  6.22.3 (64 MB, 37 s) e avviato su una cartella provvisoria: finestra "Iudex 0.7.0", token
+  creato, pagina senza token 401. Non provati: la compilazione di `iudex.iss` (Inno Setup non
+  installato sul PC: la sezione `[Code]` nuova non è ancora passata dal compilatore), la build
+  Linux con PyGObject (solo nel workflow) e le prove su VM della lista.

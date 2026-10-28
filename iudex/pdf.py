@@ -36,13 +36,19 @@ def da_installazione(cartella_dati: Path) -> str | None:
     percorso = cartella_dati / FILE_INSTALLAZIONE
     if not percorso.exists():
         return None
-    lettore = configparser.ConfigParser()
-    try:
-        lettore.read(percorso, encoding="utf-8-sig")
-    except configparser.Error:
-        return None
-    valore = lettore.get("pdf", "cartella", fallback="").strip()
-    return valore or None
+    # L'installer lo scrive in UTF-8; un file scritto a mano può essere nella codifica di
+    # Windows: un file illeggibile non deve fermare l'avvio.
+    for codifica in ("utf-8-sig", "cp1252"):
+        lettore = configparser.ConfigParser()
+        try:
+            lettore.read(percorso, encoding=codifica)
+        except UnicodeDecodeError:
+            continue
+        except configparser.Error:
+            return None
+        valore = lettore.get("pdf", "cartella", fallback="").strip()
+        return valore or None
+    return None
 
 
 def file_di(base: Path, id_sentenza: str) -> Path:

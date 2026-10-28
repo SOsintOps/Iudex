@@ -1,4 +1,4 @@
 #!/bin/sh
-# Avvia Iudex dall'AppImage: server locale e browser predefinito.
+# Avvia Iudex dall'AppImage: la finestra (pywebview con WebKitGTK del sistema).
 QUI="$(dirname "$(readlink -f "$0")")"
 exec "$QUI/usr/lib/iudex/iudex" "$@"

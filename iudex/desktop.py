@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from pathlib import Path
 
 from . import __version__, accesso, config
@@ -22,6 +23,13 @@ try:
     import webview  # noqa: F401 - controlla che l'extra sia installato
 except ImportError as exc:  # pragma: no cover - dipende dall'extra installato
     raise SystemExit("Installa l'extra desktop: pip install -e .[desktop]") from exc
+
+# Su Linux la finestra usa WebKitGTK del sistema: se manca, il messaggio dice come averlo.
+MESSAGGIO_WEBKIT = (
+    "La finestra di Iudex richiede WebKitGTK. Installalo e riapri Iudex:\n"
+    "  Debian e Ubuntu: sudo apt install gir1.2-webkit2-4.1 python3-gi\n"
+    "  Fedora: sudo dnf install webkit2gtk4.1"
+)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -53,12 +61,20 @@ def main(argv: list[str] | None = None) -> None:
     # La finestra entra con il token della cartella dei dati (lo stesso che legge il server).
     url = f"{base.rstrip('/')}/accesso?codice={accesso.leggi_o_crea(impostazioni.cartella_dati)}"
     icona = Path(__file__).resolve().parent / "static" / "favicon.png"
-    Guscio(
+    guscio = Guscio(
         url,
         f"Iudex {__version__}",
         icona=icona,
         all_uscita=server.ferma if server else None,
-    ).avvia()
+    )
+    try:
+        guscio.avvia()
+    except Exception as exc:  # pywebview senza motore grafico (Linux senza WebKitGTK)
+        if server:
+            server.ferma()
+        if sys.platform.startswith("linux"):
+            raise SystemExit(f"{MESSAGGIO_WEBKIT}\n({exc})") from exc
+        raise
 
 
 if __name__ == "__main__":

@@ -18,6 +18,9 @@ PREDEFINITE: dict = {
     "conserva_storico": True,
     # None = la cartella ``pdf`` dentro la cartella dei dati.
     "cartella_pdf": None,
+    # Vero quando l'utente l'ha scelta (installer, primo avvio o scheda Impostazioni): senza,
+    # al primo avvio la finestra la chiede.
+    "cartella_pdf_scelta": False,
     "pdf_apertura": "finestra",
     "impronta_modo": "giorno",
     "impronta_fissa": CODICI[0],
@@ -90,7 +93,7 @@ def valida(valori: dict) -> dict:
             raise ImpostazioneNonValida(f"impostazione sconosciuta: {chiave}")
         if valore is None:
             pulite[chiave] = None
-        elif chiave in ("conserva_storico", "rotazione_include_predefinite"):
+        elif chiave in ("conserva_storico", "rotazione_include_predefinite", "cartella_pdf_scelta"):
             if not isinstance(valore, bool):
                 raise ImpostazioneNonValida(f"{chiave}: atteso vero o falso")
             pulite[chiave] = valore

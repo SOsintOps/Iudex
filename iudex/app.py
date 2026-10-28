@@ -1097,12 +1097,16 @@ async def svuota_sentenze(request: Request) -> dict:
 
 
 def _impostazioni_attuali(archivio: Archivio) -> dict:
+    salvate = archivio.impostazioni()
     return {
-        "valori": preferenze.effettive(archivio.impostazioni(), impostazioni),
+        "valori": preferenze.effettive(salvate, impostazioni),
         "predefinite": preferenze.PREDEFINITE,
         "bloccate": preferenze.bloccate(impostazioni),
         "codici_impronta": list(CODICI),
         "cartella_pdf_predefinita": str(impostazioni.cartella_dati / "pdf"),
+        "cartella_pdf_da_scegliere": not (
+            salvate.get("cartella_pdf_scelta") or salvate.get("cartella_pdf")
+        ),
         "macchina": {"id": archivio.macchina, **archivio.macchine()[archivio.macchina]},
     }
 
