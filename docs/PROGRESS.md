@@ -13,8 +13,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - [x] 3. Impostazioni: API `GET/PUT /api/impostazioni` e scheda nell'interfaccia
   (`iudex/preferenze.py`); l'editor delle impronte personalizzate arriva con il passo 4
   — `53cedef`
-- [ ] 3b. Solo finestra: API e pagine con token (cookie per la finestra, header per MCP),
-  niente più modalità browser
+- [x] 3b. Solo finestra: API e pagine con token (cookie per la finestra, header per MCP),
+  niente più modalità browser (`iudex/accesso.py`)
 - [ ] 4. Impronte: fissa, personalizzata, più personalizzate in rotazione
 - [x] 5. Memoria delle ricerche e provenienza (`esecuzioni`, `risultati`); storico spento
   rispettato — `6faf807`
@@ -26,6 +26,7 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - [x] 8. Export del database delle ricerche: CSV/Excel, JSONL, ZIP con i PDF; macchina e
   `uid` (schema 5) per l'importazione — `8fe2415`
 - [x] 8c. Importazione con unione e controllo dei duplicati (ZIP, JSONL, copia del database)
+  — `0966dab`
 - [ ] 8b. Installazione su Windows (Inno Setup) e Linux (AppImage) adattata e provata su VM
 - [ ] 9. Documentazione e versione 0.8.0 (tag solo su conferma)
 
@@ -70,3 +71,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - 2026-10-28: passo 8c (`iudex/importazione.py`, `Archivio.unisci`, `POST /api/importa` con
   il file nel corpo, senza dipendenze nuove per i moduli multipart). Suite verde 5 volte su
   5 con `faulthandler_timeout`. Prossimo: passo 3b (solo finestra e token), poi 4, 8b, 9.
+- 2026-10-28: passo 3b. `Guscio` (usato anche da Praeco) non cambia: è `desktop.py` ad aprire
+  `/accesso` con il token. Installato l'extra `[mcp]` nel venv del PC: prima i test MCP
+  venivano saltati; ora passano anche loro (84 test, 4 giri verdi su 4). Prova dal vivo di
+  `python -m iudex` su una cartella provvisoria: `/health` 200, pagina e API senza token 401,
+  con token 200, `/accesso` 303. Manca la prova della finestra vera (cookie in WebView2):
+  con l'utente. README e guida ancora da aggiornare (passo 9). Prossimo: passo 4.

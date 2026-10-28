@@ -17,7 +17,7 @@ from typing import Annotated, Literal
 import httpx
 from pydantic import Field
 
-from . import __version__
+from . import __version__, accesso
 from .config import impostazioni
 
 try:  # mcp 2.x (MCPServer, ToolError, ToolAnnotations con nomi snake_case)
@@ -29,6 +29,13 @@ except ImportError as exc:  # pragma: no cover - extra non installato o mcp 1.x
 
 BASE = os.environ.get("IUDEX_URL", f"http://{impostazioni.host}:{impostazioni.porta}")
 HEADER = {"X-Iudex": "1"}
+
+
+def _header() -> dict:
+    """Header delle chiamate: il token si rilegge ogni volta dal file della cartella dei dati
+    (``IUDEX_TOKEN`` lo sostituisce), così vale anche dopo una rigenerazione."""
+    token = os.environ.get("IUDEX_TOKEN") or accesso.leggi(impostazioni.cartella_dati)
+    return {**HEADER, "X-Iudex-Token": token} if token else dict(HEADER)
 RIGHE_MASSIME = 20
 CARATTERI_MASSIMI = 30000
 # Strumenti in sola lettura per chi li chiama (Iudex aggiorna solo cache e diario locali),
@@ -50,11 +57,9 @@ mcp = FastMCP(
 
 def _chiama(percorso: str, parametri: dict) -> dict:
     try:
-        r = httpx.get(BASE + percorso, params=parametri, headers=HEADER, timeout=90)
+        r = httpx.get(BASE + percorso, params=parametri, headers=_header(), timeout=90)
     except httpx.TransportError as exc:
-        raise ToolError(
-            f"Iudex non risponde su {BASE}: va avviato con 'python -m iudex' ({exc})"
-        ) from exc
+        raise ToolError(f"Iudex non risponde su {BASE}: va aperto Iudex ({exc})") from exc
     if r.status_code >= 400:
         try:
             corpo = r.json()

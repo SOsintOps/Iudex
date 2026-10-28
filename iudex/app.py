@@ -15,11 +15,17 @@ from urllib.parse import parse_qs, urlencode
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import __version__, export, importazione, preferenze
+from . import __version__, accesso, export, importazione, preferenze
 from . import pdf as pdf_locali
 from .autonoma import aggiornamenti, backup
 from .autonoma.cartelle import congelata
@@ -67,6 +73,8 @@ async def _controlla_aggiornamenti(app: FastAPI) -> None:
 async def ciclo_vita(app: FastAPI):
     app.state.archivio = Archivio(impostazioni.percorso_db)
     app.state.client = ClientSentenzeWeb(impostazioni)
+    # Pagine e API rispondono solo a chi ha il token della cartella dei dati (la finestra).
+    app.state.token = accesso.leggi_o_crea(impostazioni.cartella_dati)
     app.state.sigle = None
     # PDF aperti con lo storico spento: file provvisori, cancellati alla chiusura.
     app.state.pdf_provvisori = {}
@@ -124,12 +132,54 @@ async def solo_interfaccia(request: Request, call_next):
     host_consentiti = HEADERS_HOST_VALIDI | {impostazioni.host.lower()}
     if host and host not in host_consentiti:
         return JSONResponse(status_code=403, content={"errore": "host non autorizzato"})
-    if request.url.path.startswith("/api/") and request.headers.get(HEADER_INTERFACCIA) != "1":
+    percorso = request.url.path
+    if percorso.startswith("/api/") and request.headers.get(HEADER_INTERFACCIA) != "1":
         return JSONResponse(
             status_code=403,
             content={"errore": "richiesta non proveniente dall'interfaccia di Iudex"},
         )
+    # Il token: cookie per la finestra, header per il server MCP e chi integra Iudex. Restano
+    # liberi /health (riconoscimento dell'istanza), /accesso e i file statici (CSS, icone).
+    libero = percorso in PERCORSI_LIBERI or percorso.startswith("/static/")
+    if not libero:
+        atteso = getattr(request.app.state, "token", None)
+        ricevuto = request.cookies.get(accesso.COOKIE) or request.headers.get(accesso.HEADER)
+        if not accesso.valido(atteso, ricevuto):
+            if percorso.startswith("/api/"):
+                return JSONResponse(
+                    status_code=401,
+                    content={"errore": "serve il token di Iudex: apri Iudex dalla sua finestra"},
+                )
+            return HTMLResponse(PAGINA_SENZA_ACCESSO, status_code=401)
     return await call_next(request)
+
+
+PERCORSI_LIBERI = {"/health", "/accesso", "/favicon.ico"}
+PAGINA_SENZA_ACCESSO = """<!doctype html><html lang="it"><head><meta charset="utf-8">
+<title>Iudex</title><link rel="stylesheet" href="/static/app.css"></head>
+<body class="senza-accesso"><main class="documento"><h1>Iudex si usa dalla sua finestra</h1>
+<p>Questo indirizzo serve solo la finestra di Iudex. Apri Iudex dal collegamento nel menu
+Start o sul Desktop (su Linux dall'AppImage).</p></main></body></html>"""
+
+
+@app.get("/accesso", include_in_schema=False)
+async def entra(request: Request, codice: str = "") -> Response:
+    """La finestra apre questo indirizzo con il token: un cookie di sessione e poi la pagina."""
+    if not accesso.valido(request.app.state.token, codice):
+        return HTMLResponse(PAGINA_SENZA_ACCESSO, status_code=401)
+    risposta = RedirectResponse("/", status_code=303)
+    risposta.set_cookie(accesso.COOKIE, codice, httponly=True, samesite="strict")
+    return risposta
+
+
+@app.post("/api/token/rigenera")
+async def rigenera_token(request: Request) -> Response:
+    """Token nuovo (per esempio se il file è stato copiato altrove): la finestra resta
+    collegata con il nuovo cookie, i client MCP lo rileggono dal file."""
+    request.app.state.token = nuovo = accesso.rigenera(impostazioni.cartella_dati)
+    risposta = JSONResponse({"ok": True, "file": str(accesso.percorso(impostazioni.cartella_dati))})
+    risposta.set_cookie(accesso.COOKIE, nuovo, httponly=True, samesite="strict")
+    return risposta
 
 
 @app.exception_handler(ErroreRemoto)

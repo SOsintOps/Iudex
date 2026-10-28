@@ -64,6 +64,17 @@
 - I PDF del pacchetto si copiano nella cartella dei PDF se mancano, controllando lo sha256;
   un PDF diverso da quello locale lascia quello locale, uno danneggiato si scarta.
 
+### Solo finestra (come Voicebox)
+- Iudex si usa dalla sua finestra: pagine, API e PDF rispondono solo con il token del file
+  `token` nella cartella dei dati (creato al primo avvio, rigenerabile con
+  `POST /api/token/rigenera`). La finestra entra da `/accesso?codice=...`, che lascia un
+  cookie di sessione HttpOnly e SameSite=Strict; il server MCP manda il token nell'header
+  `X-Iudex-Token` (riletto dal file a ogni chiamata, oppure `IUDEX_TOKEN`). Un browser che
+  apre l'indirizzo locale vede solo l'invito ad aprire Iudex dalla finestra. `/health` e i
+  file statici restano liberi.
+- Tolti `--apri` e `scripts/avvia.cmd` (la modalità browser): `python -m iudex` resta come
+  backend senza finestra per chi integra Iudex; la finestra è `python -m iudex.desktop`.
+
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).

@@ -14,7 +14,7 @@ import argparse
 import logging
 from pathlib import Path
 
-from . import __version__, config
+from . import __version__, accesso, config
 from .autonoma.cartelle import applica_avvio, prepara
 from .autonoma.server import ServerInThread, log_su_file, scegli_porta
 
@@ -41,7 +41,7 @@ def main(argv: list[str] | None = None) -> None:
     porta, gia_attivo = scegli_porta(impostazioni.host, impostazioni.porta, "iudex")
     server = None
     if gia_attivo:
-        url = f"http://{impostazioni.host}:{porta}/"
+        base = f"http://{impostazioni.host}:{porta}/"
     else:
         config.impostazioni = impostazioni = applica_avvio("IUDEX", impostazioni, None, porta)
         from .app import app
@@ -49,7 +49,9 @@ def main(argv: list[str] | None = None) -> None:
         server = ServerInThread(app, impostazioni.host, porta)
         if not server.avvia():
             raise SystemExit("il server non è partito: vedi log/iudex.log nella cartella dei dati")
-        url = server.url
+        base = server.url
+    # La finestra entra con il token della cartella dei dati (lo stesso che legge il server).
+    url = f"{base.rstrip('/')}/accesso?codice={accesso.leggi_o_crea(impostazioni.cartella_dati)}"
     icona = Path(__file__).resolve().parent / "static" / "favicon.png"
     Guscio(
         url,

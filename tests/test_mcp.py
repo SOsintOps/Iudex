@@ -94,6 +94,18 @@ async def test_cerca_sentenze_con_segnale():
 
 
 @respx.mock
+async def test_il_token_va_nelle_chiamate(monkeypatch):
+    monkeypatch.setenv("IUDEX_TOKEN", "segreto-di-prova")
+    rotta = respx.get(BASE + "/api/cerca").mock(
+        return_value=httpx.Response(
+            200, json={"trovati": 0, "descrizione": "x", "pagina": 1, "documenti": []}
+        )
+    )
+    await _chiama("cerca_sentenze", {"testo": "x"})
+    assert rotta.calls[0].request.headers["X-Iudex-Token"] == "segreto-di-prova"
+
+
+@respx.mock
 async def test_cerca_per_norma():
     rotta = respx.get(BASE + "/api/cerca").mock(
         return_value=httpx.Response(
@@ -129,5 +141,5 @@ async def test_errori_come_tool_error():
 
     respx.get(BASE + "/api/sentenza/zzz").mock(side_effect=httpx.ConnectError("rifiutata"))
     r = await _chiama("leggi_sentenza", {"id_sentenza": "zzz"})
-    assert r.is_error is True and "python -m iudex" in _testo(r)
+    assert r.is_error is True and "va aperto Iudex" in _testo(r)
     assert mcp_server.RIGHE_MASSIME == 20

@@ -14,6 +14,15 @@ from iudex.config import URL_PDF, URL_SNCASS, URL_SOLR, Impostazioni
 H = {"X-Iudex": "1"}
 
 
+class ClientIudex(TestClient):
+    """Il client di prova con il token di Iudex, come la finestra (letto all'avvio dell'app)."""
+
+    def __enter__(self):
+        c = super().__enter__()
+        c.headers["X-Iudex-Token"] = modulo_app.app.state.token
+        return c
+
+
 def _doc(i: int, kind: str = "snciv") -> dict:
     return {
         "id": f"{kind}2026L{26000 + i}S",
@@ -60,7 +69,7 @@ def client(tmp_path, monkeypatch):
     )
     with respx.mock(assert_all_called=False) as mock:
         mock.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
-        with TestClient(modulo_app.app) as c:
+        with ClientIudex(modulo_app.app) as c:
             yield c, mock
 
 
@@ -72,6 +81,37 @@ def test_api_rifiuta_senza_header(client):
     assert "su Windows" in stato.json()["impronta"] and stato.json()["impronta_fissa"] is False
     assert c.get("/api/stato", headers={**H, "Host": "evil.example.com:8765"}).status_code == 403
     assert c.get("/").status_code == 200
+
+
+def test_accesso_solo_con_il_token(client, tmp_path):
+    c, _ = client
+    token = (tmp_path / "token").read_text(encoding="ascii").strip()
+    assert token == modulo_app.app.state.token and len(token) >= 40
+    senza = {"X-Iudex-Token": ""}
+    # Un browser qualsiasi: né le pagine né le API né i PDF.
+    pagina = c.get("/", headers=senza)
+    assert pagina.status_code == 401 and "dalla sua finestra" in pagina.text
+    assert c.get("/api/stato", headers={**H, **senza}).status_code == 401
+    assert c.get("/guida.html", headers=senza).status_code == 401
+    assert c.get("/pdf/snciv2026L26001S", headers=senza).status_code == 401
+    assert c.get("/api/stato", headers={**H, "X-Iudex-Token": "sbagliato"}).status_code == 401
+    # Liberi: /health e i file statici.
+    assert c.get("/health", headers=senza).json()["app"] == "iudex"
+    assert c.get("/static/app.css", headers=senza).status_code == 200
+    # La finestra: /accesso con il token lascia il cookie e porta alla pagina.
+    del c.headers["X-Iudex-Token"]
+    assert c.get("/accesso", params={"codice": "no"}).status_code == 401
+    r = c.get("/accesso", params={"codice": token}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/"
+    assert "httponly" in r.headers["set-cookie"].lower()
+    assert "samesite=strict" in r.headers["set-cookie"].lower()
+    assert c.get("/").status_code == 200 and c.get("/api/stato", headers=H).status_code == 200
+    # Token rigenerato: il cookie nuovo vale, il vecchio token no.
+    nuovo = c.post("/api/token/rigenera", headers=H)
+    assert nuovo.status_code == 200 and c.get("/api/stato", headers=H).status_code == 200
+    assert (tmp_path / "token").read_text(encoding="ascii").strip() != token
+    c.cookies.clear()
+    assert c.get("/api/stato", headers={**H, "X-Iudex-Token": token}).status_code == 401
 
 
 def test_impostazioni(client):
@@ -115,7 +155,7 @@ def test_impostazioni_bloccate_da_variabile(tmp_path, monkeypatch):
         "impostazioni",
         Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0, impronta="edge"),
     )
-    with TestClient(modulo_app.app) as c:
+    with ClientIudex(modulo_app.app) as c:
         r = c.get("/api/impostazioni", headers=H).json()
         assert r["valori"]["impronta_modo"] == "fissa" and r["valori"]["impronta_fissa"] == "edge"
         assert "IUDEX_IMPRONTA" in r["bloccate"]["impronta_modo"]
@@ -525,7 +565,7 @@ def _istanza(cartella, monkeypatch):
     monkeypatch.setattr(
         modulo_app, "impostazioni", Impostazioni(cartella_dati=cartella, intervallo_minimo=0.0)
     )
-    return TestClient(modulo_app.app)
+    return ClientIudex(modulo_app.app)
 
 
 def test_importazione_unisce_senza_duplicati(tmp_path, monkeypatch):
@@ -582,7 +622,7 @@ def test_cartella_pdf_dall_installer(tmp_path, monkeypatch):
     monkeypatch.setattr(
         modulo_app, "impostazioni", Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0)
     )
-    with TestClient(modulo_app.app) as c:
+    with ClientIudex(modulo_app.app) as c:
         valori = c.get("/api/impostazioni", headers=H).json()["valori"]
         assert valori["cartella_pdf"] == "D:\\Sentenze"
 
@@ -603,7 +643,7 @@ def test_errori_di_validazione_e_interni_in_json(client, monkeypatch):
         raise RuntimeError("disco pieno")
 
     # Starlette rilancia l'eccezione al server dopo la risposta: nel test va disattivato.
-    with TestClient(modulo_app.app, raise_server_exceptions=False) as c2:
+    with ClientIudex(modulo_app.app, raise_server_exceptions=False) as c2:
         c2.app.state.archivio.cronologia = guasto
         r = c2.get("/api/cronologia", headers=H)
     assert r.status_code == 500 and r.json() == {"errore": "errore interno di Iudex (RuntimeError)"}
