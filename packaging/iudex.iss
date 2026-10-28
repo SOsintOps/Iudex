@@ -1,6 +1,6 @@
 ; Installer di Iudex per Windows (Inno Setup 6). Installazione per l'utente, senza diritti di
 ; amministratore; i dati restano in %APPDATA%\Iudex anche dopo la disinstallazione.
-; Compilazione: ISCC /DVersione=0.7.0 /DSorgente=build\dist\Iudex packaging\iudex.iss
+; Compilazione: ISCC /DVersione=0.8.0 /DSorgente=build\dist\Iudex packaging\iudex.iss
 
 #ifndef Versione
   #define Versione "0.0.0"

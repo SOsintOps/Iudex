@@ -15,10 +15,13 @@ Grazie dell'interesse. Poche regole, per tenere il progetto coerente.
 git clone https://github.com/SOsintOps/Iudex.git
 cd Iudex
 python -m venv .venv
-.venv\Scripts\python.exe -m pip install -e .[dev]
+.venv\Scripts\python.exe -m pip install -e .[dev,desktop,mcp]
+.venv\Scripts\python.exe -m iudex.desktop
 ```
 
-Su Linux e macOS: `.venv/bin/python`. Serve Python 3.11 o successivo.
+Su Linux e macOS: `.venv/bin/python`. Serve Python 3.11 o successivo. Iudex si usa dalla sua
+finestra (`iudex.desktop`); `python -m iudex` avvia il solo server, che risponde solo con il
+token del file `token` nella cartella dei dati.
 
 ## Stile
 
@@ -28,6 +31,9 @@ Su Linux e macOS: `.venv/bin/python`. Serve Python 3.11 o successivo.
 - I test (`pytest`) non toccano la rete: le risposte del server sono simulate con `respx`.
 - Ogni modifica visibile a chi usa l'app va nel `CHANGELOG.md` e nella pagina
   `iudex/static/versioni.html`, che riporta lo stesso registro dentro l'app.
+- Lo schema del database cambia solo con una migrazione numerata nuova in `iudex/cache.py`
+  (`VERSIONE_SCHEMA`, `MIGRAZIONI`), mai modificando quelle già rilasciate.
+- I lavori lunghi hanno un piano in `docs/plan/` e l'avanzamento in `docs/PROGRESS.md`.
 
 ## Struttura del repository
 

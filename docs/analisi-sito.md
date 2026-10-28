@@ -73,8 +73,11 @@ riferimenti normativi indicizzati dal CED.
 
 `https://www.italgiure.giustizia.it/xway/application/nif/clean/hc.dll?verbo=attach&db=<kind>&id=<filename>`
 dove `filename` è quello del documento con `.pdf` sostituito da `.clean.pdf`
-(es. `./20261014/snpen@s60@a2026@n36099@tS.pdf`). Iudex non scarica i PDF: il collegamento
-apre il documento sul sito ufficiale.
+(es. `./20261014/snpen@s60@a2026@n36099@tS.pdf`). Dalla 0.8.0 Iudex scarica il PDF una volta,
+quando lo apri, con gli header di una navigazione (`Sec-Fetch-Dest: document`, `Referer` della
+pagina di ricerca) e lo stesso ritmo delle altre richieste, e lo conserva come `<id>.pdf`; la
+risposta va controllata (content-type o intestazione `%PDF`), perché in caso di errore il sito
+risponde con una pagina HTML.
 
 ### Riferimenti normativi
 
