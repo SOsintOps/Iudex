@@ -33,9 +33,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   finestra GTK su Linux, scelta della cartella al primo avvio, `docs/prova-installazione.md`);
   installer Windows compilato con Inno Setup 6.7.3; AppImage costruita e provata su Debian 13
   (VM `london`, Xvfb); da fare la prova dell'installer su una VM Windows
-- [~] 9. Documentazione e versione 0.8.0: README, guida e FAQ (Markdown e pagine dell'app),
-  `__version__` 0.8.0, CHANGELOG e `versioni.html` (0.7.0 e 0.8.0) fatti; restano la nota su
-  Iudex in `docs/architettura.md` di Praeco e il tag `v0.8.0` (su conferma dell'utente)
+- [x] 9. Documentazione e versione 0.8.0: README, guida, FAQ, SECURITY, CONTRIBUTING,
+  schermate nuove, nota in `docs/architettura.md` di Praeco; tag `v0.8.0` (`6467eed` →
+  `73fd77e`), release pubblicata con installer Windows, AppImage e `latest.json`
 
 ## Fasi successive
 
@@ -119,3 +119,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   finestra bianca senza DMABUF) — `3eaed10`; esiti in `docs/prova-installazione.md`. Le pagine
   di aiuto ora hanno il menu completo. Restano: prova dell'installer su Windows (manca una VM
   Windows), avvio senza WebKitGTK, rilascio 0.8.0.
+- 2026-10-28, sera: rilascio 0.8.0. Schermate rifatte dalla finestra di Iudex con un archivio
+  di prova (senza nomi delle parti né percorsi con il nome dell'utente) — `73fd77e`. Tag
+  `v0.8.0`; workflow Rilascio verde (windows, linux, pubblica): `Iudex-0.8.0-setup.exe` 21,3 MB,
+  `Iudex-0.8.0-x86_64.AppImage` 77,5 MB, `latest.json` con gli sha256; note della release dal
+  CHANGELOG. Restano aperti (8b): installazione dell'installer su una VM Windows e avvio
+  dell'AppImage senza WebKitGTK. Prossimo: fasi B (entità come Praeco) e C (dialogo con Praeco).
