@@ -39,7 +39,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 
 ## Fasi successive
 
-- [ ] B. Estrazione delle entità come in Praeco (dopo il passo 30 di Praeco)
+- [ ] B. Estrazione delle entità in un modulo comune `iudex/entita/` usato anche da Praeco;
+  consultate e PDF salvati; regole + NER; dopo il passo 30 di Praeco
+  ([plan/2026-10-28-entita.md](plan/2026-10-28-entita.md))
 - [ ] C. Dialogo Iudex↔Praeco per ridurre le richieste alla Corte
 
 ## Diario
