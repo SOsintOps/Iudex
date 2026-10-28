@@ -32,8 +32,9 @@ async def test_prima_la_pagina_poi_la_query_con_intervallo(tmp_path):
     await client.cerca([("q", "b")])
     durata = time.monotonic() - inizio
     assert pagina.call_count == 1 and solr.call_count == 2
-    # tre richieste (pagina + 2 query) con almeno 0,3 s fra una e la successiva
-    assert durata >= 0.6
+    # tre richieste (pagina + 2 query) con almeno 0,3 s fra una e la successiva; su Windows
+    # asyncio.sleep può svegliarsi qualche millisecondo prima (orologio a circa 15,6 ms)
+    assert durata >= 0.6 - 0.032
     richiesta = solr.calls[0].request
     assert richiesta.headers["X-Requested-With"] == "XMLHttpRequest"
     assert "Chrome/" in richiesta.headers["User-Agent"]

@@ -12,6 +12,7 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   tabella `impostazioni` — `75145cc`
 - [x] 3. Impostazioni: API `GET/PUT /api/impostazioni` e scheda nell'interfaccia
   (`iudex/preferenze.py`); l'editor delle impronte personalizzate arriva con il passo 4
+  — `53cedef`
 - [ ] 3b. Solo finestra: API e pagine con token (cookie per la finestra, header per MCP),
   niente più modalità browser
 - [ ] 4. Impronte: fissa, personalizzata, più personalizzate in rotazione
@@ -38,6 +39,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   passi. Prossimo: passo 3.
 - 2026-10-28: passo 3. La voce del passo 2 nel CHANGELOG entra con questo commit.
   `tests/test_client.py::test_prima_la_pagina_poi_la_query_con_intervallo` è instabile su
-  Windows (0,594 s misurati contro 0,6 attesi, risoluzione del timer): passa ripetuto, da
-  sistemare a parte. Interfaccia non ancora provata dal vivo (niente Node per `--check`):
+  Windows (0,594 s misurati contro 0,6 attesi, risoluzione del timer): il commit del passo 3
+  (`53cedef`) è partito con quel test rosso; sistemato nel commit successivo con una
+  tolleranza di 32 ms nel test (il client non cambia), suite verde 8 volte su 8. D'ora in
+  poi controllo e commit in due comandi separati. Interfaccia non ancora provata dal vivo (niente Node per `--check`):
   prova nella finestra prevista dopo i passi dell'interfaccia. Prossimo: passo 3b.
