@@ -93,6 +93,9 @@
 - AppImage per Linux: la finestra pywebview con GTK e WebKitGTK del sistema al posto del
   browser; se WebKitGTK manca, un messaggio con il comando per installarlo.
 - Senza installer (Linux, sorgenti) la finestra chiede al primo avvio dove conservare i PDF.
+- La finestra usa l'icona di Iudex (la stessa dei collegamenti) anche avviata dai sorgenti:
+  prima mostrava l'icona di serie di Windows (quella di `pythonw.exe`). Su Windows pywebview
+  riceve il `.ico`, su Linux il PNG. Vale anche per Praeco, che usa la stessa finestra.
 - Lista delle prove degli installer su macchina virtuale: `docs/prova-installazione.md`.
 
 ### App autonoma

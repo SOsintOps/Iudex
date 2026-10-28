@@ -49,6 +49,16 @@ class Guscio:
             return False
         return None
 
+    def _file_icona(self) -> str | None:
+        """L'icona della finestra per pywebview. Senza, su Windows la finestra prende quella
+        del programma che la avvia (``pythonw.exe`` dai sorgenti). Su Windows pywebview vuole
+        un ``.ico`` (un PNG fa fallire l'avvio): si usa quello accanto a ``icona``, lo stesso
+        dei collegamenti; altrove il PNG."""
+        if self.icona is None:
+            return None
+        file_ = self.icona.with_suffix(".ico") if sys.platform == "win32" else self.icona
+        return str(file_) if file_.exists() else None
+
     def mostra(self) -> None:
         if self.finestra is not None:
             self.finestra.show()
@@ -107,7 +117,7 @@ class Guscio:
         )
         self.finestra.events.closing += self._alla_chiusura
         threading.Thread(target=self._crea_tray, name="tray", daemon=True).start()
-        webview.start()
+        webview.start(icon=self._file_icona())
         # Tutte le finestre sono chiuse: si esce davvero.
         self._uscita = True
         if self._icona_tray is not None:
