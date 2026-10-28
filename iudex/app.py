@@ -238,6 +238,34 @@ def _descrizione(testo, rif, filtri) -> str:
     return " · ".join(parti) or "tutte le sentenze"
 
 
+def _descrivi_permalink(permalink: str) -> str:
+    p = _da_permalink(permalink)
+    return _descrizione(p["testo"], p["rif"], p["filtri"])
+
+
+def _arricchisci(archivio: Archivio, documenti: list[dict]) -> None:
+    """Aggiunge a ogni documento ``consultazione`` (None se mai aperta) per il badge "già
+    vista": quante volte, l'ultima, da quali ricerche è stata aperta e in quali è uscita."""
+    ids = [d["id"] for d in documenti if d.get("id")]
+    consultate = archivio.consultazioni(ids)
+    provenienze = archivio.provenienze(list(consultate))
+    for doc in documenti:
+        c = consultate.get(doc.get("id"))
+        if c is None:
+            doc["consultazione"] = None
+            continue
+        doc["consultazione"] = {
+            "volte": c["volte"],
+            "prima": c["prima"],
+            "ultima": c["ultima"],
+            "pdf": c["pdf"],
+            "aperta_da": [
+                {"descrizione": _descrivi_permalink(a["permalink"]), **a} for a in c["aperture"][:5]
+            ],
+            "uscita_in": provenienze.get(doc["id"], [])[:5],
+        }
+
+
 def _scelte(request: Request) -> dict:
     """Le impostazioni effettive (scheda Impostazioni e variabili d'ambiente)."""
     return preferenze.effettive(request.app.state.archivio.impostazioni(), impostazioni)
@@ -310,8 +338,10 @@ async def _esegui_ricerca(request: Request, testo, rif, filtri, ordina, pagina, 
         }
     )
     preferiti = archivio.id_preferiti()
+    risposta["documenti"] = [dict(doc) for doc in risposta["documenti"]]
     for doc in risposta["documenti"]:
         doc["preferito"] = doc["id"] in preferiti
+    _arricchisci(archivio, risposta["documenti"])
     return risposta
 
 
@@ -400,6 +430,18 @@ def _testo_unito(valore) -> str | None:
     return valore
 
 
+def _da_grezzo(grezzo: dict) -> tuple[dict, str | None]:
+    """Documento normalizzato e testo dalla risposta intera del server per una sentenza."""
+    documento = normalizza_documento(grezzo)
+    testo = _testo_unito(grezzo.get("ocrfull") or grezzo.get("testoocr") or grezzo.get("ocr"))
+    documento["materia"] = grezzo.get("materia")
+    documento["massima"] = _testo_unito(grezzo.get("ocrdis"))
+    # Campi "rnc-*": riferimenti normativi citati nel provvedimento (indicizzati dal CED).
+    rnc = {chiave[4:]: valore for chiave, valore in grezzo.items() if chiave.startswith("rnc-")}
+    documento["riferimenti_normativi"] = formatta_riferimenti(rnc)
+    return documento, testo
+
+
 async def _carica_sentenza(
     request: Request,
     id_sentenza: str,
@@ -423,6 +465,15 @@ async def _carica_sentenza(
         archivio.annota_sentenza(id_sentenza, consultazione)
         gia_consultata = archivio.tocca_consultata(id_sentenza)
     salvata = archivio.leggi_sentenza(id_sentenza)
+    if not salvata and gia_consultata:
+        # Testo tolto dalla cache ma sentenza già consultata: si ricostruisce dalla risposta
+        # intera conservata, senza chiedere di nuovo al server.
+        grezzo = archivio.grezzo_consultata(id_sentenza)
+        if grezzo is not None:
+            documento, testo = _da_grezzo(grezzo)
+            if conserva:
+                archivio.scrivi_sentenza(id_sentenza, documento, testo)
+            salvata = {"documento": documento, "testo": testo}
     if salvata and gia_consultata:
         marcato = None
         if chiave_hl:
@@ -435,13 +486,7 @@ async def _carica_sentenza(
     if not docs:
         raise HTTPException(404, "sentenza non trovata")
     grezzo = docs[0]
-    documento = normalizza_documento(grezzo)
-    testo = _testo_unito(grezzo.get("ocrfull") or grezzo.get("testoocr") or grezzo.get("ocr"))
-    documento["materia"] = grezzo.get("materia")
-    documento["massima"] = _testo_unito(grezzo.get("ocrdis"))
-    # Campi "rnc-*": riferimenti normativi citati nel provvedimento (indicizzati dal CED).
-    rnc = {chiave[4:]: valore for chiave, valore in grezzo.items() if chiave.startswith("rnc-")}
-    documento["riferimenti_normativi"] = formatta_riferimenti(rnc)
+    documento, testo = _da_grezzo(grezzo)
     if conserva:
         archivio.scrivi_sentenza(id_sentenza, documento, testo)
     if annota and not gia_consultata:
@@ -487,6 +532,8 @@ async def sentenza(
                 {k: v for k, v in voce.items() if k != "documento"}
                 for voce in archivio.diario(id_sentenza=id_sentenza, limite=100)
             ],
+            # Le ricerche in cui la sentenza è uscita fra i risultati visti.
+            "uscita_in": archivio.provenienze([id_sentenza]).get(id_sentenza, []),
         },
     }
 
@@ -620,7 +667,10 @@ async def controlla_salvata(request: Request, id_salvata: int) -> dict:
 
 @app.get("/api/preferiti")
 async def preferiti(request: Request) -> list[dict]:
-    return request.app.state.archivio.preferiti()
+    archivio: Archivio = request.app.state.archivio
+    voci = [dict(v, id=v["id_sentenza"]) for v in archivio.preferiti()]
+    _arricchisci(archivio, voci)
+    return voci
 
 
 @app.post("/api/preferiti")

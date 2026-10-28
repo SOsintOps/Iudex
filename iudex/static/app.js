@@ -234,6 +234,7 @@
         <div class="estremi" role="button" tabindex="0" title="Apri il testo">
           <span class="sezione">${escapa(doc.archivio)}${doc.sezione ? " · Sez. " + escapa(doc.sezione) : ""}${doc.sottosezione && doc.sottosezione !== "nessuna" ? " (" + escapa(doc.sottosezione) + ")" : ""}</span>
           ${escapa(doc.tipo || "")} <span class="numero">n. ${escapa(doc.numero)}/${escapa(doc.anno)}</span>
+          ${badgeVista(doc.consultazione)}
         </div>
         <div class="meta">
           <span>udienza ${dataIt(doc.data_decisione) || "?"}</span>
@@ -423,6 +424,22 @@
     return descriviVoce(v) + (ordina && ordina !== "pubblicazione" ? ` (per ${ordina})` : "");
   }
 
+  // Badge "già vista": il tooltip dice quando e da quali ricerche è stata aperta la sentenza
+  // e in quali ricerche è uscita fra i risultati.
+  function badgeVista(c) {
+    if (!c || !c.volte) return "";
+    const righe = [`Vista ${c.volte === 1 ? "una volta" : c.volte + " volte"}, l'ultima il ${quando(c.ultima)}${c.pdf ? " (anche il PDF)" : ""}`];
+    if (c.aperta_da && c.aperta_da.length) {
+      righe.push("Aperta da:");
+      c.aperta_da.forEach((a) => righe.push(`  · ${a.descrizione} (${quando(a.quando)})`));
+    }
+    if (c.uscita_in && c.uscita_in.length) {
+      righe.push("Uscita nelle ricerche:");
+      c.uscita_in.forEach((u) => righe.push(`  · ${u.descrizione || "ricerca"} (${quando(u.quando)})`));
+    }
+    return `<span class="gia-vista" title="${escapa(righe.join("\n"))}">già vista</span>`;
+  }
+
   function consultazioneHtml(c) {
     if (!c || !c.volte) return "";
     // Le ricerche di provenienza, una volta ciascuna, dalla più recente.
@@ -436,7 +453,13 @@
     const da = ricerche.slice(0, 4).map((a) =>
       `<a href="#${escapa(a.permalink)}" title="Riapri la ricerca">${escapa(descriviPermalink(a.permalink))}</a> <span class="quando">(${quando(a.quando)})</span>`).join(", ");
     const volte = c.volte === 1 ? "Prima apertura" : `Aperta <b>${c.volte}</b> volte, la prima ${quando(c.prima_volta)}`;
-    return `<div class="consultazione">${volte}${da ? " · da: " + da : ""}${ricerche.length > 4 ? ` e altre ${ricerche.length - 4}` : ""} · <a href="#diario" class="vai-diario">Diario</a></div>`;
+    const uscite = c.uscita_in || [];
+    const uscita = uscite.slice(0, 4).map((u) =>
+      `<a href="#${escapa(u.ricerca)}" title="Riapri la ricerca">${escapa(u.descrizione || descriviPermalink(u.ricerca))}</a> <span class="quando">(${quando(u.quando)})</span>`).join(", ");
+    const righeUscita = uscite.length
+      ? `<div class="consultazione">Uscita in <b>${uscite.length}</b> ricerc${uscite.length === 1 ? "a" : "he"}: ${uscita}${uscite.length > 4 ? ` e altre ${uscite.length - 4}` : ""}</div>`
+      : "";
+    return `<div class="consultazione">${volte}${da ? " · da: " + da : ""}${ricerche.length > 4 ? ` e altre ${ricerche.length - 4}` : ""} · <a href="#diario" class="vai-diario">Diario</a></div>${righeUscita}`;
   }
 
   function chiudiFascicolo() {
@@ -630,7 +653,7 @@
       const e = v.estremi || {};
       return `<tr data-id="${escapa(v.id_sentenza)}">
         <td class="quando">${quando(v.quando)}</td>
-        <td><a class="titolo apri-preferito" href="#" data-id="${escapa(v.id_sentenza)}">${estremiDoc(e)}</a>${e.data_deposito ? `<div class="dettaglio">dep. ${dataIt(e.data_deposito)}</div>` : ""}</td>
+        <td><a class="titolo apri-preferito" href="#" data-id="${escapa(v.id_sentenza)}">${estremiDoc(e)}</a> ${badgeVista(v.consultazione)}${e.data_deposito ? `<div class="dettaglio">dep. ${dataIt(e.data_deposito)}</div>` : ""}</td>
         <td><span class="ecli">${escapa(e.ecli || "")}</span></td>
         <td><input class="nota" type="text" value="${escapa(v.nota || "")}" placeholder="aggiungi una nota" data-id="${escapa(v.id_sentenza)}"></td>
         <td class="azioni-td">${e.pdf ? `<a class="discreto" href="${escapa(e.pdf)}" target="_blank" rel="noopener">PDF</a>` : ""}<button type="button" class="discreto rimuovi-preferito" data-id="${escapa(v.id_sentenza)}">Rimuovi</button></td>
@@ -1031,7 +1054,7 @@
       let testo;
       if (r.prima_volta) testo = `<b>Primo controllo:</b> ${numero(r.trovati)} provvedimenti registrati come punto di partenza. Dal prossimo controllo verranno segnalati i nuovi.`;
       else if (!r.nuovi.length) testo = `<b>Nessuna novità</b> (${numero(r.trovati)} provvedimenti in tutto${r.dalla_cache ? ", dalla cache locale" : ""}).`;
-      else testo = `<b>${r.nuovi.length} nuov${r.nuovi.length === 1 ? "o" : "i"}:</b><ul>` + r.nuovi.map((d) => `<li><a href="#" class="apri-nuovo" data-id="${escapa(d.id)}">${estremiDoc(d)}</a> · dep. ${dataIt(d.data_deposito)}</li>`).join("") + "</ul>";
+      else testo = `<b>${r.nuovi.length} nuov${r.nuovi.length === 1 ? "o" : "i"}:</b><ul>` + r.nuovi.map((d) => `<li><a href="#" class="apri-nuovo" data-id="${escapa(d.id)}">${estremiDoc(d)}</a> ${badgeVista(d.consultazione)} · dep. ${dataIt(d.data_deposito)}</li>`).join("") + "</ul>";
       const dett = document.createElement("tr");
       dett.className = "novita-riga";
       dett.innerHTML = `<td colspan="6">${testo}</td>`;

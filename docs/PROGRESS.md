@@ -17,8 +17,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   niente più modalità browser
 - [ ] 4. Impronte: fissa, personalizzata, più personalizzate in rotazione
 - [x] 5. Memoria delle ricerche e provenienza (`esecuzioni`, `risultati`); storico spento
-  rispettato
-- [ ] 6. Consultazioni (testo e PDF) e badge "già vista" con tooltip
+  rispettato — `6faf807`
+- [x] 6. Consultazioni (testo e PDF) e badge "già vista" con tooltip; riapertura dal grezzo
+  (la voce `pdf` del diario si scrive al passo 7)
 - [ ] 7. PDF salvati nella cartella scelta (installer e Impostazioni), aperti in finestra o
   con il programma del PC
 - [ ] 8. Export del database delle ricerche: CSV/Excel, JSONL, ZIP con i PDF
@@ -48,3 +49,6 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - 2026-10-28: ordine cambiato: prima le funzioni chieste dall'utente (5, 6, 7, 8), poi 3b, 4,
   8b, 9. Passo 5: schema 3; migrazione provata su una copia dell'archivio vero (37 ricerche,
   47 voci di diario, 3 consultate conservate, copia in `backup/` fatta). Prossimo: passo 6.
+- 2026-10-28: passo 6. Nel badge dei risultati appena arrivati le ricerche "uscita in" sono
+  quelle precedenti (l'esecuzione in corso si registra dopo la risposta); il pannello di
+  lettura le elenca tutte. Prossimo: passo 7 (PDF).

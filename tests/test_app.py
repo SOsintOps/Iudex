@@ -352,6 +352,39 @@ def test_storico_spento_non_registra_niente(client):
     assert archivio.conta_esecuzioni() == 1 and len(c.get("/api/cronologia", headers=H).json()) == 1
 
 
+def test_badge_gia_vista_e_riapertura_dal_grezzo(client):
+    c, mock = client
+    archivio = modulo_app.app.state.archivio
+    vista, nuova = _doc(5), _doc(6)
+    mock.post(URL_SOLR + "?app.query").mock(
+        return_value=httpx.Response(200, json=_risposta([vista, nuova], trovati=2))
+    )
+    dettaglio = mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([vista])))
+    c.get("/api/cerca", params={"testo": "estorsione"}, headers=H)
+    c.get(f"/api/sentenza/{vista['id']}", params={"da": "testo=estorsione"}, headers=H)
+    archivio.annota_sentenza(vista["id"], "testo=estorsione", tipo="pdf")
+    # Un'altra ricerca dove esce la stessa sentenza: il badge la riconosce.
+    docs = c.get("/api/cerca", params={"testo": "usura"}, headers=H).json()["documenti"]
+    c_vista, c_nuova = docs[0]["consultazione"], docs[1]["consultazione"]
+    assert c_nuova is None
+    assert c_vista["volte"] == 2 and c_vista["pdf"] == 1 and c_vista["ultima"] >= c_vista["prima"]
+    assert c_vista["aperta_da"][0]["descrizione"] == "estorsione"
+    # Nel badge le ricerche precedenti: quella in corso si registra dopo la risposta.
+    assert [u["descrizione"] for u in c_vista["uscita_in"]] == ["estorsione"]
+    r = c.get(f"/api/sentenza/{vista['id']}", headers=H).json()
+    assert len(r["consultazione"]["uscita_in"]) == 2
+    # Preferiti con il badge.
+    c.post("/api/preferiti", headers=H, json={"id": vista["id"], "estremi": {"numero": "1"}})
+    assert c.get("/api/preferiti", headers=H).json()[0]["consultazione"]["volte"] == 3
+    # Testi della cache svuotati: la sentenza consultata si riapre dal grezzo, senza richieste.
+    c.delete("/api/cache/sentenze", headers=H)
+    chiamate = dettaglio.call_count
+    r = c.get(f"/api/sentenza/{vista['id']}", headers=H).json()
+    assert dettaglio.call_count == chiamate and r["dalla_cache"] is True
+    assert "Testo del provvedimento" in str(r["testo"])
+    assert c.get("/api/diario/giorni", headers=H).json()[0]["pdf"] == 1
+
+
 def test_errori_di_validazione_e_interni_in_json(client, monkeypatch):
     c, _ = client
     json_h = {**H, "Content-Type": "application/json"}

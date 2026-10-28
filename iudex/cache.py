@@ -567,14 +567,52 @@ class Archivio:
                 ),
             )
 
-    def annota_sentenza(self, id_sentenza: str, permalink: str | None) -> None:
-        """Un'apertura della sentenza; ``permalink`` è la ricerca da cui è stata aperta."""
+    def annota_sentenza(
+        self, id_sentenza: str, permalink: str | None, tipo: str = "sentenza"
+    ) -> None:
+        """Un'apertura della sentenza (``tipo`` = ``sentenza`` per il testo, ``pdf`` per il
+        PDF); ``permalink`` è la ricerca da cui è stata aperta."""
         with self._lock, self._conn:
             self._conn.execute(
-                "INSERT INTO diario (quando, tipo, permalink, id_sentenza)"
-                " VALUES (?, 'sentenza', ?, ?)",
-                (time.time(), permalink or None, id_sentenza),
+                "INSERT INTO diario (quando, tipo, permalink, id_sentenza) VALUES (?, ?, ?, ?)",
+                (time.time(), tipo, permalink or None, id_sentenza),
             )
+
+    def consultazioni(self, ids: list[str]) -> dict[str, dict]:
+        """Per le sentenze già consultate (testo o PDF): ``{volte, prima, ultima, pdf,
+        aperture: [{permalink, quando}]}``, aperture una per ricerca dalla più recente."""
+        if not ids:
+            return {}
+        segnaposto = ",".join("?" * len(ids))
+        dove = f"tipo IN ('sentenza', 'pdf') AND id_sentenza IN ({segnaposto})"
+        with self._lock:
+            somme = self._conn.execute(
+                "SELECT id_sentenza, COUNT(*) AS volte, MIN(quando) AS prima,"
+                " MAX(quando) AS ultima, SUM(tipo = 'pdf') AS pdf"
+                f" FROM diario WHERE {dove} GROUP BY id_sentenza",
+                list(ids),
+            ).fetchall()
+            aperture = self._conn.execute(
+                "SELECT id_sentenza, permalink, MAX(quando) AS quando FROM diario"
+                f" WHERE {dove} AND permalink IS NOT NULL"
+                " GROUP BY id_sentenza, permalink ORDER BY quando DESC",
+                list(ids),
+            ).fetchall()
+        esito = {
+            r["id_sentenza"]: {
+                "volte": r["volte"],
+                "prima": r["prima"],
+                "ultima": r["ultima"],
+                "pdf": r["pdf"],
+                "aperture": [],
+            }
+            for r in somme
+        }
+        for r in aperture:
+            esito[r["id_sentenza"]]["aperture"].append(
+                {"permalink": r["permalink"], "quando": r["quando"]}
+            )
+        return esito
 
     def diario(
         self, giorno: str | None = None, id_sentenza: str | None = None, limite: int = 500
@@ -609,7 +647,8 @@ class Archivio:
         with self._lock:
             righe = self._conn.execute(
                 f"SELECT {GIORNO_SQL} AS giorno,"
-                " SUM(tipo = 'ricerca') AS ricerche, SUM(tipo = 'sentenza') AS sentenze"
+                " SUM(tipo = 'ricerca') AS ricerche, SUM(tipo = 'sentenza') AS sentenze,"
+                " SUM(tipo = 'pdf') AS pdf"
                 " FROM diario GROUP BY giorno ORDER BY giorno DESC"
             ).fetchall()
         return [dict(r) for r in righe]

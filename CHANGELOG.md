@@ -23,6 +23,15 @@
 - Con "Conserva lo storico" spento non si registra niente: cronologia, diario, esecuzioni,
   consultate, testi e risposte in cache.
 
+### Consultazioni
+- Badge "già vista" nei risultati, nei preferiti e nelle novità delle ricerche salvate: al
+  passaggio del mouse dice quante volte e l'ultima volta che la sentenza è stata aperta (testo
+  o PDF), da quali ricerche e in quali ricerche precedenti è uscita. Il pannello di lettura
+  elenca le ricerche in cui la sentenza è uscita.
+- Diario: nuovo tipo di voce `pdf` (apertura del PDF), contato nei giorni.
+- Una sentenza consultata il cui testo è stato tolto dalla cache si riapre dalla risposta
+  intera conservata, senza una nuova richiesta al server.
+
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).
