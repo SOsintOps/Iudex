@@ -100,7 +100,7 @@ COLONNE_AGGIUNTE = {
 # Versione dello schema, salvata in ``PRAGMA user_version`` (0 fino alla 0.7.0). Ogni
 # migrazione porta il database dalla versione precedente alla sua ed è idempotente: un
 # archivio della 0.7.0 ha già alcune colonne della migrazione 1.
-VERSIONE_SCHEMA = 2
+VERSIONE_SCHEMA = 3
 
 # Tabelle il cui contenuto è dell'utente: se una ha righe, prima di migrare si fa la copia.
 TABELLE_UTENTE = ("ricerche", "salvate", "preferiti", "diario", "consultate")
@@ -122,7 +122,61 @@ def _migra_2(conn: sqlite3.Connection) -> None:
     )
 
 
-MIGRAZIONI = {1: _migra_1, 2: _migra_2}
+def _migra_3(conn: sqlite3.Connection) -> None:
+    # Memoria permanente delle ricerche: ogni pagina di risultati vista è un'esecuzione, con
+    # le sentenze mostrate in ``risultati`` (da quale ricerca è uscita una sentenza).
+    # ``ricerca`` è il permalink della pagina 1, lo stesso di ``ricerche.permalink``.
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS esecuzioni (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            quando REAL NOT NULL,
+            ricerca TEXT NOT NULL,
+            permalink TEXT NOT NULL,
+            descrizione TEXT,
+            pagina INTEGER NOT NULL,
+            righe INTEGER NOT NULL,
+            trovati INTEGER,
+            dalla_cache INTEGER NOT NULL,
+            origine TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS esecuzioni_ricerca ON esecuzioni (ricerca);
+        CREATE TABLE IF NOT EXISTS risultati (
+            id_esecuzione INTEGER NOT NULL,
+            posizione INTEGER NOT NULL,
+            id_sentenza TEXT NOT NULL,
+            estremi TEXT NOT NULL,
+            PRIMARY KEY (id_esecuzione, posizione)
+        );
+        CREATE INDEX IF NOT EXISTS risultati_sentenza ON risultati (id_sentenza);
+        """
+    )
+    presenti = {r["name"] for r in conn.execute("PRAGMA table_info(ricerche)")}
+    if "prima_volta" not in presenti:
+        conn.execute("ALTER TABLE ricerche ADD COLUMN prima_volta REAL")
+        conn.execute("UPDATE ricerche SET prima_volta = quando")
+    if "volte" not in presenti:
+        conn.execute("ALTER TABLE ricerche ADD COLUMN volte INTEGER NOT NULL DEFAULT 1")
+
+
+MIGRAZIONI = {1: _migra_1, 2: _migra_2, 3: _migra_3}
+
+# Estremi di una sentenza conservati con ogni risultato: bastano a riconoscerla e a
+# esportarla anche se il testo non è mai stato aperto.
+CAMPI_ESTREMI = (
+    "archivio",
+    "kind",
+    "tipo",
+    "sezione",
+    "numero",
+    "anno",
+    "data_decisione",
+    "data_deposito",
+    "ecli",
+    "presidente",
+    "relatore",
+    "filename",
+)
 
 
 class Archivio:
@@ -282,14 +336,15 @@ class Archivio:
         trovati: int,
         permalink: str,
     ) -> None:
+        adesso = time.time()
         with self._lock, self._conn:
             self._conn.execute(
                 "INSERT INTO ricerche (quando, testo, riferimenti, filtri, ordinamento, righe,"
-                " trovati, permalink) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                " trovati, permalink, prima_volta, volte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
                 " ON CONFLICT(permalink) DO UPDATE SET quando = excluded.quando,"
-                " trovati = excluded.trovati",
+                " trovati = excluded.trovati, volte = ricerche.volte + 1",
                 (
-                    time.time(),
+                    adesso,
                     testo,
                     riferimenti,
                     json.dumps(filtri, ensure_ascii=False),
@@ -297,8 +352,95 @@ class Archivio:
                     righe,
                     trovati,
                     permalink,
+                    adesso,
                 ),
             )
+
+    def registra_esecuzione(
+        self,
+        *,
+        ricerca: str,
+        permalink: str,
+        descrizione: str,
+        pagina: int,
+        righe: int,
+        trovati: int | None,
+        dalla_cache: bool,
+        origine: str,
+        documenti: list[dict],
+        inizio: int = 0,
+    ) -> int:
+        """Una pagina di risultati vista (``origine`` = ``ricerca`` o ``controllo`` di una
+        ricerca salvata) e le sentenze mostrate, con la loro posizione nei risultati."""
+        with self._lock, self._conn:
+            cur = self._conn.execute(
+                "INSERT INTO esecuzioni (quando, ricerca, permalink, descrizione, pagina, righe,"
+                " trovati, dalla_cache, origine) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    time.time(),
+                    ricerca,
+                    permalink,
+                    descrizione,
+                    pagina,
+                    righe,
+                    trovati,
+                    int(dalla_cache),
+                    origine,
+                ),
+            )
+            id_esecuzione = cur.lastrowid
+            self._conn.executemany(
+                "INSERT OR IGNORE INTO risultati (id_esecuzione, posizione, id_sentenza, estremi)"
+                " VALUES (?, ?, ?, ?)",
+                [
+                    (
+                        id_esecuzione,
+                        inizio + i + 1,
+                        d["id"],
+                        json.dumps(
+                            {k: d.get(k) for k in CAMPI_ESTREMI if d.get(k) is not None},
+                            ensure_ascii=False,
+                        ),
+                    )
+                    for i, d in enumerate(documenti)
+                    if d.get("id")
+                ],
+            )
+        return id_esecuzione
+
+    def provenienze(self, ids: list[str]) -> dict[str, list[dict]]:
+        """Per ogni sentenza, le ricerche in cui è uscita: ``[{ricerca, descrizione,
+        quando}]`` con l'ultima volta per ricerca, dalla più recente."""
+        if not ids:
+            return {}
+        segnaposto = ",".join("?" * len(ids))
+        with self._lock:
+            righe = self._conn.execute(
+                "SELECT r.id_sentenza, e.ricerca, MAX(e.quando) AS quando,"
+                " (SELECT descrizione FROM esecuzioni WHERE ricerca = e.ricerca"
+                "  ORDER BY quando DESC LIMIT 1) AS descrizione"
+                " FROM risultati r JOIN esecuzioni e ON e.id = r.id_esecuzione"
+                f" WHERE r.id_sentenza IN ({segnaposto})"
+                " GROUP BY r.id_sentenza, e.ricerca ORDER BY quando DESC",
+                list(ids),
+            ).fetchall()
+        esito: dict[str, list[dict]] = {}
+        for r in righe:
+            esito.setdefault(r["id_sentenza"], []).append(
+                {"ricerca": r["ricerca"], "descrizione": r["descrizione"], "quando": r["quando"]}
+            )
+        return esito
+
+    def conta_esecuzioni(self) -> int:
+        with self._lock:
+            return self._conn.execute("SELECT COUNT(*) FROM esecuzioni").fetchone()[0]
+
+    def _togli_esecuzioni(self, dove: str = "", valori: tuple = ()) -> None:
+        self._conn.execute(
+            f"DELETE FROM risultati WHERE id_esecuzione IN (SELECT id FROM esecuzioni{dove})",
+            valori,
+        )
+        self._conn.execute(f"DELETE FROM esecuzioni{dove}", valori)
 
     def cronologia(self, limite: int = 200) -> list[dict]:
         with self._lock:
@@ -308,12 +450,20 @@ class Archivio:
         return [dict(r, filtri=json.loads(r["filtri"] or "{}")) for r in righe]
 
     def svuota_cronologia(self) -> None:
+        """Cancella tutte le ricerche con le loro esecuzioni e i risultati (provenienze)."""
         with self._lock, self._conn:
             self._conn.execute("DELETE FROM ricerche")
+            self._togli_esecuzioni()
 
     def elimina_ricerca(self, id_ricerca: int) -> None:
+        """Cancella la ricerca e le sue esecuzioni: le sentenze non risultano più uscite da lì."""
         with self._lock, self._conn:
+            riga = self._conn.execute(
+                "SELECT permalink FROM ricerche WHERE id = ?", (id_ricerca,)
+            ).fetchone()
             self._conn.execute("DELETE FROM ricerche WHERE id = ?", (id_ricerca,))
+            if riga:
+                self._togli_esecuzioni(" WHERE ricerca = ?", (riga["permalink"],))
 
     # --- ricerche salvate ----------------------------------------------------------------
 

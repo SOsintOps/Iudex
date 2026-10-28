@@ -16,7 +16,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - [ ] 3b. Solo finestra: API e pagine con token (cookie per la finestra, header per MCP),
   niente più modalità browser
 - [ ] 4. Impronte: fissa, personalizzata, più personalizzate in rotazione
-- [ ] 5. Memoria delle ricerche e provenienza (`esecuzioni`, `risultati`)
+- [x] 5. Memoria delle ricerche e provenienza (`esecuzioni`, `risultati`); storico spento
+  rispettato
 - [ ] 6. Consultazioni (testo e PDF) e badge "già vista" con tooltip
 - [ ] 7. PDF salvati nella cartella scelta (installer e Impostazioni), aperti in finestra o
   con il programma del PC
@@ -44,3 +45,6 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   tolleranza di 32 ms nel test (il client non cambia), suite verde 8 volte su 8. D'ora in
   poi controllo e commit in due comandi separati. Interfaccia non ancora provata dal vivo (niente Node per `--check`):
   prova nella finestra prevista dopo i passi dell'interfaccia. Prossimo: passo 3b.
+- 2026-10-28: ordine cambiato: prima le funzioni chieste dall'utente (5, 6, 7, 8), poi 3b, 4,
+  8b, 9. Passo 5: schema 3; migrazione provata su una copia dell'archivio vero (37 ricerche,
+  47 voci di diario, 3 consultate conservate, copia in `backup/` fatta). Prossimo: passo 6.

@@ -291,6 +291,67 @@ def test_diario_registra_ricerche_e_aperture(client):
     assert backup["ok"] and backup["percorso"].endswith(".sqlite")
 
 
+def test_memoria_delle_ricerche_e_provenienza(client):
+    c, mock = client
+    archivio = modulo_app.app.state.archivio
+    pagina1, pagina2 = [_doc(1), _doc(2)], [_doc(3)]
+    ricerca = mock.post(URL_SOLR + "?app.query").mock(
+        side_effect=[
+            httpx.Response(200, json=_risposta(pagina1, trovati=3)),
+            httpx.Response(200, json=_risposta(pagina2, trovati=3)),
+        ]
+    )
+    parametri = {"testo": "usura", "righe": 2}
+    c.get("/api/cerca", params=parametri, headers=H)
+    c.get("/api/cerca", params={**parametri, "pagina": 2}, headers=H)
+    c.get("/api/cerca", params=parametri, headers=H)  # dalla cache: conta lo stesso
+    assert ricerca.call_count == 2 and archivio.conta_esecuzioni() == 3
+    voce = c.get("/api/cronologia", headers=H).json()[0]
+    assert voce["permalink"] == "testo=usura&righe=2" and voce["volte"] == 2
+    righe = archivio._conn.execute(
+        "SELECT e.pagina, e.dalla_cache, r.posizione, r.id_sentenza, r.estremi"
+        " FROM risultati r JOIN esecuzioni e ON e.id = r.id_esecuzione ORDER BY e.id, r.posizione"
+    ).fetchall()
+    assert [(r["pagina"], r["posizione"]) for r in righe] == [
+        (1, 1),
+        (1, 2),
+        (2, 3),
+        (1, 1),
+        (1, 2),
+    ]
+    assert righe[-1]["dalla_cache"] == 1 and '"numero": "26002"' in righe[1]["estremi"]
+    # Da quali ricerche è uscita una sentenza.
+    provenienze = archivio.provenienze([_doc(3)["id"], _doc(1)["id"], "zzz"])
+    assert [p["ricerca"] for p in provenienze[_doc(3)["id"]]] == ["testo=usura&righe=2"]
+    assert provenienze[_doc(1)["id"]][0]["descrizione"] == "usura" and "zzz" not in provenienze
+    # Cancellare la ricerca cancella anche esecuzioni e risultati.
+    c.delete(f"/api/cronologia/{voce['id']}", headers=H)
+    assert archivio.conta_esecuzioni() == 0 and archivio.provenienze([_doc(1)["id"]]) == {}
+
+
+def test_storico_spento_non_registra_niente(client):
+    c, mock = client
+    archivio = modulo_app.app.state.archivio
+    doc = _doc(4)
+    mock.post(URL_SOLR + "?app.query").mock(
+        return_value=httpx.Response(200, json=_risposta([doc], trovati=1))
+    )
+    dettaglio = mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([doc])))
+    c.put("/api/impostazioni", headers=H, json={"conserva_storico": False})
+    c.get("/api/cerca", params={"testo": "riciclaggio"}, headers=H)
+    c.get(f"/api/sentenza/{doc['id']}", params={"da": "testo=riciclaggio"}, headers=H)
+    c.get(f"/api/sentenza/{doc['id']}", headers=H)
+    assert dettaglio.call_count == 2  # niente testo in cache
+    assert c.get("/api/cronologia", headers=H).json() == []
+    assert archivio.conta_diario() == 0 and archivio.conta_consultate() == 0
+    assert archivio.conta_esecuzioni() == 0 and archivio.conta_risposte() == 0
+    assert archivio.conta_sentenze() == 0
+    # Riacceso, si registra di nuovo.
+    c.put("/api/impostazioni", headers=H, json={"conserva_storico": True})
+    c.get("/api/cerca", params={"testo": "riciclaggio"}, headers=H)
+    assert archivio.conta_esecuzioni() == 1 and len(c.get("/api/cronologia", headers=H).json()) == 1
+
+
 def test_errori_di_validazione_e_interni_in_json(client, monkeypatch):
     c, _ = client
     json_h = {**H, "Content-Type": "application/json"}

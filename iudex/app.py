@@ -238,6 +238,16 @@ def _descrizione(testo, rif, filtri) -> str:
     return " · ".join(parti) or "tutte le sentenze"
 
 
+def _scelte(request: Request) -> dict:
+    """Le impostazioni effettive (scheda Impostazioni e variabili d'ambiente)."""
+    return preferenze.effettive(request.app.state.archivio.impostazioni(), impostazioni)
+
+
+def _conserva_storico(request: Request) -> bool:
+    """Spento nella scheda Impostazioni: Iudex non registra niente di ciò che si consulta."""
+    return bool(_scelte(request)["conserva_storico"])
+
+
 async def _riferimento_normalizzato(request: Request, rif: str | None) -> str | None:
     if not rif or not rif.strip():
         return None
@@ -281,7 +291,8 @@ async def _esegui_ricerca(request: Request, testo, rif, filtri, ordina, pagina, 
             "segnali": normalizza_segnali(dati.get("facet_counts", {}).get("facet_queries")),
             "tempo_solr_ms": dati.get("responseHeader", {}).get("QTime"),
         }
-        archivio.scrivi_risposta(chiave, risposta)
+        if _conserva_storico(request):
+            archivio.scrivi_risposta(chiave, risposta)
     risposta = dict(risposta)
     risposta.update(
         {
@@ -325,6 +336,8 @@ async def cerca(
 ) -> dict:
     filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale)
     risposta = await _esegui_ricerca(request, testo, rif, filtri, ordina, pagina, righe)
+    if not _conserva_storico(request):
+        return risposta
     archivio: Archivio = request.app.state.archivio
     if pagina == 1:
         archivio.registra_ricerca(
@@ -334,14 +347,39 @@ async def cerca(
             ordinamento=risposta["ordinamento"],
             righe=risposta["righe"],
             trovati=risposta["trovati"],
-            permalink=_permalink(testo, rif, filtri, risposta["ordinamento"], risposta["righe"], 1),
+            permalink=_ricerca_di(risposta),
         )
     _annota_ricerca(archivio, risposta)
     return risposta
 
 
-def _annota_ricerca(archivio: Archivio, risposta: dict) -> None:
-    """Ogni esecuzione di una ricerca è una voce del diario, anche se servita dalla cache."""
+def _ricerca_di(risposta: dict) -> str:
+    """Il permalink della pagina 1: identifica la ricerca in cronologia ed esecuzioni."""
+    return _permalink(
+        risposta["testo"],
+        risposta["riferimenti"],
+        risposta["filtri"],
+        risposta["ordinamento"],
+        risposta["righe"],
+        1,
+    )
+
+
+def _annota_ricerca(archivio: Archivio, risposta: dict, origine: str = "ricerca") -> None:
+    """Ogni esecuzione di una ricerca è una voce del diario, anche se servita dalla cache, e
+    un'esecuzione con le sentenze mostrate (la provenienza di ciascuna)."""
+    archivio.registra_esecuzione(
+        ricerca=_ricerca_di(risposta),
+        permalink=risposta["permalink"],
+        descrizione=risposta["descrizione"],
+        pagina=risposta["pagina"],
+        righe=risposta["righe"],
+        trovati=risposta["trovati"],
+        dalla_cache=risposta["dalla_cache"],
+        origine=origine,
+        documenti=risposta["documenti"],
+        inizio=risposta["inizio"],
+    )
     archivio.annota_ricerca(
         testo=risposta["testo"],
         riferimenti=risposta["riferimenti"],
@@ -379,6 +417,8 @@ async def _carica_sentenza(
     archivio: Archivio = request.app.state.archivio
     chiave_hl = json.dumps(["hl", id_sentenza, hl_q]) if hl_q else None
     gia_consultata = True
+    conserva = _conserva_storico(request)
+    annota = annota and conserva
     if annota:
         archivio.annota_sentenza(id_sentenza, consultazione)
         gia_consultata = archivio.tocca_consultata(id_sentenza)
@@ -402,13 +442,14 @@ async def _carica_sentenza(
     # Campi "rnc-*": riferimenti normativi citati nel provvedimento (indicizzati dal CED).
     rnc = {chiave[4:]: valore for chiave, valore in grezzo.items() if chiave.startswith("rnc-")}
     documento["riferimenti_normativi"] = formatta_riferimenti(rnc)
-    archivio.scrivi_sentenza(id_sentenza, documento, testo)
+    if conserva:
+        archivio.scrivi_sentenza(id_sentenza, documento, testo)
     if annota and not gia_consultata:
         archivio.scrivi_consultata(id_sentenza, documento, grezzo)
     marcato = None
     if chiave_hl:
         marcato = _testo_unito(dati.get("highlighting", {}).get(id_sentenza, {}).get("ocr"))
-        if marcato:
+        if marcato and conserva:
             archivio.scrivi_risposta(chiave_hl, {"testo": marcato})
     return documento, testo, marcato, False
 
@@ -567,7 +608,8 @@ async def controlla_salvata(request: Request, id_salvata: int) -> dict:
     prima_volta = precedenti is None
     nuovi = [] if prima_volta else [d for d in risposta["documenti"] if d["id"] not in precedenti]
     archivio.aggiorna_controllo(id_salvata, risposta["trovati"], ids, len(nuovi))
-    _annota_ricerca(archivio, risposta)
+    if _conserva_storico(request):
+        _annota_ricerca(archivio, risposta, origine="controllo")
     return {
         "prima_volta": prima_volta,
         "trovati": risposta["trovati"],

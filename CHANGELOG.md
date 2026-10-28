@@ -14,6 +14,15 @@
   salvano nell'archivio; `IUDEX_IMPRONTA`, se impostata, vince e la scheda mostra il campo
   bloccato. Le scelte prendono effetto nei passi successivi della 0.8.0.
 
+### Memoria delle ricerche
+- Ogni pagina di risultati vista (anche servita dalla cache, anche con "Controlla novità") è
+  un'esecuzione permanente con le sentenze mostrate e la loro posizione (tabelle `esecuzioni`
+  e `risultati`, schema 3): Iudex sa da quale o quali ricerche è uscita ogni sentenza. La
+  cronologia conta quante volte si è fatta una ricerca (`volte`, `prima_volta`). Cancellare
+  una ricerca cancella anche le sue esecuzioni.
+- Con "Conserva lo storico" spento non si registra niente: cronologia, diario, esecuzioni,
+  consultate, testi e risposte in cache.
+
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).
