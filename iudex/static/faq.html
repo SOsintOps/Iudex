@@ -36,7 +36,7 @@
     <a href="#server">Le richieste al server</a>
     <a href="#locale">I dati locali</a>
     <a href="#problemi">Problemi</a>
-    <a href="#oltre">Oltre il browser</a>
+    <a href="#oltre">Finestra e assistenti</a>
   </nav>
   <article class="documento">
     <h1>Domande frequenti</h1>
@@ -46,9 +46,9 @@
       <dt>Che cosa contiene SentenzeWeb?</dt>
       <dd>Le sentenze, le ordinanze e i decreti civili e penali della Corte di Cassazione pubblicati negli ultimi anni: al 21 ottobre 2026 circa 422.000 provvedimenti dal 2021. È una finestra scorrevole di circa cinque anni: i provvedimenti più vecchi escono dall'archivio. Non contiene le massime ufficiali del Massimario né i provvedimenti anteriori: quelli sono in ItalgiureWeb, il servizio riservato agli operatori.</dd>
       <dt>Iudex copia la banca dati?</dt>
-      <dd>No. Ogni ricerca interroga il server della Corte nel momento in cui la fai. In locale restano le risposte recenti (per un'ora), i testi che hai aperto e il diario delle tue consultazioni.</dd>
+      <dd>No. Ogni ricerca interroga il server della Corte nel momento in cui la fai. In locale restano le risposte recenti (per un'ora), i testi e i PDF che hai aperto e la memoria delle tue ricerche e consultazioni.</dd>
       <dt>Di chi sono i testi?</dt>
-      <dd>Della Corte Suprema di Cassazione, che li pubblica per la consultazione. Iudex li mostra e li esporta per uso personale; il PDF si apre sempre dal sito ufficiale.</dd>
+      <dd>Della Corte Suprema di Cassazione, che li pubblica per la consultazione. Iudex li mostra e li esporta per uso personale; salva il PDF ufficiale di una sentenza solo quando lo apri, una volta, e non scarica mai in blocco.</dd>
       <dt>Perché non cercare per nome di persona?</dt>
       <dd>Le sentenze contengono dati personali e talvolta categorie particolari di dati. Nel 2024 il Garante per la protezione dei dati personali ha ammonito la Corte proprio per la presenza, nei testi pubblicati, di dati relativi alla salute e a vittime di reati. Iudex non costruisce indici nominativi e non va usato per questo.</dd>
     </dl>
@@ -74,7 +74,7 @@
     <h2 id="server">Le richieste al server</h2>
     <dl>
       <dt>Quante richieste fa Iudex?</dt>
-      <dd>Una per ricerca (i conteggi dei filtri arrivano nella stessa risposta), una per il testo di una sentenza mai aperta prima, una per la normalizzazione di un riferimento normativo nuovo, una al mese per la lista delle sigle. Il sito ufficiale, per una ricerca, ne fa circa venti.</dd>
+      <dd>Una per ricerca (i conteggi dei filtri arrivano nella stessa risposta), una per il testo di una sentenza mai aperta prima, una per il PDF di una sentenza alla prima apertura, una per la normalizzazione di un riferimento normativo nuovo, una al mese per la lista delle sigle. Il sito ufficiale, per una ricerca, ne fa circa venti.</dd>
       <dt>Quali limiti rispetta?</dt>
       <dd>Una richiesta alla volta, almeno due secondi fra una e l'altra, un solo nuovo tentativo su errore di rete, nessuna insistenza se il server rifiuta (403 o 429). Non esistono funzioni di scaricamento massivo e non vanno aggiunte.</dd>
       <dt>Il controllo delle novità è automatico?</dt>
@@ -82,17 +82,21 @@
       <dt>Quanto costa un'esportazione?</dt>
       <dd>La pagina corrente non costa nulla (è già in cache). "Primi 50" costa al più una richiesta, "primi 100" al più due; il menu lo indica.</dd>
       <dt>Con che identità si presenta Iudex?</dt>
-      <dd>Con gli header di un browser installato su Windows (Chrome, Edge o Firefox), scelto dal giorno del calendario: lo stesso per tutta la giornata, un altro il giorno dopo, quando Iudex riapre anche la sessione. La scheda Stato mostra quello in uso; la variabile <code>IUDEX_IMPRONTA</code> (<code>chrome</code>, <code>edge</code>, <code>firefox</code>) ne fissa uno. L'uso previsto resta quello di una persona che consulta l'archivio, a ritmo umano o più lento; cambiano solo gli header, non l'impronta TLS di Python.</dd>
+      <dd>Con gli header di un browser. Per impostazione predefinita Chrome, Edge o Firefox su Windows, scelto dal giorno del calendario: lo stesso per tutta la giornata, un altro il giorno dopo, quando Iudex riapre anche la sessione. Nelle <a href="/guida.html#impostazioni">Impostazioni</a> puoi fissarne uno, usare un'impronta personalizzata (Iudex controlla che sia coerente) o far ruotare le personalizzate. La scheda Stato mostra quella in uso; la variabile <code>IUDEX_IMPRONTA</code> (<code>chrome</code>, <code>edge</code>, <code>firefox</code>) le fissa tutte. L'uso previsto resta quello di una persona che consulta l'archivio, a ritmo umano o più lento; cambiano solo gli header, non l'impronta TLS di Python.</dd>
     </dl>
 
     <h2 id="locale">I dati locali</h2>
     <dl>
       <dt>Dove sono salvati cronologia, preferiti e cache?</dt>
-      <dd>In un unico file SQLite, <code>dati/iudex.sqlite</code> nella cartella di Iudex (il percorso esatto è nella scheda Stato). Le preferenze di aspetto (tema, densità, carattere, larghezze delle colonne) sono memorizzate nel browser.</dd>
+      <dd>Nella cartella dei dati di Iudex: il database SQLite <code>iudex.sqlite</code> (il percorso esatto è nella scheda Stato), il token di accesso e, salvo scelta diversa, la cartella <code>pdf</code>. Le preferenze di aspetto (tema, densità, carattere, larghezze delle colonne) sono memorizzate nella finestra.</dd>
       <dt>Iudex salva le mie ricerche?</dt>
-      <dd>Sì, nel <a href="/guida.html#diario">Diario</a>: ogni ricerca (parole, filtri, quanti risultati) e ogni sentenza aperta, con la ricerca da cui l'hai aperta. Delle sentenze aperte conserva anche la risposta intera del server, testo compreso; dei risultati non aperti nulla oltre il conteggio. Il diario non si svuota con i pulsanti della cache e si esporta in JSONL, CSV o zip.</dd>
+      <dd>Sì, per sempre, salvo che tu spenga lo storico nelle <a href="/guida.html#impostazioni">Impostazioni</a>: ogni ricerca, ogni pagina di risultati vista con le sentenze mostrate, ogni sentenza aperta (testo o PDF) con la ricerca da cui l'hai aperta, e su quale computer. Delle sentenze aperte conserva anche la risposta intera del server, testo compreso. Il badge <b>già vista</b> nei risultati lo mostra al passaggio del mouse. Lo storico non si svuota con i pulsanti della cache; si esporta dalla Cronologia (CSV per Excel, JSONL, pacchetto ZIP con i PDF) e dal <a href="/guida.html#diario">Diario</a> (JSONL, CSV, zip, FollowTheMoney).</dd>
+      <dt>Posso portare lo storico su un altro computer?</dt>
+      <dd>Sì: esporta il pacchetto ZIP dalla Cronologia e importalo nell'altro Iudex (Impostazioni, <i>Importa uno storico</i>). L'importazione unisce senza duplicati, anche più volte e da più computer; accetta anche il JSONL o una copia del database.</dd>
+      <dt>Dove sono i PDF?</dt>
+      <dd>Nella cartella scelta nell'installer o nelle Impostazioni (la scheda Stato la mostra), uno per sentenza con il nome <code>&lt;id&gt;.pdf</code>. Cambiando cartella, Iudex sposta quelli già salvati.</dd>
       <dt>Come cancello tutto?</dt>
-      <dd>Dalla scheda Stato: "Svuota cache ricerche" e "Svuota testi in cache"; cronologia e preferiti si svuotano dalle rispettive schede. Il diario non ha un pulsante di cancellazione: per azzerare l'intero archivio, chiudi Iudex ed elimina il file <code>dati/iudex.sqlite</code> (prima, se vuoi, usa "Copia di sicurezza" nella scheda Stato).</dd>
+      <dd>Dalla scheda Stato: "Svuota cache ricerche" e "Svuota testi in cache"; cronologia (con le sentenze uscite da ciascuna ricerca) e preferiti si svuotano dalle rispettive schede. Il diario non ha un pulsante di cancellazione: per azzerare l'intero archivio, chiudi Iudex ed elimina la cartella dei dati (prima, se vuoi, usa "Copia di sicurezza" nella scheda Stato o il pacchetto ZIP della Cronologia).</dd>
       <dt>Posso cambiare la larghezza delle colonne?</dt>
       <dd>Sì: trascina la linea fra i filtri e i risultati, quella fra i risultati e il testo, o le linee fra le intestazioni delle tabelle di cronologia, ricerche salvate e preferiti. Un doppio clic ripristina la larghezza predefinita; con la tastiera, porta il focus sulla maniglia e usa le frecce.</dd>
     </dl>
@@ -104,21 +108,25 @@
       <dt>"Errore di rete" o "certificate verify failed"</dt>
       <dd>Il server della Corte invia una catena di certificati incompleta. Iudex include l'intermedio mancante in <code>iudex/certs/</code>; se il messaggio compare, il certificato non è stato trovato (reinstalla con <code>pip install -e .</code>) oppure la Corte ha cambiato certificato: apri una segnalazione.</dd>
       <dt>"Errore di rete" con la VPN attiva</dt>
-      <dd>Il server della Corte non risponde alle connessioni che arrivano dagli indirizzi di uscita delle VPN commerciali: il collegamento resta senza risposta. Non dipende da Iudex, succede anche aprendo il sito nel browser. Rimedio: con l'esclusione dal tunnel della VPN (<em>split tunneling</em>) lascia fuori l'indirizzo di <code>www.italgiure.giustizia.it</code> (per indirizzo IP, non per applicazione, così funzionano anche i PDF ufficiali aperti nel browser); i dettagli nel README, sezione «Da dietro una VPN».</dd>
+      <dd>Il server della Corte non risponde alle connessioni che arrivano dagli indirizzi di uscita delle VPN commerciali: il collegamento resta senza risposta. Non dipende da Iudex, succede anche aprendo il sito nel browser. Rimedio: con l'esclusione dal tunnel della VPN (<em>split tunneling</em>) lascia fuori l'indirizzo di <code>www.italgiure.giustizia.it</code> (per indirizzo IP; dalla 0.8 basta anche escludere il programma Iudex, perché i PDF li scarica Iudex e non il browser); i dettagli nel README, sezione «Da dietro una VPN».</dd>
+      <dt>Nel browser compare "Iudex si usa dalla sua finestra"</dt>
+      <dd>È voluto: pagine e API rispondono solo alla finestra di Iudex (e al server MCP), che hanno il token della cartella dei dati. Apri Iudex dal collegamento nel menu Start o sul Desktop (su Linux dall'AppImage).</dd>
       <dt>"Ricerca non riuscita: richiesta non proveniente dall'interfaccia di Iudex"</dt>
-      <dd>Le API accettano solo le chiamate della pagina di Iudex. Il messaggio compare se chiami gli indirizzi <code>/api/…</code> da un'altra pagina o da uno script senza l'header <code>X-Iudex: 1</code>.</dd>
-      <dt>La pagina si apre ma la ricerca non risponde</dt>
-      <dd>Il server locale non è in esecuzione: avvialo con <code>scripts\avvia.cmd</code> (o <code>python -m iudex --apri</code>) e ricarica la pagina. Se all'avvio compare «La porta 8765 è occupata da un altro programma», scegli un'altra porta con la variabile <code>IUDEX_PORTA</code>; se è già aperto un altro Iudex, l'avvio apre quello.</dd>
+      <dd>Le API accettano solo le chiamate della finestra di Iudex. Il messaggio compare se chiami gli indirizzi <code>/api/…</code> da uno script senza l'header <code>X-Iudex: 1</code> (e senza il token).</dd>
+      <dt>La finestra si apre ma la ricerca non risponde</dt>
+      <dd>Chiudi e riapri Iudex. Se la porta 8765 è occupata da un altro programma, Iudex passa alla successiva libera (o scegli tu la porta con la variabile <code>IUDEX_PORTA</code>); se è già aperto un altro Iudex, l'avvio apre quello.</dd>
+      <dt>Su Linux la finestra non si apre</dt>
+      <dd>Manca WebKitGTK: il messaggio dice il comando per installarlo (Debian e Ubuntu: <code>sudo apt install gir1.2-webkit2-4.1 python3-gi</code>).</dd>
       <dt>"Errore interno di Iudex"</dt>
-      <dd>Un errore imprevisto nel programma (per esempio il disco pieno): la traccia completa è nella finestra del server. Apri una segnalazione con quel testo.</dd>
+      <dd>Un errore imprevisto nel programma (per esempio il disco pieno): la traccia completa è in <code>log/iudex.log</code> nella cartella dei dati. Apri una segnalazione con quel testo.</dd>
     </dl>
 
-    <h2 id="oltre">Oltre il browser</h2>
+    <h2 id="oltre">Finestra e assistenti</h2>
     <dl>
-      <dt>Esiste una versione "app"?</dt>
-      <dd>Sì: <code>scripts\avvia-finestra.cmd</code> apre Iudex in una finestra propria (componente WebView2 di Windows) e ferma il server quando la chiudi. Richiede l'extra <code>desktop</code>: <code>pip install -e .[desktop]</code>.</dd>
+      <dt>Perché Iudex non si apre più nel browser?</dt>
+      <dd>Dalla 0.8 Iudex è un'app con la sua finestra, come Voicebox: WebView2 su Windows, WebKitGTK su Linux, con l'icona nell'area di notifica. Così pagine e API restano chiuse a ogni altro programma o sito. Dai sorgenti: <code>scripts\avvia-finestra.cmd</code> (extra <code>desktop</code>: <code>pip install -e .[desktop]</code>).</dd>
       <dt>Si può usare da un assistente o da un LLM locale?</dt>
-      <dd>Sì, con il server MCP incluso: <code>python -m iudex.mcp_server</code> espone tre strumenti (cerca sentenze, cerca per norma, leggi sentenza) che passano dall'API locale, quindi dalla cache e dai limiti di cortesia. Serve l'extra <code>mcp</code> e un client MCP (per esempio LM Studio con un modello che sappia chiamare strumenti). Il server locale di Iudex deve essere in esecuzione. Esempio di configurazione nel README.</dd>
+      <dd>Sì, con il server MCP incluso: <code>python -m iudex.mcp_server</code> espone tre strumenti (cerca sentenze, cerca per norma, leggi sentenza) che passano dall'API locale, quindi dalla cache e dai limiti di cortesia. Serve l'extra <code>mcp</code>, un client MCP (per esempio LM Studio con un modello che sappia chiamare strumenti) e Iudex aperto; il token si legge dal file <code>token</code> della cartella dei dati (o da <code>IUDEX_TOKEN</code>). Esempio di configurazione nel README.</dd>
     </dl>
   </article>
 </div></main>

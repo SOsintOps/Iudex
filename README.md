@@ -13,8 +13,10 @@ Interfaccia locale per interrogare **SentenzeWeb**, la banca dati pubblica delle
 civili e penali della Corte Suprema di Cassazione (<https://www.italgiure.giustizia.it/sncass/>).
 
 Iudex non è un archivio e non copia la banca dati: ogni ricerca interroga il server della
-Corte come farebbe il browser, ma con un'interfaccia pensata per leggere e confrontare,
-una cronologia, i preferiti, l'esportazione e una cache locale dei testi già aperti.
+Corte come farebbe il browser, ma in una finestra propria, con un'interfaccia pensata per
+leggere e confrontare e con una memoria permanente di ciò che hai cercato e consultato:
+ricerche, sentenze uscite da ciascuna, testi e PDF aperti, esportabili e importabili su un
+altro computer.
 
 ![Iudex: risultati in vista compatta con il filtro "Civile" attivo, i segnali di orientamento e i filtri con i conteggi](docs/immagini/risultati.png)
 
@@ -29,19 +31,29 @@ una cronologia, i preferiti, l'esportazione e una cache locale dei testi già ap
 - **Testo integrale** in un pannello di lettura accanto ai risultati, ricostruito in
   paragrafi, con le occorrenze evidenziate e navigabili (`n`/`p`), il salto al P.Q.M., il
   dispositivo, i **riferimenti normativi** indicizzati dal CED (cliccabili: cercano le sentenze
-  che citano la stessa norma) e il collegamento al **PDF ufficiale**.
+  che citano la stessa norma) e il **PDF ufficiale**, salvato in locale alla prima apertura e
+  mostrato nella finestra o con il programma PDF del computer.
+- **Memoria permanente**: ogni ricerca e ogni pagina di risultati vista, con le sentenze
+  mostrate, la macchina e l'ora; un badge **"già vista"** nei risultati dice, al passaggio del
+  mouse, quando hai consultato la sentenza e da quali ricerche è uscita. Si può spegnere
+  nelle Impostazioni.
 - **Cronologia**, **ricerche salvate** con **controllo delle novità** su richiesta,
   **preferiti con note**; ogni ricerca ha un collegamento diretto (permalink)
-  (`http://127.0.0.1:8765/#testo=…&kind=snciv&anno=2026`).
+  (`#testo=…&kind=snciv&anno=2026`).
 - **Diario**: archivio personale permanente, per giorno, delle ricerche e delle sentenze
-  aperte da ciascuna; delle sentenze aperte conserva la risposta intera del server, testo
-  compreso, e le riapre anche senza rete. Export in JSONL, CSV e zip; copia di sicurezza
-  del database.
+  aperte da ciascuna (testo e PDF); delle sentenze aperte conserva la risposta intera del
+  server, testo compreso, e le riapre anche senza rete.
+- **Esportazione dello storico** in CSV per Excel, JSONL o un pacchetto ZIP con i PDF, e
+  **importazione** in un altro Iudex (unione senza duplicati, anche da una copia del
+  database); copia di sicurezza automatica prima delle migrazioni e delle importazioni.
+- **Impostazioni**: conservazione dello storico, cartella e apertura dei PDF, impronta del
+  browser dichiarata alla Corte (a rotazione, fissa, personalizzata o personalizzate a
+  rotazione), nome del computer.
 - **Esportazione** della pagina di risultati o dei primi 50/100 risultati in CSV, JSON o
   Markdown, e della singola sentenza in Markdown o JSON, con la citazione pronta da copiare.
 - **Colonne ridimensionabili** trascinando le maniglie (pannelli e tabelle), tema chiaro e
   scuro, righe compatte, carattere regolabile, scorciatoie da tastiera, nessuna dipendenza
-  esterna nel browser.
+  esterna nella pagina.
 - Menu **Help** con la **guida all'utilizzo**, le **domande frequenti**, le **versioni**, i
   **software simili** e la **licenza**.
 - Grafica allineata a [Exploratores](https://github.com/SOsintOps/Exploratores) (stessi
@@ -86,10 +98,10 @@ nella stessa richiesta della ricerca. Inoltre:
 | Testi aperti | conservati in locale: riaprire una sentenza non chiama il server |
 | Controllo novità delle ricerche salvate | solo su clic, una richiesta per ricerca |
 | Esportazioni | pagina corrente: nessuna richiesta; primi 50: al più una; primi 100: al più due |
-| PDF | non scaricati da Iudex: il collegamento apre il documento sul sito della Corte |
+| PDF | una richiesta alla prima apertura di una sentenza (con lo stesso ritmo delle altre), poi dalla copia locale; mai in blocco |
 | Telemetria del sito (`xway`) | non replicata (`IUDEX_TELEMETRIA=1` per replicarla) |
-| Identità dichiarata | User-Agent e header di un browser installato su Windows (Chrome, Edge o Firefox), scelto dal giorno del calendario; `IUDEX_IMPRONTA` ne fissa uno. Cambiano solo gli header: l'impronta TLS resta quella di Python |
-| API locali | rispondono solo all'interfaccia di Iudex (header `X-Iudex: 1`): un altro sito aperto nel browser non può usarle |
+| Identità dichiarata | User-Agent e header di un browser: per impostazione predefinita Chrome, Edge o Firefox su Windows scelto dal giorno; nelle Impostazioni una predefinita fissa, una personalizzata (controllata perché sia coerente) o le personalizzate a rotazione; `IUDEX_IMPRONTA` le fissa tutte. Cambiano solo gli header: l'impronta TLS resta quella di Python |
+| Accesso locale | pagine, API e PDF rispondono solo alla finestra di Iudex (token nella cartella dei dati); un browser o un altro sito non possono usarli |
 
 Non c'è alcuna funzione di scaricamento massivo o di scansione dell'archivio, e non va
 aggiunta: la banca dati è della Corte, che la pubblica per la consultazione.
@@ -106,13 +118,20 @@ le risposte alle domande più comuni in [docs/faq.md](docs/faq.md); i progetti a
 Dalla pagina delle [release](https://github.com/SOsintOps/Iudex/releases/latest):
 
 - **Windows**: `Iudex-X.Y.Z-setup.exe`. Si installa per l'utente, senza diritti di
-  amministratore, in `%LOCALAPPDATA%\Programs\Iudex`; apre Iudex in una finestra propria
-  (componente WebView2 di Windows 11) con un'icona nell'area di notifica. I dati stanno in
-  `%APPDATA%\Iudex` e restano anche dopo la disinstallazione. L'installer non è firmato con
-  un certificato di firma del codice: Windows SmartScreen può chiedere conferma ("Ulteriori
-  informazioni", "Esegui comunque"); lo sha256 di ogni file è in `latest.json` nella release.
-- **Linux**: `Iudex-X.Y.Z-x86_64.AppImage` (renderlo eseguibile con `chmod +x`): avvia il
-  server e apre il browser predefinito; dati in `~/.local/share/iudex`.
+  amministratore, in `%LOCALAPPDATA%\Programs\Iudex`, e chiede in quale cartella conservare i
+  PDF; apre Iudex in una finestra propria (componente WebView2, già presente in Windows 11;
+  su Windows 10 l'installer avvisa se manca) con un'icona nell'area di notifica. I dati
+  stanno in `%APPDATA%\Iudex` e restano anche dopo la disinstallazione. L'installer non è
+  firmato con un certificato di firma del codice: Windows SmartScreen può chiedere conferma
+  ("Ulteriori informazioni", "Esegui comunque"); lo sha256 di ogni file è in `latest.json`
+  nella release.
+- **Linux**: `Iudex-X.Y.Z-x86_64.AppImage` (renderlo eseguibile con `chmod +x`): apre la
+  finestra con WebKitGTK del sistema (`sudo apt install gir1.2-webkit2-4.1 python3-gi` su
+  Debian e Ubuntu; se manca, Iudex lo dice) e al primo avvio chiede la cartella dei PDF;
+  dati in `~/.local/share/iudex`.
+
+Le prove da fare sugli installer prima di una versione sono in
+[docs/prova-installazione.md](docs/prova-installazione.md).
 
 ### Dai sorgenti
 
@@ -122,18 +141,26 @@ Serve Python 3.11 o successivo.
 git clone https://github.com/SOsintOps/Iudex.git
 cd Iudex
 python -m venv .venv
-.venv\Scripts\python.exe -m pip install -e .
-scripts\avvia.cmd
+.venv\Scripts\python.exe -m pip install -e .[desktop]
+scripts\avvia-finestra.cmd
 ```
 
-`scripts\avvia.cmd` avvia il server e apre il browser quando risponde (`python -m iudex
---apri`), sulla porta configurata; se Iudex è già in esecuzione apre quello invece di
-avviarne un secondo. Su Linux o macOS: `.venv/bin/python -m iudex --apri`. I dati locali
-(cronologia, diario, preferiti, cache) sono archiviati in `dati/iudex.sqlite`; le voci di
-cache scadute vengono tolte a ogni avvio.
+`scripts\avvia-finestra.cmd` (o `python -m iudex.desktop`) apre la finestra di Iudex; se
+Iudex è già acceso apre quello invece di avviarne un secondo. Su Linux:
+`.venv/bin/python -m iudex.desktop`, con WebKitGTK e PyGObject del sistema (Debian e Ubuntu:
+`sudo apt install gir1.2-webkit2-4.1 python3-gi`, e il venv creato con
+`--system-site-packages`). Dai sorgenti i dati (cronologia, diario, esecuzioni, preferiti,
+impostazioni, cache, token) stanno in `dati/iudex.sqlite` e nella cartella `dati/`, i PDF in
+`dati/pdf/` salvo scelta diversa; le voci di cache scadute vengono tolte a ogni avvio.
 
-Ogni settimana, all'avvio, Iudex fa una copia di sicurezza del database in `backup/` nella
-cartella dei dati (`VACUUM INTO`, le ultime otto). L'app installata controlla all'avvio se
+`python -m iudex` avvia il solo server, senza finestra, per chi integra Iudex in un'altra app
+(argomenti `--data-dir`, `--port`, `--parent-pid`): pagine e API chiedono il token del file
+`token` nella cartella dei dati, nell'header `X-Iudex-Token`.
+
+Ogni settimana, all'avvio, e prima di ogni migrazione dello schema e di ogni importazione,
+Iudex fa una copia di sicurezza del database in `backup/` nella cartella dei dati
+(`VACUUM INTO`, le ultime otto). I PDF non sono nel database: per conservarli altrove usa il
+pacchetto ZIP dalla scheda Cronologia. L'app installata controlla all'avvio se
 c'è una versione nuova (una richiesta a GitHub per `latest.json` della release più recente,
 senza altri dati) e lo segnala nella scheda Stato; l'installer si scarica e si avvia solo
 premendo "Scarica e installa", dopo il controllo dello sha256. `IUDEX_AGGIORNAMENTI=0` spegne
@@ -143,11 +170,11 @@ Variabili d'ambiente: `IUDEX_PORTA` (8765), `IUDEX_HOST` (127.0.0.1), `IUDEX_DAT
 (cartella dei dati), `IUDEX_INTERVALLO` (secondi fra le richieste), `IUDEX_TTL_RICERCHE`
 (secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`, `IUDEX_AGGIORNAMENTI` (`0`
 spegne il controllo degli aggiornamenti, `1` lo accende anche dai sorgenti), `IUDEX_IMPRONTA`
-(`chrome`, `edge` o `firefox` per dichiarare sempre lo stesso browser invece di quello del
-giorno; la scheda Stato mostra quale). Iudex è pensato per
-`127.0.0.1`: le API accettano solo richieste con un `Host` locale, quindi un indirizzo
-diverso (per esempio `0.0.0.0` per la rete locale) va aggiunto anche come `IUDEX_HOST`, e
-in rete l'header `X-Iudex` da solo non è una protezione.
+(`chrome`, `edge` o `firefox` per dichiarare sempre lo stesso browser, qualunque cosa dicano
+le Impostazioni; la scheda Stato mostra quale), `IUDEX_TOKEN` (per il server MCP, al posto del
+file `token`). Iudex è pensato per `127.0.0.1`: le API accettano solo richieste con un `Host`
+locale, quindi un indirizzo diverso (per esempio `0.0.0.0` per la rete locale) va aggiunto
+anche come `IUDEX_HOST`; il token protegge l'accesso, ma la connessione resta in HTTP.
 
 ### Finestra nativa
 
@@ -156,17 +183,20 @@ in rete l'header `X-Iudex` da solo non è una protezione.
 scripts\avvia-finestra.cmd
 ```
 
-Apre Iudex in una finestra propria (componente WebView2 di Windows 11; WebKitGTK su Linux,
-WebKit su macOS), con un'icona nell'area di notifica (Apri, Mantieni in esecuzione, Esci), e
-ferma il server quando la chiudi. Se Iudex è già acceso su quella porta, la finestra apre
-quello invece di avviarne un secondo; se la porta è occupata da un altro programma, usa la
-successiva libera. `--data-dir` e `--port` scelgono cartella dei dati e porta.
+È l'unico modo di usare Iudex, come in Voicebox: una finestra propria (componente WebView2
+di Windows; WebKitGTK su Linux, WebKit su macOS), con un'icona nell'area di notifica (Apri,
+Mantieni in esecuzione, Esci), che ferma il server quando la chiudi. La finestra entra con
+il token della cartella dei dati (`/accesso?codice=...`, poi un cookie di sessione); un
+browser che apre l'indirizzo locale vede solo l'invito ad aprire Iudex dalla finestra. Se
+Iudex è già acceso su quella porta, la finestra apre quello invece di avviarne un secondo; se
+la porta è occupata da un altro programma, usa la successiva libera. `--data-dir` e `--port`
+scelgono cartella dei dati e porta.
 
 Come backend di un'altra app, `python -m iudex --data-dir CARTELLA --port PORTA --parent-pid
 PID` avvia solo il server e lo chiude quando termina il processo `PID`; `GET /health`
-risponde `{"app": "iudex", "versione", "pid"}` senza l'header delle API, così chi lo avvia
-riconosce la propria istanza. Il log va in `log/iudex.log` nella cartella dei dati, con
-rotazione.
+risponde `{"app": "iudex", "versione", "pid"}` senza token, così chi lo avvia riconosce la
+propria istanza; le altre chiamate vogliono l'header `X-Iudex-Token` con il contenuto del file
+`token`. Il log va in `log/iudex.log` nella cartella dei dati, con rotazione.
 
 ### Con un assistente o un LLM locale (MCP)
 
@@ -174,9 +204,11 @@ rotazione.
 .venv\Scripts\python.exe -m pip install -e .[mcp]
 ```
 
-Con Iudex in esecuzione, `python -m iudex.mcp_server` espone tre strumenti MCP
+Con Iudex aperto, `python -m iudex.mcp_server` espone tre strumenti MCP
 (`cerca_sentenze`, `cerca_per_norma`, `leggi_sentenza`) che passano dall'API locale, quindi
-dalla cache e dalla limitazione della frequenza delle richieste. Esempio per LM Studio (`mcp.json`) o Claude Desktop:
+dalla cache e dalla limitazione della frequenza delle richieste. Il server MCP legge il token
+dal file `token` della cartella dei dati (la stessa di Iudex: `IUDEX_DATI` se l'hai cambiata)
+oppure da `IUDEX_TOKEN`. Esempio per LM Studio (`mcp.json`) o Claude Desktop:
 
 ```json
 {
@@ -214,9 +246,9 @@ aprendo il sito nel browser.
 Il rimedio è lasciare fuori dal tunnel solo il traffico verso il sito della Corte, con
 l'esclusione dal tunnel (*split tunneling*) per **indirizzo IP** (`www.italgiure.giustizia.it`,
 oggi 81.126.56.168, rete Telecom Italia). Così tutto il resto resta nella VPN, mentre le
-ricerche e i PDF ufficiali, che si aprono nel browser sullo stesso sito, raggiungono la Corte
-in modo diretto: la Corte vede quindi l'indirizzo reale per quelle richieste. Escludere
-invece l'eseguibile di Iudex funziona per le ricerche ma non per i PDF, che apre il browser.
+ricerche e i PDF ufficiali, che Iudex scarica dallo stesso sito, raggiungono la Corte in
+modo diretto: la Corte vede quindi l'indirizzo reale per quelle richieste. Dalla 0.8 anche
+escludere il solo eseguibile di Iudex basta, perché i PDF li scarica Iudex e non il browser.
 
 ## Sviluppo
 
@@ -237,15 +269,20 @@ Struttura:
 |--------|---------|
 | `iudex/query.py` | costruzione delle query Solr secondo la sintassi del sito (implementazione propria); riferimenti normativi |
 | `iudex/client.py` | client HTTP con la limitazione delle richieste e il contesto TLS |
-| `iudex/cache.py` | SQLite: cronologia, ricerche salvate, preferiti, testi, cache, diario e sentenze consultate |
-| `iudex/export.py` | CSV, JSON, Markdown, JSONL, zip; ricostruzione dei paragrafi |
-| `iudex/app.py` | server FastAPI, API JSON, protezione delle API |
+| `iudex/cache.py` | SQLite con schema versionato e migrazioni: cronologia, esecuzioni e risultati, ricerche salvate, preferiti, testi, cache, diario, sentenze consultate, PDF, impostazioni, macchine; unione di un altro archivio |
+| `iudex/export.py` | CSV, JSON, Markdown, JSONL, zip (anche dello storico); ricostruzione dei paragrafi |
+| `iudex/importazione.py` | lettura di un pacchetto ZIP, di un JSONL o di una copia del database di un altro Iudex |
+| `iudex/pdf.py` | cartella, nome e apertura dei PDF salvati |
+| `iudex/preferenze.py` | impostazioni della scheda Impostazioni: predefinite, convalida, variabili d'ambiente |
+| `iudex/impronte.py` | impronte del browser predefinite e personalizzate |
+| `iudex/accesso.py` | token di accesso della finestra e del server MCP |
+| `iudex/app.py` | server FastAPI, API JSON, protezione delle pagine e delle API |
 | `iudex/mcp_server.py` | server MCP (extra `mcp`) |
 | `iudex/desktop.py` | finestra nativa (extra `desktop`) |
 | `iudex/autonoma/` | app autonoma: cartelle dei dati per sistema, server con `/health`, porta e sorveglianza del processo genitore, finestra con icona nell'area di notifica |
 | `iudex/static/` | interfaccia e pagine di aiuto (HTML, CSS, JavaScript senza dipendenze), font, icone |
 | `tests/` | test automatici (senza rete) |
-| `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini |
+| `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini; piano dei lavori (`plan/`) e avanzamento (`PROGRESS.md`); prove degli installer |
 | `assets/logo/` | logo originale e script che generano logo, marchio, favicon e anteprima social (`docs/immagini/anteprima-social.png`) |
 | `scripts/` | avviatori per Windows |
 | `.github/` | integrazione continua (ruff + pytest), Dependabot, modelli per segnalazioni e pull request |

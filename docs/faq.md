@@ -11,11 +11,12 @@ massime ufficiali né i provvedimenti anteriori: quelli sono in ItalgiureWeb, ri
 operatori.
 
 **Iudex copia la banca dati?** No. Ogni ricerca interroga il server della Corte nel momento
-in cui la fai. In locale restano le risposte recenti (un'ora), i testi che hai aperto e il
-diario delle tue consultazioni.
+in cui la fai. In locale restano le risposte recenti (un'ora), i testi e i PDF che hai aperto
+e la memoria delle tue ricerche e consultazioni.
 
 **Di chi sono i testi?** Della Corte Suprema di Cassazione, che li pubblica per la
-consultazione. Il PDF si apre sempre dal sito ufficiale.
+consultazione. Iudex salva il PDF ufficiale di una sentenza solo quando lo apri, una volta, e
+non scarica mai in blocco.
 
 **Perché non cercare per nome di persona?** Le sentenze contengono dati personali e talvolta
 categorie particolari di dati; nel 2024 il Garante per la protezione dei dati personali ha
@@ -50,9 +51,9 @@ numerati, ma non separa le parole che l'OCR ha unito.
 
 ## Le richieste al server
 
-**Quante?** Una per ricerca, una per il testo di una sentenza mai aperta, una per un
-riferimento normativo nuovo, una al mese per la lista delle sigle. Il sito ne fa circa venti
-per ricerca.
+**Quante?** Una per ricerca, una per il testo di una sentenza mai aperta, una per il PDF di
+una sentenza alla prima apertura, una per un riferimento normativo nuovo, una al mese per la
+lista delle sigle. Il sito ne fa circa venti per ricerca.
 
 **Limiti:** una richiesta alla volta, almeno due secondi di distanza, un solo nuovo tentativo
 su errore di rete, nessuna insistenza su 403/429. Nessuna funzione di scaricamento massivo.
@@ -63,21 +64,35 @@ controllo registra il punto di partenza.
 **Esportazioni:** pagina corrente = nessuna richiesta; primi 50 = al più una; primi 100 = al
 più due.
 
-**Identità:** gli header di un browser installato su Windows (Chrome, Edge o Firefox),
-scelto dal giorno del calendario: lo stesso per tutta la giornata, un altro il giorno dopo,
-quando Iudex riapre anche la sessione. `IUDEX_IMPRONTA` ne fissa uno; la scheda Stato mostra
-quello in uso. Cambiano solo gli header: l'impronta TLS resta quella di Python.
+**Identità:** gli header di un browser. Per impostazione predefinita Chrome, Edge o Firefox su
+Windows, scelto dal giorno del calendario: lo stesso per tutta la giornata, un altro il giorno
+dopo, quando Iudex riapre anche la sessione. Nelle Impostazioni si può fissare una predefinita,
+usarne una personalizzata (controllata perché sia coerente) o far ruotare le personalizzate;
+`IUDEX_IMPRONTA` le fissa tutte; la scheda Stato mostra quella in uso. Cambiano solo gli
+header: l'impronta TLS resta quella di Python.
 
 ## I dati locali
 
-Tutto in `dati/iudex.sqlite` (percorso nella scheda Stato); preferenze di aspetto nel
-browser. Svuotamento dalla scheda Stato; per azzerare, chiudi Iudex ed elimina il file.
+Tutto nella cartella dei dati di Iudex: il database `iudex.sqlite` (percorso nella scheda
+Stato), il token di accesso e, salvo scelta diversa, la cartella `pdf`. Svuotamento della
+cache dalla scheda Stato; per azzerare, chiudi Iudex ed elimina la cartella.
 
-**Iudex salva le mie ricerche?** Sì, nel Diario: ogni ricerca (parole, filtri, risultati) e
-ogni sentenza aperta, con la ricerca di provenienza. Delle sentenze aperte conserva la
-risposta intera del server, testo compreso; dei risultati non aperti solo il conteggio. Il
-diario non si svuota con i pulsanti della cache; si esporta in JSONL, CSV, zip o
-FollowTheMoney (`.ftm`), e *Copia di sicurezza* salva il database intero.
+**Iudex salva le mie ricerche?** Sì, per sempre (salvo che tu spenga lo storico nelle
+Impostazioni): ogni ricerca, ogni pagina di risultati vista con le sentenze mostrate, ogni
+sentenza aperta (testo o PDF) con la ricerca di provenienza, e su quale computer. Delle
+sentenze aperte conserva la risposta intera del server, testo compreso. Il badge *già vista*
+nei risultati lo mostra al passaggio del mouse. Lo storico non si svuota con i pulsanti della
+cache; si esporta dalla Cronologia (CSV per Excel, JSONL, pacchetto ZIP con i PDF) e dal Diario
+(JSONL, CSV, zip, FollowTheMoney), e *Copia di sicurezza* salva il database intero.
+
+**Posso portare lo storico su un altro computer?** Sì: esporta il pacchetto ZIP dalla
+Cronologia e importalo nell'altro Iudex (Impostazioni, *Importa uno storico*). L'importazione
+unisce senza duplicati, anche più volte e da più computer; accetta anche il JSONL o una copia
+del database.
+
+**Dove sono i PDF?** Nella cartella scelta nell'installer o nelle Impostazioni (la scheda
+Stato la mostra), uno per sentenza con il nome `<id>.pdf`. Cambiando cartella, Iudex sposta
+quelli già salvati.
 
 **Colonne:** trascina le linee fra i pannelli o fra le intestazioni delle tabelle; doppio
 clic ripristina; da tastiera, focus sulla maniglia e frecce.
@@ -94,16 +109,24 @@ clic ripristina; da tastiera, focus sulla maniglia e frecce.
   di uscita delle VPN (il collegamento resta senza risposta). Escludi dal tunnel l'indirizzo
   di `www.italgiure.giustizia.it` con l'esclusione per IP della VPN (*split tunneling*); i
   dettagli nel README, sezione «Da dietro una VPN».
+- **"Iudex si usa dalla sua finestra" nel browser:** è voluto. Pagine e API rispondono solo
+  alla finestra di Iudex (e al server MCP), che hanno il token della cartella dei dati: aprilo
+  dal collegamento nel menu Start o sul Desktop.
 - **"Richiesta non proveniente dall'interfaccia di Iudex":** le API accettano solo le
   chiamate della pagina (header `X-Iudex: 1`).
-- **La ricerca non risponde:** il server locale non è avviato (`scripts\avvia.cmd` o
-  `python -m iudex --apri`). Porta occupata da un altro programma: cambia `IUDEX_PORTA`; se
-  è già aperto un altro Iudex, l'avvio apre quello.
+- **La ricerca non risponde:** Iudex non è aperto. Porta occupata da un altro programma:
+  Iudex passa alla successiva libera (o cambia `IUDEX_PORTA`); se è già aperto un altro Iudex,
+  l'avvio apre quello.
+- **Su Linux la finestra non si apre:** manca WebKitGTK; il messaggio dice il comando
+  (Debian e Ubuntu: `sudo apt install gir1.2-webkit2-4.1 python3-gi`).
 - **"Errore interno di Iudex":** errore imprevisto (per esempio disco pieno); la traccia è
-  nella finestra del server.
+  in `log/iudex.log` nella cartella dei dati.
 
-## Oltre il browser
+## Finestra e assistenti
 
-- **Finestra nativa:** `scripts\avvia-finestra.cmd` (extra `desktop`, pywebview su WebView2).
+- **Finestra:** Iudex si usa solo dalla sua finestra (pywebview su WebView2 in Windows,
+  WebKitGTK in Linux), come Voicebox; dai sorgenti `scripts\avvia-finestra.cmd` (extra
+  `desktop`).
 - **Assistenti e LLM locali:** `python -m iudex.mcp_server` (extra `mcp`) espone tre
-  strumenti che passano dall'API locale; serve un client MCP e Iudex in esecuzione.
+  strumenti che passano dall'API locale; serve un client MCP e Iudex aperto. Il token si
+  legge dal file `token` della cartella dei dati (o da `IUDEX_TOKEN`).

@@ -42,21 +42,23 @@
     <a href="#salvate">Ricerche salvate</a>
     <a href="#preferiti">Preferiti</a>
     <a href="#stato">Stato</a>
+    <a href="#impostazioni">Impostazioni</a>
     <a href="#tastiera">Tastiera</a>
-    <a href="#oltre">Oltre il browser</a>
+    <a href="#oltre">Finestra e assistenti</a>
   </nav>
   <article class="documento">
     <h1>Guida all'utilizzo</h1>
-    <p>Iudex è un'interfaccia locale per <b>SentenzeWeb</b>, la banca dati pubblica delle sentenze civili e penali della Corte Suprema di Cassazione. Non duplica la banca dati: ogni ricerca interroga il server della Corte nel momento in cui la esegui, e in locale restano la cronologia, il diario, le ricerche salvate, i preferiti e una cache dei testi già aperti. Questa pagina descrive il percorso tipico di lavoro e che cosa fa ogni voce dell'interfaccia.</p>
+    <p>Iudex è un'interfaccia locale per <b>SentenzeWeb</b>, la banca dati pubblica delle sentenze civili e penali della Corte Suprema di Cassazione. Non duplica la banca dati: ogni ricerca interroga il server della Corte nel momento in cui la esegui. In locale restano la memoria di ciò che hai fatto (ricerche, sentenze uscite da ciascuna, consultazioni), i testi e i PDF aperti, le ricerche salvate e i preferiti. Iudex si usa dalla sua finestra. Questa pagina descrive il percorso tipico di lavoro e che cosa fa ogni voce dell'interfaccia.</p>
 
     <h2 id="flusso">Il flusso di lavoro</h2>
     <ol>
       <li><b>Cerca</b>: scrivi parole, estremi o un riferimento normativo nel riquadro in alto e premi <b>Cerca</b> (o Invio). Parte una sola richiesta al server della Corte.</li>
       <li><b>Restringi</b>: nella colonna di sinistra spunta archivio, tipo di provvedimento, sezione, anno, sottosezione o materia. I conteggi arrivano con la stessa risposta della ricerca, quindi sai subito quanti provvedimenti restano.</li>
-      <li><b>Leggi</b>: <b>Apri testo</b> mostra il provvedimento in un pannello accanto ai risultati, in paragrafi, con le occorrenze evidenziate, il salto al P.Q.M. e i riferimenti normativi cliccabili. Il PDF ufficiale si apre sempre dal sito della Corte.</li>
+      <li><b>Leggi</b>: <b>Apri testo</b> mostra il provvedimento in un pannello accanto ai risultati, in paragrafi, con le occorrenze evidenziate, il salto al P.Q.M. e i riferimenti normativi cliccabili. <b>PDF</b> apre il PDF ufficiale: la prima volta Iudex lo scarica e lo salva, poi lo riapre dalla copia locale.</li>
+      <li><b>Riconosci</b>: il badge <b>già vista</b> segna le sentenze che hai già consultato; passandoci sopra con il mouse vedi quando e da quali ricerche.</li>
       <li><b>Conserva</b>: <b>Preferisci</b> mette il provvedimento fra i preferiti (con annotazioni personali); <b>Salva ricerca</b> salva i criteri di ricerca per ripeterla e controllare se ci sono novità.</li>
-      <li><b>Esporta</b>: la pagina di risultati o i primi 50/100 in CSV, JSON o Markdown; la singola sentenza in Markdown o JSON; la citazione pronta da incollare.</li>
-      <li><b>Ritrova</b>: tutto quello che hai cercato è nella <b>Cronologia</b> e nel <b>Diario</b>; ogni ricerca ha un collegamento diretto (permalink) che puoi copiare dalla barra degli indirizzi del browser.</li>
+      <li><b>Esporta</b>: la pagina di risultati o i primi 50/100 in CSV, JSON o Markdown; la singola sentenza in Markdown o JSON; la citazione pronta da incollare; tutto lo storico dalla <b>Cronologia</b>.</li>
+      <li><b>Ritrova</b>: tutto quello che hai cercato è nella <b>Cronologia</b> e nel <b>Diario</b>; ogni ricerca ha un collegamento diretto (permalink).</li>
     </ol>
 
     <h2 id="barra">La barra di navigazione</h2>
@@ -66,15 +68,17 @@
       <dt>Ricerca</dt>
       <dd>La scheda principale: riquadro di ricerca, filtri, risultati e pannello di lettura.</dd>
       <dt>Cronologia</dt>
-      <dd>Le ricerche fatte, in ordine di tempo, con il numero di risultati e il collegamento per rifarle.</dd>
+      <dd>Le ricerche fatte, in ordine di tempo, quante volte, con il numero di risultati e il collegamento per rifarle; l'esportazione dello storico.</dd>
       <dt>Diario</dt>
-      <dd>L'archivio personale permanente: giorno per giorno, le ricerche e le sentenze aperte da ciascuna, con il testo conservato.</dd>
+      <dd>L'archivio personale permanente: giorno per giorno, le ricerche e le sentenze aperte da ciascuna (testo e PDF), con il testo conservato.</dd>
       <dt>Ricerche salvate</dt>
       <dd>Le interrogazioni che hai deciso di conservare, con il controllo delle novità su richiesta.</dd>
       <dt>Preferiti</dt>
       <dd>I singoli provvedimenti che hai segnato, con le note.</dd>
       <dt>Stato</dt>
-      <dd>Versione, richieste fatte al server in questa sessione, contenuto della cache, orari del tema scuro e registro delle chiamate.</dd>
+      <dd>Versione, richieste fatte al server in questa sessione, contenuto della cache, PDF salvati, orari del tema scuro e registro delle chiamate.</dd>
+      <dt>Impostazioni</dt>
+      <dd>Conservazione dello storico, cartella e apertura dei PDF, impronta del browser, nome del computer, importazione di uno storico.</dd>
       <dt>Help</dt>
       <dd>Questa guida, le domande frequenti, le versioni, i software simili e la licenza.</dd>
       <dt>Compatta</dt>
@@ -122,10 +126,12 @@
     <h2 id="risultati">I risultati</h2>
     <p>L'intestazione dice quanti provvedimenti rispondono alla ricerca e se la risposta arriva dalla cache locale. Ogni risultato mostra archivio e sezione, tipo e numero, date di udienza e di deposito, presidente, relatore, ECLI e, nella vista normale, i frammenti di testo con le parole cercate evidenziate.</p>
     <dl>
+      <dt>Già vista</dt>
+      <dd>Compare accanto agli estremi delle sentenze che hai già consultato (testo o PDF). Passandoci sopra con il mouse vedi quante volte e l'ultima volta che l'hai aperta, da quali ricerche e in quali ricerche precedenti è uscita.</dd>
       <dt>Apri testo</dt>
       <dd>Carica il testo integrale nel pannello di lettura (una richiesta al server la prima volta, poi dalla cache). Anche il clic sugli estremi lo apre.</dd>
-      <dt>PDF ufficiale</dt>
-      <dd>Apre il documento sul sito della Corte, in una nuova scheda. Iudex non scarica i PDF.</dd>
+      <dt>PDF</dt>
+      <dd>Il PDF ufficiale. La prima volta Iudex lo scarica (una richiesta) e lo salva nella cartella dei PDF come <code>&lt;id&gt;.pdf</code>; poi lo apre sempre dalla copia locale, nel pannello di lettura o con il programma PDF del computer, come scelto nelle Impostazioni. Le sentenze in fase di oscuramento non hanno ancora il PDF.</dd>
       <dt>Preferisci</dt>
       <dd>Aggiunge o toglie il provvedimento dai preferiti.</dd>
       <dt>Salva ricerca</dt>
@@ -135,14 +141,14 @@
       <dt>Pagine</dt>
       <dd>I pulsanti sotto l'elenco scorrono le pagine di risultati.</dd>
       <dt>Collegamento diretto (permalink)</dt>
-      <dd>Dopo ogni ricerca l'indirizzo nella barra del browser contiene tutti i parametri (per esempio <code>#testo=licenziamento&amp;kind=snciv&amp;anno=2026</code>): copialo, salvalo fra i segnalibri o incollalo in un appunto. Riaprendolo, Iudex ripete la stessa ricerca.</dd>
+      <dd>Ogni ricerca ha un indirizzo con tutti i parametri (per esempio <code>#testo=licenziamento&amp;kind=snciv&amp;anno=2026</code>), lo stesso della cronologia e delle ricerche salvate: riaprendolo, Iudex ripete la stessa ricerca.</dd>
     </dl>
 
     <h2 id="lettura">Il pannello di lettura</h2>
-    <p>Si apre a destra dei risultati e mostra il provvedimento ricostruito in paragrafi, con le intestazioni (Fatti di causa, Ragioni della decisione, P.Q.M. e simili) riconosciute. In alto ci sono gli estremi, le date, presidente e relatore, l'ECLI e, quando il CED l'ha indicata, la materia. La maniglia fra risultati e testo regola la larghezza come quella dei filtri.</p>
+    <p>Si apre a destra dei risultati e mostra il provvedimento ricostruito in paragrafi, con le intestazioni (Fatti di causa, Ragioni della decisione, P.Q.M. e simili) riconosciute. In alto ci sono gli estremi, le date, presidente e relatore, l'ECLI, quando il CED l'ha indicata la materia, quante volte l'hai aperta, da quali ricerche e in quali ricerche è uscita. La maniglia fra risultati e testo regola la larghezza come quella dei filtri.</p>
     <dl>
-      <dt>PDF ufficiale</dt>
-      <dd>Lo stesso collegamento al sito della Corte.</dd>
+      <dt>PDF</dt>
+      <dd>Come nell'elenco; il PDF mostrato nel pannello ha <b>Torna al testo</b>.</dd>
       <dt>Copia citazione</dt>
       <dd>Mette negli appunti la citazione nel formato <code>Cass. civ., Sez. Lavoro, Sentenza n. 26495/2026, dep. 09/10/2026 (ECLI:IT:CASS:2026:26495CIV)</code>.</dd>
       <dt>Aggiungi ai preferiti</dt>
@@ -162,13 +168,17 @@
     </dl>
 
     <h2 id="cronologia">Cronologia</h2>
-    <p>Ogni ricerca finisce qui con data e ora, testo e filtri, numero di risultati, ordinamento e risultati per pagina. <b>Apri</b> la rifà (dalla cache se è recente); <b>Elimina</b> toglie la singola voce; <b>Svuota</b> cancella tutta la cronologia. La cronologia è solo tua: resta nel file SQLite nella cartella <code>dati</code>.</p>
+    <p>Ogni ricerca finisce qui con data e ora, testo e filtri, numero di risultati, ordinamento e risultati per pagina. <b>Apri</b> la rifà (dalla cache se è recente); <b>Elimina</b> toglie la singola voce, con il ricordo delle sentenze uscite da quella ricerca; <b>Svuota</b> cancella tutta la cronologia. La cronologia è solo tua: resta nella cartella dei dati di Iudex.</p>
+    <dl>
+      <dt>Esporta lo storico</dt>
+      <dd><b>Excel (CSV)</b>: una riga per ogni sentenza uscita in ogni ricerca, con la data di consultazione e se il PDF è salvato. <b>JSONL</b>: tutto lo storico, un record per riga. <b>Pacchetto ZIP con i PDF</b>: i CSV di ricerche, pagine viste, risultati e consultazioni, il JSONL, la risposta intera e il testo delle sentenze consultate e i PDF salvati; si importa in un altro Iudex. Ogni riga dice anche su quale computer è stata fatta.</dd>
+    </dl>
 
     <h2 id="diario">Diario</h2>
     <p>Il diario è l'archivio personale di Iudex e, a differenza della cronologia e della cache, non si svuota mai da un pulsante. Per ogni giorno elenca le ricerche fatte (ora, parole, filtri, numero di provvedimenti, pagina) e, sotto ciascuna, le sentenze che hai aperto da quei risultati. La stessa sentenza aperta in giorni diversi, da ricerche diverse, compare sotto ognuna: il diario risponde sia a «che cosa ho consultato il 17» sia a «da quali ricerche è emersa questa ordinanza».</p>
     <dl>
       <dt>Che cosa conserva</dt>
-      <dd>Delle ricerche solo la traccia (parole, filtri, quanti risultati): cercare un termine comune non archivia decine di sentenze inutili. Delle sentenze <b>aperte</b> conserva invece la risposta intera del server della Corte, testo compreso, una volta sola per sentenza: le riapri dal diario anche senza rete e anche quando il provvedimento sarà uscito dalla finestra dei cinque anni dell'archivio pubblico.</dd>
+      <dd>Delle ricerche la traccia (parole, filtri, quanti risultati) e gli estremi delle sentenze mostrate nelle pagine che hai visto, non i loro testi: cercare un termine comune non archivia decine di sentenze inutili. Delle sentenze <b>aperte</b> conserva invece la risposta intera del server della Corte, testo compreso, una volta sola per sentenza: le riapri dal diario anche senza rete e anche quando il provvedimento sarà uscito dalla finestra dei cinque anni dell'archivio pubblico.</dd>
       <dt>Giorno</dt>
       <dd>Il menu in alto sceglie il giorno; accanto a ogni data il numero di ricerche e di sentenze aperte.</dd>
       <dt>Nel pannello di lettura</dt>
@@ -180,7 +190,7 @@
       <dt>Sentenze consultate (zip)</dt>
       <dd>Un archivio con due file per ogni sentenza aperta: <code>&lt;id&gt;.json</code>, la risposta del server con tutti i campi, e <code>&lt;id&gt;.txt</code>, il solo testo in paragrafi.</dd>
       <dt>Dati personali</dt>
-      <dd>I testi delle sentenze contengono nomi, date di nascita e fatti di causa in chiaro: il diario li conserva sul tuo disco, nel file <code>dati/iudex.sqlite</code>, e da nessun'altra parte. Va custodito con la stessa riservatezza di un fascicolo di studio.</dd>
+      <dd>I testi delle sentenze contengono nomi, date di nascita e fatti di causa in chiaro: il diario li conserva sul tuo disco, nella cartella dei dati di Iudex, e da nessun'altra parte. Va custodito con la stessa riservatezza di un fascicolo di studio.</dd>
     </dl>
 
     <h2 id="salvate">Ricerche salvate</h2>
@@ -195,22 +205,36 @@
     </dl>
 
     <h2 id="preferiti">Preferiti</h2>
-    <p>Un preferito è un <i>singolo provvedimento</i>: estremi, ECLI, collegamento al PDF e una nota che scrivi tu (per esempio perché ti interessa o a quale pratica si riferisce). La tabella si ordina per data di inserimento; <b>PDF</b> apre il documento sul sito della Corte, <b>Rimuovi</b> lo toglie dai preferiti. Il testo, se l'hai già aperto, è anche in cache e si rilegge senza chiamare il server.</p>
+    <p>Un preferito è un <i>singolo provvedimento</i>: estremi, ECLI, collegamento al PDF e una nota che scrivi tu (per esempio perché ti interessa o a quale pratica si riferisce). La tabella si ordina per data di inserimento e mostra il badge <b>già vista</b>; <b>PDF</b> apre il PDF come nell'elenco, <b>Rimuovi</b> lo toglie dai preferiti. Il testo, se l'hai già aperto, è anche in cache e si rilegge senza chiamare il server.</p>
 
     <h2 id="stato">Stato</h2>
     <dl>
       <dt>Richieste al server</dt>
       <dd>Quante chiamate Iudex ha fatto alla Corte da quando è partito, e l'intervallo minimo fra due chiamate (2 secondi per impostazione predefinita).</dd>
-      <dt>Identità dichiarata oggi</dt>
-      <dd>Il browser (Chrome, Edge o Firefox su Windows) i cui header Iudex sta usando: cambia con il giorno del calendario, oppure è fisso se impostato con <code>IUDEX_IMPRONTA</code>.</dd>
+      <dt>Identità dichiarata</dt>
+      <dd>Il browser i cui header Iudex sta usando, secondo la scelta nelle Impostazioni (o fissato con <code>IUDEX_IMPRONTA</code>).</dd>
       <dt>Cache locale</dt>
-      <dd>Quanti testi e quante risposte di ricerca sono conservati, e il percorso del database locale. <b>Svuota cache ricerche</b> cancella le risposte (valgono comunque un'ora); <b>Svuota testi in cache</b> cancella i testi aperti, non i preferiti né il diario.</dd>
+      <dd>Quanti testi e quante risposte di ricerca sono conservati, quante pagine di risultati sono ricordate, quanti PDF sono salvati e dove, e il percorso del database locale. <b>Svuota cache ricerche</b> cancella le risposte (valgono comunque un'ora); <b>Svuota testi in cache</b> cancella i testi aperti, non i preferiti, il diario o lo storico.</dd>
       <dt>Copia di sicurezza</dt>
-      <dd>Scrive una copia pulita dell'intero archivio (diario e sentenze consultate compresi) in <code>dati/iudex-AAAAMMGG-HHMMSS.sqlite</code>; si apre con qualunque programma per SQLite.</dd>
+      <dd>Scrive una copia pulita dell'intero archivio (diario e sentenze consultate compresi) nella cartella dei dati; si apre con qualunque programma per SQLite. Iudex ne fa una da solo ogni settimana e prima di ogni migrazione o importazione.</dd>
       <dt>Tema scuro automatico</dt>
       <dd>L'ora di inizio e di fine del tema scuro, secondo l'ora del computer.</dd>
       <dt>Registro</dt>
       <dd>Le ultime chiamate al server con ora, tipo, esito e durata: mostra le richieste effettivamente inviate al server della Corte.</dd>
+    </dl>
+
+    <h2 id="impostazioni">Impostazioni</h2>
+    <dl>
+      <dt>Conserva lo storico</dt>
+      <dd>Spento, Iudex non registra niente: ricerche, sentenze uscite, diario, consultazioni, testi e PDF (il PDF si apre da un file provvisorio cancellato alla chiusura). Quello già registrato resta.</dd>
+      <dt>PDF delle sentenze</dt>
+      <dd>La cartella in cui salvarli (scelta anche nell'installer; cambiandola, i PDF già salvati si spostano) e dove aprirli: nella finestra di Iudex o con il programma PDF del computer.</dd>
+      <dt>Identità dichiarata al server della Corte</dt>
+      <dd>Una delle impronte predefinite (Chrome, Edge o Firefox su Windows) a rotazione ogni giorno, sempre la stessa, una personalizzata o le personalizzate a rotazione, con o senza le predefinite. Un'impronta personalizzata è il nome, lo User-Agent e le lingue di un browser vero: Iudex controlla che sia coerente e, per Chrome ed Edge, ricava <code>sec-ch-ua</code> se lo lasci vuoto. <b>Prova</b> mostra gli header che verrebbero inviati, senza contattare la Corte. Cambiano solo gli header: l'impronta TLS resta quella di Python.</dd>
+      <dt>Questo computer</dt>
+      <dd>Il nome che compare accanto a ricerche e consultazioni negli export.</dd>
+      <dt>Importa uno storico</dt>
+      <dd>Unisce allo storico di questo computer il pacchetto ZIP, il JSONL o una copia del database (<code>.sqlite</code>) di un altro Iudex. Niente viene duplicato né cancellato; prima Iudex fa una copia di sicurezza; il riepilogo dice che cosa è stato aggiunto e che cosa c'era già.</dd>
     </dl>
 
     <h2 id="tastiera">Tastiera</h2>
@@ -227,8 +251,8 @@
       </tbody>
     </table>
 
-    <h2 id="oltre">Oltre il browser</h2>
-    <p><b>Finestra nativa</b>: <code>scripts\avvia-finestra.cmd</code> apre Iudex in una finestra propria (WebView2 su Windows, WebKit su Linux e macOS) e ferma il server quando la chiudi. <b>Assistenti e LLM locali</b>: il server MCP incluso espone tre strumenti (cerca sentenze, cerca per norma, leggi sentenza) che passano dall'API locale, quindi dalla cache e dalla limitazione della frequenza delle richieste. I dettagli sono nelle <a href="/faq.html#oltre">domande frequenti</a>.</p>
+    <h2 id="oltre">Finestra e assistenti</h2>
+    <p><b>Finestra</b>: Iudex si usa solo dalla sua finestra (WebView2 su Windows, WebKitGTK su Linux), come Voicebox; un browser che apre l'indirizzo locale vede solo l'invito ad aprirla. <b>Assistenti e LLM locali</b>: il server MCP incluso espone tre strumenti (cerca sentenze, cerca per norma, leggi sentenza) che passano dall'API locale, quindi dalla cache e dalla limitazione della frequenza delle richieste, con il token della cartella dei dati. I dettagli sono nelle <a href="/faq.html#oltre">domande frequenti</a>.</p>
     <p>Qualunque strada usi, vale la stessa regola: Iudex fa al server della Corte una richiesta alla volta, con almeno due secondi di distanza, e non ha funzioni di scaricamento massivo. I testi restano della Corte Suprema di Cassazione.</p>
   </article>
 </div></main>

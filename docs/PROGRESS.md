@@ -32,7 +32,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   fatto il codice (pagina della cartella dei PDF e controllo di WebView2 nell'installer,
   finestra GTK su Linux, scelta della cartella al primo avvio, `docs/prova-installazione.md`);
   da fare la compilazione con Inno Setup e le prove su VM
-- [ ] 9. Documentazione e versione 0.8.0 (tag solo su conferma)
+- [~] 9. Documentazione e versione 0.8.0 (tag solo su conferma): fatti README, guida e FAQ
+  (Markdown e pagine dell'app); da fare al rilascio `__version__`, `versioni.html` (0.7.0 e
+  0.8.0), la nota su Iudex in `docs/architettura.md` di Praeco e il tag
 
 ## Fasi successive
 
@@ -91,3 +93,6 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   creato, pagina senza token 401. Non provati: la compilazione di `iudex.iss` (Inno Setup non
   installato sul PC: la sezione `[Code]` nuova non è ancora passata dal compilatore), la build
   Linux con PyGObject (solo nel workflow) e le prove su VM della lista.
+- 2026-10-28: passo 9, documentazione. Restano per il rilascio 0.8.0: compilazione con Inno
+  Setup e prove su VM (8b), prova della finestra vera con l'utente (cookie in WebView2, badge,
+  PDF nella finestra), versione, `versioni.html`, tag. Fasi B e C dopo il rilascio.
