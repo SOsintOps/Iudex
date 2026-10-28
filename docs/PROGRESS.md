@@ -31,7 +31,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - [~] 8b. Installazione su Windows (Inno Setup) e Linux (AppImage) adattata e provata su VM:
   fatto il codice (pagina della cartella dei PDF e controllo di WebView2 nell'installer,
   finestra GTK su Linux, scelta della cartella al primo avvio, `docs/prova-installazione.md`);
-  da fare la compilazione con Inno Setup e le prove su VM
+  installer Windows compilato con Inno Setup 6.7.3; AppImage costruita e provata su Debian 13
+  (VM `london`, Xvfb); da fare la prova dell'installer su una VM Windows
 - [~] 9. Documentazione e versione 0.8.0 (tag solo su conferma): fatti README, guida e FAQ
   (Markdown e pagine dell'app); da fare al rilascio `__version__`, `versioni.html` (0.7.0 e
   0.8.0), la nota su Iudex in `docs/architettura.md` di Praeco e il tag
@@ -111,3 +112,10 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   e salvata in `dati/pdf/snpen2026531751S.pdf` (126.998 byte; due richieste, dettaglio e pdf,
   perché il testo non era mai arrivato), seconda apertura dalla copia locale senza richieste,
   `/pdf/{id}` lo serve come `application/pdf`; il badge conta anche le aperture del PDF.
+- 2026-10-28, sera: icona della finestra (era quella di serie di Windows) — `19a532e`; orari
+  del tema scuro nelle Impostazioni e menu più piccolo — `c4652fb`; Inno Setup 6.7.3 installato
+  sul PC, installer compilato (25,5 MB). Build Linux sulla VM `london` (dallo snapshot
+  "Speculator installato", poi ripristinato): due difetti trovati e corretti (PyGObject < 3.51,
+  finestra bianca senza DMABUF) — `3eaed10`; esiti in `docs/prova-installazione.md`. Le pagine
+  di aiuto ora hanno il menu completo. Restano: prova dell'installer su Windows (manca una VM
+  Windows), avvio senza WebKitGTK, rilascio 0.8.0.
