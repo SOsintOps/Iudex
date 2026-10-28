@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import __version__, export, preferenze
+from . import __version__, export, importazione, preferenze
 from . import pdf as pdf_locali
 from .autonoma import aggiornamenti, backup
 from .autonoma.cartelle import congelata
@@ -891,6 +891,54 @@ async def esporta_ricerche(
     )
     contenuto = export.ricerche_zip(dati, _descrivi_permalink, pdf_files, consultate)
     return _allegato(contenuto, f"iudex-ricerche-{marca}.zip", "application/zip")
+
+
+@app.post("/api/importa")
+async def importa(request: Request, nome: str = Query("pacchetto", max_length=260)) -> dict:
+    """Unisce lo storico di un altro Iudex (corpo della richiesta: pacchetto ZIP, JSONL o
+    copia del database) a quello presente, senza duplicati; prima una copia di sicurezza.
+    I PDF del pacchetto si copiano nella cartella dei PDF se mancano, controllando lo sha256."""
+    archivio: Archivio = request.app.state.archivio
+    contenuto = await request.body()
+    if not contenuto:
+        raise HTTPException(422, "nessun file ricevuto")
+    try:
+        pacchetto = importazione.leggi(nome, contenuto)
+    except importazione.ImportazioneNonValida as exc:
+        raise HTTPException(422, str(exc)) from None
+    copia = backup.esegui(
+        archivio.copia_di_sicurezza,
+        impostazioni.cartella_dati / "backup",
+        "iudex",
+        "prima dell'importazione",
+    )
+    riepilogo = archivio.unisci(pacchetto.dati, pacchetto.consultate)
+    base = _cartella_pdf(_scelte(request))
+    esito_pdf = {"aggiunti": 0, "presenti": 0, "diversi": [], "rifiutati": []}
+    dichiarati = {p["id_sentenza"]: p for p in pacchetto.dati.get("pdf", [])}
+    for id_sentenza, dati_pdf in pacchetto.pdf.items():
+        sha = importazione.sha256(dati_pdf)
+        atteso = dichiarati.get(id_sentenza, {}).get("sha256")
+        if atteso and atteso != sha:
+            esito_pdf["rifiutati"].append(id_sentenza)  # file danneggiato nel pacchetto
+            continue
+        locale = _pdf_locale(request, id_sentenza, _scelte(request))
+        if locale is not None:
+            if importazione.sha256(locale.read_bytes()) == sha:
+                esito_pdf["presenti"] += 1
+            else:
+                esito_pdf["diversi"].append(id_sentenza)  # resta quello locale
+            continue
+        percorso = pdf_locali.file_di(base, id_sentenza)
+        pdf_locali.salva(percorso, dati_pdf)
+        archivio.registra_pdf(id_sentenza, pdf_locali.relativo(base, percorso), len(dati_pdf), sha)
+        esito_pdf["aggiunti"] += 1
+    return {
+        "formato": pacchetto.formato,
+        "copia_di_sicurezza": str(copia),
+        **riepilogo,
+        "pdf": esito_pdf,
+    }
 
 
 @app.get("/api/export/consultate")

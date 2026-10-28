@@ -786,6 +786,34 @@
     } catch (e) { esitoImpostazioni(e.message || String(e)); }
   }
 
+  async function importaStorico() {
+    const file = $("#file-importa").files[0];
+    const esito = $("#esito-importa");
+    if (!file) { esito.hidden = false; esito.textContent = "Scegli prima un file."; return; }
+    const b = $("#importa");
+    b.disabled = true;
+    esito.hidden = false;
+    esito.textContent = "Importo…";
+    try {
+      const r = await api("/api/importa?nome=" + encodeURIComponent(file.name), {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: file,
+      });
+      const voce = (t, n) => `${t}: <b>${r[n].aggiunte}</b> aggiunte, ${r[n].presenti} già presenti`;
+      const p = r.pdf;
+      esito.innerHTML = [
+        `Importato (${escapa(r.formato)}). Copia di sicurezza: <code>${escapa(r.copia_di_sicurezza)}</code>`,
+        voce("Ricerche", "ricerche"), voce("Pagine di risultati", "esecuzioni"),
+        voce("Voci del diario", "diario"), voce("Sentenze consultate", "consultate"),
+        `PDF: <b>${p.aggiunti}</b> aggiunti, ${p.presenti} già presenti` +
+          (p.diversi.length ? `, ${p.diversi.length} diversi da quelli locali (tenuti i locali)` : "") +
+          (p.rifiutati.length ? `, ${p.rifiutati.length} danneggiati nel pacchetto (scartati)` : ""),
+      ].join("<br>");
+    } catch (e) { esito.textContent = "Importazione non riuscita: " + (e.message || String(e)); }
+    finally { b.disabled = false; }
+  }
+
   async function aggiornaPie() {
     try {
       const s = await api("/api/stato");
@@ -1172,6 +1200,7 @@
 
   $$(".scheda").forEach((b) => b.addEventListener("click", () => mostraScheda(b.dataset.scheda)));
   $("#salva-impostazioni").addEventListener("click", salvaImpostazioni);
+  $("#importa").addEventListener("click", importaStorico);
   $("#impostazioni").addEventListener("submit", (e) => { e.preventDefault(); salvaImpostazioni(); });
   $("#impostazioni").elements.impronta_modo.addEventListener("change", mostraModoImpronta);
 

@@ -223,6 +223,14 @@
         <p class="dettaglio" id="impronta-bloccata" hidden></p>
       </fieldset>
     </form>
+    <div class="impostazioni stato">
+      <fieldset>
+        <legend>Importa uno storico</legend>
+        <p class="dettaglio">Unisce allo storico di questo computer quello di un altro Iudex: il pacchetto ZIP o il JSONL esportati dalla scheda Cronologia, oppure una copia del database (<code>.sqlite</code>). Niente viene duplicato né cancellato; prima Iudex fa una copia di sicurezza.</p>
+        <div class="riga"><input type="file" id="file-importa" accept=".zip,.jsonl,.sqlite,application/zip"> <button type="button" id="importa">Importa</button></div>
+        <div id="esito-importa" class="dettaglio" hidden></div>
+      </fieldset>
+    </div>
   </section>
 
   <div class="maniglia" id="maniglia-fascicolo" role="separator" aria-orientation="vertical" aria-label="Larghezza del testo" tabindex="0" title="Trascina per ridimensionare, doppio clic per ripristinare" hidden></div>

@@ -55,6 +55,15 @@
   (`uid`): schema 5, per unire gli archivi di più computer.
 - L'export del diario non si ferma più a 5000 voci.
 
+### Importazione dello storico
+- Scheda Impostazioni, "Importa uno storico" (`POST /api/importa`): unisce allo storico di
+  questo computer il pacchetto ZIP, il JSONL o una copia del database (`.sqlite`, anche di una
+  versione vecchia, migrata a parte) di un altro Iudex, senza duplicati: macchine e `uid` di
+  esecuzioni e diario, permalink delle ricerche, id delle sentenze consultate. Prima una copia
+  di sicurezza; poi un riepilogo di quanto è stato aggiunto e di quanto era già presente.
+- I PDF del pacchetto si copiano nella cartella dei PDF se mancano, controllando lo sha256;
+  un PDF diverso da quello locale lascia quello locale, uno danneggiato si scarta.
+
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).

@@ -520,6 +520,61 @@ def test_export_del_database_delle_ricerche(client):
     assert zip_.read(f"pdf/{aperta['id']}.pdf") == PDF_FINTO
 
 
+def _istanza(cartella, monkeypatch):
+    """Un Iudex con la propria cartella dei dati (per provare l'importazione fra due)."""
+    monkeypatch.setattr(
+        modulo_app, "impostazioni", Impostazioni(cartella_dati=cartella, intervallo_minimo=0.0)
+    )
+    return TestClient(modulo_app.app)
+
+
+def test_importazione_unisce_senza_duplicati(tmp_path, monkeypatch):
+    # Computer A: una ricerca, una sentenza aperta con il PDF; export ZIP e JSONL.
+    with respx.mock(assert_all_called=False) as mock, _istanza(tmp_path / "a", monkeypatch) as a:
+        mock.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
+        aperta, _ = _storico_di_prova(a, mock)
+        macchina_a = modulo_app.app.state.archivio.macchina
+        pacchetto = a.get("/api/export/ricerche", headers=H).content
+        jsonl = a.get("/api/export/ricerche", params={"formato": "jsonl"}, headers=H).content
+    # Computer B: una sua ricerca, poi l'importazione del pacchetto di A.
+    with respx.mock(assert_all_called=False) as mock, _istanza(tmp_path / "b", monkeypatch) as b:
+        mock.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
+        mock.post(URL_SOLR + "?app.query").mock(
+            return_value=httpx.Response(200, json=_risposta([_doc(20)], trovati=1))
+        )
+        b.get("/api/cerca", params={"testo": "truffa"}, headers=H)
+        archivio = modulo_app.app.state.archivio
+        r = b.post("/api/importa", params={"nome": "a.zip"}, headers=H, content=pacchetto)
+        assert r.status_code == 200, r.text
+        esito = r.json()
+        assert esito["formato"] == "zip" and esito["copia_di_sicurezza"].endswith(".sqlite")
+        assert esito["ricerche"] == {"aggiunte": 1, "presenti": 0}
+        assert esito["esecuzioni"]["aggiunte"] == 1 and esito["risultati"]["aggiunte"] == 2
+        assert esito["consultate"]["aggiunte"] == 1 and esito["pdf"]["aggiunti"] == 1
+        assert (tmp_path / "b" / "pdf" / f"{aperta['id']}.pdf").read_bytes() == PDF_FINTO
+        assert macchina_a in archivio.macchine() and len(archivio.macchine()) == 2
+        assert len(b.get("/api/cronologia", headers=H).json()) == 2
+        # La provenienza e il badge arrivano con lo storico; il testo si riapre senza rete.
+        assert archivio.provenienze([aperta["id"]])[aperta["id"]][0]["descrizione"] == "bancarotta"
+        assert archivio.consultazioni([aperta["id"]])[aperta["id"]]["pdf"] == 1
+        testo = b.get(f"/api/sentenza/{aperta['id']}", headers=H).json()
+        assert testo["dalla_cache"] is True
+        # Seconda importazione dello stesso pacchetto e poi del JSONL: niente di nuovo.
+        for corpo, nome in ((pacchetto, "a.zip"), (jsonl, "a.jsonl")):
+            again = b.post("/api/importa", params={"nome": nome}, headers=H, content=corpo).json()
+            assert again["esecuzioni"]["aggiunte"] == 0 and again["diario"]["aggiunte"] == 0
+            assert again["ricerche"]["aggiunte"] == 0 and again["consultate"]["aggiunte"] == 0
+        assert again["formato"] == "jsonl"
+        assert archivio.conta_esecuzioni() == 2 and archivio.conta_pdf() == 1
+        # Copia del database di A (anche di una versione vecchia si migra a parte).
+        db_a = (tmp_path / "a" / "iudex.sqlite").read_bytes()
+        da_db = b.post("/api/importa", params={"nome": "a.sqlite"}, headers=H, content=db_a)
+        assert da_db.json()["formato"] == "sqlite" and da_db.json()["esecuzioni"]["aggiunte"] == 0
+        # File non validi.
+        for corpo in (b"", b"non sono un export", b"PK\x03\x04rotto"):
+            assert b.post("/api/importa", headers=H, content=corpo).status_code == 422
+
+
 def test_cartella_pdf_dall_installer(tmp_path, monkeypatch):
     (tmp_path / "installazione.ini").write_text(
         "[pdf]\ncartella = D:\\Sentenze\n", encoding="utf-8"

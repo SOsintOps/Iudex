@@ -546,6 +546,173 @@ class Archivio:
             "pdf": [dict(r) for r in pdf],
         }
 
+    def unisci(self, dati: dict, consultate: list[tuple[str, dict | None, dict]]) -> dict:
+        """Unisce lo storico di un altro archivio (forma di ``dati_ricerche``) senza
+        duplicati: macchine e uid di esecuzioni e diario, permalink delle ricerche, id delle
+        sentenze consultate. ``consultate``: ``(id, documento, grezzo)``. I PDF li gestisce
+        chi chiama (file). Restituisce ``{tabella: {"aggiunte": n, "presenti": n}}``."""
+        conta = {
+            t: {"aggiunte": 0, "presenti": 0}
+            for t in ("ricerche", "esecuzioni", "risultati", "diario", "consultate")
+        }
+        meta_consultate = {c["id_sentenza"]: c for c in dati.get("consultate", [])}
+        with self._lock, self._conn:
+            c = self._conn
+            for id_m, m in (dati.get("macchine") or {}).items():
+                c.execute(
+                    "INSERT OR IGNORE INTO macchine (id, nome, locale, prima_volta)"
+                    " VALUES (?, ?, 0, ?)",
+                    (id_m, m.get("nome") or id_m, time.time()),
+                )
+            for r in dati.get("ricerche", []):
+                quando = r.get("quando") or time.time()
+                prima = r.get("prima_volta") or quando
+                esiste = c.execute(
+                    "SELECT id FROM ricerche WHERE permalink = ?", (r["permalink"],)
+                ).fetchone()
+                if esiste:
+                    conta["ricerche"]["presenti"] += 1
+                    c.execute(
+                        "UPDATE ricerche SET prima_volta = MIN(COALESCE(prima_volta, quando), ?),"
+                        " trovati = CASE WHEN ? > quando THEN ? ELSE trovati END,"
+                        " quando = MAX(quando, ?), volte = MAX(volte, ?) WHERE id = ?",
+                        (
+                            prima,
+                            quando,
+                            r.get("trovati"),
+                            quando,
+                            r.get("volte") or 1,
+                            esiste["id"],
+                        ),
+                    )
+                    continue
+                conta["ricerche"]["aggiunte"] += 1
+                c.execute(
+                    "INSERT INTO ricerche (quando, testo, riferimenti, filtri, ordinamento, righe,"
+                    " trovati, permalink, prima_volta, volte, macchina)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        quando,
+                        r.get("testo"),
+                        r.get("riferimenti"),
+                        json.dumps(r.get("filtri") or {}, ensure_ascii=False),
+                        r.get("ordinamento") or "pubblicazione",
+                        r.get("righe") or 10,
+                        r.get("trovati"),
+                        r["permalink"],
+                        prima,
+                        r.get("volte") or 1,
+                        r.get("macchina"),
+                    ),
+                )
+            nuove: dict[str, int] = {}
+            for e in dati.get("esecuzioni", []):
+                if c.execute("SELECT 1 FROM esecuzioni WHERE uid = ?", (e["uid"],)).fetchone():
+                    conta["esecuzioni"]["presenti"] += 1
+                    continue
+                conta["esecuzioni"]["aggiunte"] += 1
+                cur = c.execute(
+                    "INSERT INTO esecuzioni (quando, ricerca, permalink, descrizione, pagina,"
+                    " righe, trovati, dalla_cache, origine, uid, macchina)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        e["quando"],
+                        e["ricerca"],
+                        e["permalink"],
+                        e.get("descrizione"),
+                        e["pagina"],
+                        e["righe"],
+                        e.get("trovati"),
+                        int(bool(e.get("dalla_cache"))),
+                        e.get("origine") or "ricerca",
+                        e["uid"],
+                        e.get("macchina"),
+                    ),
+                )
+                nuove[e["uid"]] = cur.lastrowid
+            for r in dati.get("risultati", []):
+                id_nuova = nuove.get(r.get("uid_esecuzione"))
+                if id_nuova is None:
+                    conta["risultati"]["presenti"] += 1
+                    continue
+                conta["risultati"]["aggiunte"] += 1
+                c.execute(
+                    "INSERT OR IGNORE INTO risultati (id_esecuzione, posizione, id_sentenza,"
+                    " estremi) VALUES (?, ?, ?, ?)",
+                    (
+                        id_nuova,
+                        r["posizione"],
+                        r["id_sentenza"],
+                        json.dumps(r.get("estremi") or {}, ensure_ascii=False),
+                    ),
+                )
+            for v in dati.get("diario", []):
+                if c.execute("SELECT 1 FROM diario WHERE uid = ?", (v["uid"],)).fetchone():
+                    conta["diario"]["presenti"] += 1
+                    continue
+                conta["diario"]["aggiunte"] += 1
+                c.execute(
+                    "INSERT INTO diario (quando, tipo, testo, riferimenti, filtri, ordinamento,"
+                    " pagina, permalink, id_sentenza, trovati, uid, macchina)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        v["quando"],
+                        v["tipo"],
+                        v.get("testo"),
+                        v.get("riferimenti"),
+                        json.dumps(v["filtri"], ensure_ascii=False) if v.get("filtri") else None,
+                        v.get("ordinamento"),
+                        v.get("pagina"),
+                        v.get("permalink"),
+                        v.get("id_sentenza"),
+                        v.get("trovati"),
+                        v["uid"],
+                        v.get("macchina"),
+                    ),
+                )
+            for id_sentenza, documento, grezzo in consultate:
+                meta = meta_consultate.get(id_sentenza, {})
+                adesso = time.time()
+                prima = meta.get("prima_volta") or adesso
+                ultima = meta.get("ultima_volta") or prima
+                esiste = c.execute(
+                    "SELECT 1 FROM consultate WHERE id_sentenza = ?", (id_sentenza,)
+                ).fetchone()
+                if esiste:
+                    conta["consultate"]["presenti"] += 1
+                    c.execute(
+                        "UPDATE consultate SET prima_volta = MIN(prima_volta, ?),"
+                        " ultima_volta = MAX(ultima_volta, ?) WHERE id_sentenza = ?",
+                        (prima, ultima, id_sentenza),
+                    )
+                    continue
+                conta["consultate"]["aggiunte"] += 1
+                blob = zlib.compress(json.dumps(grezzo, ensure_ascii=False).encode("utf-8"), 6)
+                c.execute(
+                    "INSERT INTO consultate (id_sentenza, prima_volta, ultima_volta, volte,"
+                    " documento, grezzo) VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        id_sentenza,
+                        prima,
+                        ultima,
+                        meta.get("volte") or 1,
+                        json.dumps(documento or {}, ensure_ascii=False),
+                        blob,
+                    ),
+                )
+            # Conteggi ricalcolati sull'unione: le volte di una ricerca non sono meno delle sue
+            # esecuzioni di pagina 1, le aperture di una consultata non meno di quelle nel diario.
+            c.execute(
+                "UPDATE ricerche SET volte = MAX(volte, (SELECT COUNT(*) FROM esecuzioni e"
+                " WHERE e.ricerca = ricerche.permalink AND e.pagina = 1"
+                " AND e.origine = 'ricerca'))"
+            )
+            c.execute(
+                "UPDATE consultate SET volte = MAX(volte, (SELECT COUNT(*) FROM diario d"
+                " WHERE d.id_sentenza = consultate.id_sentenza AND d.tipo = 'sentenza'))"
+            )
+        return conta
+
     def conta_esecuzioni(self) -> int:
         with self._lock:
             return self._conn.execute("SELECT COUNT(*) FROM esecuzioni").fetchone()[0]

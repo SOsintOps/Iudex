@@ -24,8 +24,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   dell'installer che lo scrive è nel passo 8b), aperti in finestra o con il programma del PC
   — `4178ec2`
 - [x] 8. Export del database delle ricerche: CSV/Excel, JSONL, ZIP con i PDF; macchina e
-  `uid` (schema 5) per l'importazione
-- [ ] 8c. Importazione con unione e controllo dei duplicati (ZIP, JSONL, copia del database)
+  `uid` (schema 5) per l'importazione — `8fe2415`
+- [x] 8c. Importazione con unione e controllo dei duplicati (ZIP, JSONL, copia del database)
 - [ ] 8b. Installazione su Windows (Inno Setup) e Linux (AppImage) adattata e provata su VM
 - [ ] 9. Documentazione e versione 0.8.0 (tag solo su conferma)
 
@@ -67,3 +67,6 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   bloccata oltre dieci minuti (fermata a mano), senza poter vedere quale test; poi 12 giri
   verdi su 12 con `-o faulthandler_timeout=30`. Da indagare: usare sempre quell'opzione
   nelle ripetizioni, per avere la traccia se si blocca di nuovo.
+- 2026-10-28: passo 8c (`iudex/importazione.py`, `Archivio.unisci`, `POST /api/importa` con
+  il file nel corpo, senza dipendenze nuove per i moduli multipart). Suite verde 5 volte su
+  5 con `faulthandler_timeout`. Prossimo: passo 3b (solo finestra e token), poi 4, 8b, 9.
