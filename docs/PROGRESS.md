@@ -107,3 +107,7 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   corretto un difetto (c'era già nella 0.7.0): l'apertura si annotava nel diario prima di
   avere il testo, così un'apertura fallita rendeva la sentenza "già vista"; ora si annota solo
   dopo. Nel diario vero resta la voce dell'apertura fallita delle 15:54 (snpen2026531751S).
+- 2026-10-28, 16:00: rete di nuovo sul Wi-Fi. PDF dal vivo provato: prima apertura scaricata
+  e salvata in `dati/pdf/snpen2026531751S.pdf` (126.998 byte; due richieste, dettaglio e pdf,
+  perché il testo non era mai arrivato), seconda apertura dalla copia locale senza richieste,
+  `/pdf/{id}` lo serve come `application/pdf`; il badge conta anche le aperture del PDF.
