@@ -38,6 +38,8 @@
   o PDF), da quali ricerche e in quali ricerche precedenti è uscita. Il pannello di lettura
   elenca le ricerche in cui la sentenza è uscita.
 - Diario: nuovo tipo di voce `pdf` (apertura del PDF), contato nei giorni.
+- Un'apertura fallita (rete caduta, sentenza non trovata) non finisce più nel diario né fra le
+  consultate: prima vi finiva e, con il badge, la sentenza risultava "già vista".
 - Una sentenza consultata il cui testo è stato tolto dalla cache si riapre dalla risposta
   intera conservata, senza una nuova richiesta al server.
 

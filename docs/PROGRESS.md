@@ -96,3 +96,14 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - 2026-10-28: passo 9, documentazione. Restano per il rilascio 0.8.0: compilazione con Inno
   Setup e prove su VM (8b), prova della finestra vera con l'utente (cookie in WebView2, badge,
   PDF nella finestra), versione, `versioni.html`, tag. Fasi B e C dopo il rilascio.
+- 2026-10-28, prova dal vivo sull'archivio vero (`run-Iudex.ps1`, dati in `C:\scripts\Iudex\dati`):
+  migrazione 0 → 5 con la copia `backup/iudex-20261028-155311.sqlite`; la finestra WebView2
+  entra con il token (schermata: interfaccia completa, scheda Impostazioni, barra del primo
+  avvio per la cartella dei PDF); senza token 401; 38 ricerche e 48 voci di diario; export
+  ZIP (12 file) e CSV con BOM e macchina; una ricerca dalla finestra ("paolo rossi", 115
+  risultati) registrata con le 10 sentenze mostrate; ripetuta dalla cache, nessuna richiesta,
+  badge corretto. Poi la rete verso la Corte è caduta (rotta tornata su ProtonVPN): dettaglio
+  e PDF falliti con "errore di rete", quindi PDF salvato dal vivo **non provato**. Trovato e
+  corretto un difetto (c'era già nella 0.7.0): l'apertura si annotava nel diario prima di
+  avere il testo, così un'apertura fallita rendeva la sentenza "già vista"; ora si annota solo
+  dopo. Nel diario vero resta la voce dell'apertura fallita delle 15:54 (snpen2026531751S).

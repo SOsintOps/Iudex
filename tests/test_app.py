@@ -470,6 +470,22 @@ def test_badge_gia_vista_e_riapertura_dal_grezzo(client):
     assert c.get("/api/diario/giorni", headers=H).json()[0]["pdf"] == 1
 
 
+def test_apertura_fallita_non_e_una_consultazione(client):
+    # Visto dal vivo il 28/10: rete caduta durante l'apertura, la sentenza risultava "già vista".
+    c, mock = client
+    archivio = modulo_app.app.state.archivio
+    doc = _doc(40)
+    dettaglio = mock.post(URL_SOLR).mock(side_effect=httpx.ConnectError("rete caduta"))
+    r = c.get(f"/api/sentenza/{doc['id']}", params={"da": "testo=x"}, headers=H)
+    assert r.status_code == 502 and dettaglio.call_count >= 1
+    assert archivio.conta_diario() == 0 and archivio.consultazioni([doc["id"]]) == {}
+    # Tornata la rete, la prima apertura riuscita è la prima consultazione.
+    dettaglio.side_effect = None
+    dettaglio.return_value = httpx.Response(200, json=_risposta([doc]))
+    r = c.get(f"/api/sentenza/{doc['id']}", params={"da": "testo=x"}, headers=H).json()
+    assert r["consultazione"]["volte"] == 1 and archivio.conta_diario() == 1
+
+
 PDF_FINTO = b"%PDF-1.7\n% sentenza di prova\n%%EOF\n"
 
 

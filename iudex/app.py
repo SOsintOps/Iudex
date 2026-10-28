@@ -528,12 +528,11 @@ async def _carica_sentenza(
     """
     archivio: Archivio = request.app.state.archivio
     chiave_hl = json.dumps(["hl", id_sentenza, hl_q]) if hl_q else None
-    gia_consultata = True
     conserva = _conserva_storico(request)
     annota = annota and conserva
-    if annota:
-        archivio.annota_sentenza(id_sentenza, consultazione)
-        gia_consultata = archivio.tocca_consultata(id_sentenza)
+    # L'apertura si annota solo quando il testo c'è davvero: un dettaglio fallito (rete, 404)
+    # non deve far risultare la sentenza "già vista".
+    gia_consultata = archivio.consultata(id_sentenza) is not None if annota else True
     salvata = archivio.leggi_sentenza(id_sentenza)
     if not salvata and gia_consultata:
         # Testo tolto dalla cache ma sentenza già consultata: si ricostruisce dalla risposta
@@ -545,6 +544,9 @@ async def _carica_sentenza(
                 archivio.scrivi_sentenza(id_sentenza, documento, testo)
             salvata = {"documento": documento, "testo": testo}
     if salvata and gia_consultata:
+        if annota:
+            archivio.annota_sentenza(id_sentenza, consultazione)
+            archivio.tocca_consultata(id_sentenza)
         marcato = None
         if chiave_hl:
             voce = archivio.leggi_risposta(chiave_hl, impostazioni.ttl_ricerche)
@@ -559,8 +561,12 @@ async def _carica_sentenza(
     documento, testo = _da_grezzo(grezzo)
     if conserva:
         archivio.scrivi_sentenza(id_sentenza, documento, testo)
-    if annota and not gia_consultata:
-        archivio.scrivi_consultata(id_sentenza, documento, grezzo)
+    if annota:
+        archivio.annota_sentenza(id_sentenza, consultazione)
+        if gia_consultata:
+            archivio.tocca_consultata(id_sentenza)
+        else:
+            archivio.scrivi_consultata(id_sentenza, documento, grezzo)
     marcato = None
     if chiave_hl:
         marcato = _testo_unito(dati.get("highlighting", {}).get(id_sentenza, {}).get("ocr"))
