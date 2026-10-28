@@ -17,6 +17,7 @@ import math
 import ssl
 import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, date
 from email.utils import parsedate_to_datetime
@@ -107,8 +108,13 @@ def secondi_retry_after(valore: str | None, adesso: float | None = None) -> int 
 
 
 class ClientSentenzeWeb:
-    def __init__(self, impostazioni: Impostazioni):
+    def __init__(
+        self, impostazioni: Impostazioni, scegli_impronta: Callable[[], Impronta] | None = None
+    ):
         self.imp = impostazioni
+        # Chi sceglie l'impronta (la scheda Impostazioni di Iudex); senza, quella del giorno o
+        # IUDEX_IMPRONTA, come prima (Praeco usa il client così).
+        self._scegli_impronta = scegli_impronta
         self._lock = asyncio.Lock()
         self._client: httpx.AsyncClient | None = None
         self._sessione_pronta = False
@@ -117,7 +123,11 @@ class ClientSentenzeWeb:
         self.stat = Statistiche()
 
     def impronta_corrente(self) -> Impronta:
-        """L'impronta browser da dichiarare oggi (o quella fissata nelle impostazioni)."""
+        """L'impronta browser da dichiarare ora: quella scelta nelle Impostazioni, altrimenti
+        quella del giorno (o fissata da ``IUDEX_IMPRONTA``). Quando cambia, la richiesta
+        successiva riapre la sessione con gli header nuovi."""
+        if self._scegli_impronta is not None:
+            return self._scegli_impronta()
         return impronta_del_giorno(date.today(), self.imp.impronta)
 
     def pausa_residua(self) -> int:

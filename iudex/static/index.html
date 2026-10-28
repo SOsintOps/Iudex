@@ -221,6 +221,20 @@
         <label class="riga" data-modo="personalizzata"><span>Personalizzata</span><select name="impronta_personalizzata" class="input-field"></select></label>
         <label class="riga" data-modo="rotazione"><input type="checkbox" name="rotazione_include_predefinite"> Includi le predefinite nella rotazione</label>
         <p class="dettaglio" id="impronta-bloccata" hidden></p>
+        <div class="impronte-proprie">
+          <span class="etichetta">Impronte personalizzate</span>
+          <p class="dettaglio">Gli header di un browser vero (User-Agent e lingue; per Chrome ed Edge Iudex ricava <code>sec-ch-ua</code> se lo lasci vuoto). Cambiano solo gli header: l'impronta TLS resta quella di Python.</p>
+          <table class="tabella"><thead><tr><th>Nome</th><th>User-Agent</th><th>Accept-Language</th><th>sec-ch-ua (facoltativo)</th><th></th></tr></thead>
+            <tbody id="lista-impronte"></tbody></table>
+          <div class="riga"><button type="button" id="aggiungi-impronta" class="discreto">Aggiungi un'impronta</button>
+            <button type="button" id="prova-impronta" class="discreto" title="Mostra gli header che verrebbero inviati, senza contattare la Corte">Prova l'impronta attiva</button></div>
+          <pre id="esito-impronta" class="dettaglio" hidden></pre>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Questo computer</legend>
+        <label class="riga"><span>Nome</span><input type="text" name="nome_macchina" class="input-field" size="40" maxlength="80"></label>
+        <p class="dettaglio">Compare accanto a ricerche e consultazioni negli export e nelle importazioni, per sapere su quale computer sono state fatte.</p>
       </fieldset>
     </form>
     <div class="impostazioni stato">

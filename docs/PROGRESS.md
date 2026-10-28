@@ -14,8 +14,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   (`iudex/preferenze.py`); l'editor delle impronte personalizzate arriva con il passo 4
   — `53cedef`
 - [x] 3b. Solo finestra: API e pagine con token (cookie per la finestra, header per MCP),
-  niente più modalità browser (`iudex/accesso.py`)
-- [ ] 4. Impronte: fissa, personalizzata, più personalizzate in rotazione
+  niente più modalità browser (`iudex/accesso.py`) — `4eceed2`
+- [x] 4. Impronte: fissa, personalizzata, più personalizzate in rotazione; nome del computer
 - [x] 5. Memoria delle ricerche e provenienza (`esecuzioni`, `risultati`); storico spento
   rispettato — `6faf807`
 - [x] 6. Consultazioni (testo e PDF) e badge "già vista" con tooltip; riapertura dal grezzo
@@ -77,3 +77,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   `python -m iudex` su una cartella provvisoria: `/health` 200, pagina e API senza token 401,
   con token 200, `/accesso` 303. Manca la prova della finestra vera (cookie in WebView2):
   con l'utente. README e guida ancora da aggiornare (passo 9). Prossimo: passo 4.
+- 2026-10-28: passo 4. Firma di `impronta_del_giorno` e costruttore di `ClientSentenzeWeb`
+  compatibili con Praeco (parametro nuovo facoltativo). 87 test. Controllo di compatibilità:
+  il venv di Praeco sul PC importa Iudex da `C:\scripts\Iudex`, e la suite di Praeco passa
+  con l'Iudex di questo passo (93 test; uno fallisce solo per il `.env` locale di Praeco, copia
+  di `.env.example` con `PRAECO_LLM_URL`, e passa senza). Prossimo: passo 8b (installer), poi 9.

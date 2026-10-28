@@ -16,6 +16,7 @@ in ``docs/analisi/cattura-cdp-2026-10-21.json``.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -129,3 +130,89 @@ def impronta_del_giorno(giorno: date, scelta: str | None = None) -> Impronta:
                 return impronta
         raise ValueError(f"impronta sconosciuta {scelta!r}: valori ammessi {', '.join(CODICI)}")
     return IMPRONTE[giorno.toordinal() % len(IMPRONTE)]
+
+
+# --- impronte personalizzate (scheda Impostazioni) -----------------------------------------
+
+_RE_CHROMIUM = re.compile(r"\bChrome/(\d+)\.")
+_RE_FIREFOX = re.compile(r"\bFirefox/(\d+)\.")
+
+
+class ImprontaNonCoerente(ValueError):
+    pass
+
+
+def personalizzata(
+    nome: str, user_agent: str, accept_language: str, client_hints: dict[str, str] | None = None
+) -> Impronta:
+    """Un'impronta scritta dall'utente, controllata perché sia credibile: un User-Agent di
+    Chromium (Chrome, Edge, Opera...) vuole ``sec-ch-ua`` con la stessa versione maggiore
+    (se manca si ricava con l'algoritmo del browser), uno di Firefox nessun client hint."""
+    user_agent = " ".join(user_agent.split())
+    accept_language = accept_language.strip()
+    suggerimenti = {k.strip().lower(): v.strip() for k, v in (client_hints or {}).items()}
+    if not user_agent.startswith("Mozilla/5.0 ("):
+        raise ImprontaNonCoerente(f"{nome}: lo User-Agent di un browser inizia con 'Mozilla/5.0 ('")
+    if not accept_language:
+        raise ImprontaNonCoerente(f"{nome}: Accept-Language vuoto")
+    chromium = _RE_CHROMIUM.search(user_agent)
+    if _RE_FIREFOX.search(user_agent):
+        if any(k.startswith("sec-ch-ua") for k in suggerimenti):
+            raise ImprontaNonCoerente(f"{nome}: Firefox non manda i client hints sec-ch-ua")
+        accept = ACCEPT_PAGINA_FIREFOX
+    elif chromium:
+        versione = int(chromium.group(1))
+        if "sec-ch-ua" in suggerimenti:
+            dichiarate = {int(v) for v in re.findall(r'v="(\d+)"', suggerimenti["sec-ch-ua"])}
+            if versione not in dichiarate:
+                raise ImprontaNonCoerente(
+                    f"{nome}: sec-ch-ua non contiene la versione {versione} dello User-Agent"
+                )
+        else:
+            marchio = "Microsoft Edge" if " Edg/" in user_agent else "Google Chrome"
+            suggerimenti["sec-ch-ua"] = sec_ch_ua_chromium(versione, marchio)
+        suggerimenti.setdefault("sec-ch-ua-mobile", "?0")
+        if "Windows" in user_agent:
+            suggerimenti.setdefault("sec-ch-ua-platform", '"Windows"')
+        accept = ACCEPT_PAGINA_CHROMIUM
+    else:
+        raise ImprontaNonCoerente(
+            f"{nome}: lo User-Agent non è riconosciuto come Chromium (Chrome/NN) o Firefox"
+        )
+    return Impronta(
+        codice=f"personalizzata:{nome}",
+        nome=nome,
+        user_agent=user_agent,
+        accept_language=accept_language,
+        accept_pagina=accept,
+        client_hints=suggerimenti,
+    )
+
+
+def impronta_attiva(giorno: date, scelte: dict, fissata: str | None = None) -> Impronta:
+    """L'impronta da dichiarare secondo le Impostazioni (``preferenze.effettive``):
+    ``giorno`` (rotazione delle predefinite), ``fissa``, ``personalizzata`` o ``rotazione``
+    (personalizzate, con o senza le predefinite). ``fissata`` (``IUDEX_IMPRONTA``) vince."""
+    if fissata:
+        return impronta_del_giorno(giorno, fissata)
+    modo = scelte.get("impronta_modo") or "giorno"
+    proprie = [
+        personalizzata(
+            i["nome"], i["user_agent"], i["accept_language"], i.get("client_hints") or {}
+        )
+        for i in scelte.get("impronte_personalizzate") or []
+    ]
+    if modo == "fissa":
+        return impronta_del_giorno(giorno, scelte.get("impronta_fissa") or CODICI[0])
+    if modo == "personalizzata":
+        for impronta in proprie:
+            if impronta.nome == scelte.get("impronta_personalizzata"):
+                return impronta
+        return impronta_del_giorno(giorno)
+    if modo == "rotazione":
+        insieme = proprie + (
+            list(IMPRONTE) if scelte.get("rotazione_include_predefinite", True) else []
+        )
+        if insieme:
+            return insieme[giorno.toordinal() % len(insieme)]
+    return impronta_del_giorno(giorno)

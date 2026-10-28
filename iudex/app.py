@@ -10,6 +10,7 @@ import shutil
 import tempfile
 import time
 from contextlib import asynccontextmanager
+from datetime import date
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode
 
@@ -25,7 +26,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import __version__, accesso, export, importazione, preferenze
+from . import __version__, accesso, export, importazione, impronte, preferenze
 from . import pdf as pdf_locali
 from .autonoma import aggiornamenti, backup
 from .autonoma.cartelle import congelata
@@ -69,10 +70,18 @@ async def _controlla_aggiornamenti(app: FastAPI) -> None:
         log.info("controllo degli aggiornamenti non riuscito: %s", exc)
 
 
+def _impronta_scelta(archivio: Archivio) -> impronte.Impronta:
+    """L'impronta da dichiarare secondo la scheda Impostazioni (``IUDEX_IMPRONTA`` vince)."""
+    scelte = preferenze.effettive(archivio.impostazioni(), impostazioni)
+    return impronte.impronta_attiva(date.today(), scelte, impostazioni.impronta)
+
+
 @asynccontextmanager
 async def ciclo_vita(app: FastAPI):
     app.state.archivio = Archivio(impostazioni.percorso_db)
-    app.state.client = ClientSentenzeWeb(impostazioni)
+    app.state.client = ClientSentenzeWeb(
+        impostazioni, scegli_impronta=lambda: _impronta_scelta(app.state.archivio)
+    )
     # Pagine e API rispondono solo a chi ha il token della cartella dei dati (la finestra).
     app.state.token = accesso.leggi_o_crea(impostazioni.cartella_dati)
     app.state.sigle = None
@@ -1094,12 +1103,40 @@ def _impostazioni_attuali(archivio: Archivio) -> dict:
         "bloccate": preferenze.bloccate(impostazioni),
         "codici_impronta": list(CODICI),
         "cartella_pdf_predefinita": str(impostazioni.cartella_dati / "pdf"),
+        "macchina": {"id": archivio.macchina, **archivio.macchine()[archivio.macchina]},
     }
 
 
 @app.get("/api/impostazioni")
 async def leggi_impostazioni(request: Request) -> dict:
     return _impostazioni_attuali(request.app.state.archivio)
+
+
+@app.post("/api/impronta/prova")
+async def prova_impronta(request: Request) -> dict:
+    """Gli header che Iudex manderebbe al server della Corte, senza mandarli: dell'impronta
+    inviata nel corpo (una personalizzata non ancora salvata) o di quella attiva oggi."""
+    try:
+        corpo = await request.json()
+    except ValueError:
+        corpo = None
+    if isinstance(corpo, dict) and corpo.get("user_agent"):
+        try:
+            impronta = impronte.personalizzata(
+                str(corpo.get("nome") or "prova"),
+                str(corpo["user_agent"]),
+                str(corpo.get("accept_language") or ""),
+                corpo.get("client_hints") or {},
+            )
+        except impronte.ImprontaNonCoerente as exc:
+            raise HTTPException(422, str(exc)) from None
+    else:
+        impronta = _impronta_scelta(request.app.state.archivio)
+    return {
+        "nome": impronta.nome,
+        "header": impronta.header_comuni(),
+        "header_pagina": impronta.header_pagina(),
+    }
 
 
 @app.put("/api/impostazioni")
@@ -1112,6 +1149,12 @@ async def scrivi_impostazioni(request: Request) -> dict:
         raise HTTPException(422, "corpo JSON non valido") from None
     if not isinstance(corpo, dict):
         raise HTTPException(422, "atteso un oggetto JSON")
+    # Il nome di questo computer sta con le macchine, non fra le impostazioni.
+    nome_macchina = corpo.pop("nome_macchina", None)
+    if nome_macchina is not None:
+        if not isinstance(nome_macchina, str) or not 0 < len(nome_macchina.strip()) <= 80:
+            raise HTTPException(422, "nome del computer: da 1 a 80 caratteri")
+        archivio.nome_macchina(nome_macchina.strip())
     try:
         nuove = preferenze.valida(corpo)
         bloccate = preferenze.bloccate(impostazioni).keys() & nuove.keys()
@@ -1165,6 +1208,7 @@ async def stato(request: Request) -> dict:
         "pausa_residua_s": client.pausa_residua(),
         "impronta": client.impronta_corrente().nome,
         "impronta_fissa": bool(impostazioni.impronta),
+        "impronta_modo": _scelte(request)["impronta_modo"],
         "sentenze_in_cache": archivio.conta_sentenze(),
         "risposte_in_cache": archivio.conta_risposte(),
         "voci_diario": archivio.conta_diario(),

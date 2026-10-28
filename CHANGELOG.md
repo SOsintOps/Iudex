@@ -12,7 +12,16 @@
   conservazione dello storico, cartella e apertura dei PDF, modo dell'impronta del browser
   (rotazione giornaliera, fissa, personalizzata, personalizzate a rotazione). Le scelte si
   salvano nell'archivio; `IUDEX_IMPRONTA`, se impostata, vince e la scheda mostra il campo
-  bloccato. Le scelte prendono effetto nei passi successivi della 0.8.0.
+  bloccato.
+- Impronte del browser: oltre alla rotazione giornaliera delle predefinite, una predefinita
+  fissa, una personalizzata o le personalizzate a rotazione (con o senza le predefinite).
+  Un'impronta personalizzata (nome, User-Agent, Accept-Language, `sec-ch-ua` facoltativo) si
+  salva solo se è coerente: per Chrome ed Edge `sec-ch-ua` con la stessa versione dello
+  User-Agent (ricavato se manca), per Firefox nessun client hint. "Prova" mostra gli header
+  senza contattare la Corte (`POST /api/impronta/prova`); quando l'impronta cambia, la
+  richiesta successiva riapre la sessione. `ClientSentenzeWeb` accetta `scegli_impronta`
+  (senza, il comportamento di prima, usato da Praeco).
+- Nome di questo computer modificabile nelle Impostazioni (compare negli export).
 
 ### Memoria delle ricerche
 - Ogni pagina di risultati vista (anche servita dalla cache, anche con "Controlla novità") è

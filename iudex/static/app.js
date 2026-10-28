@@ -755,6 +755,8 @@
     f.impronta_modo.value = v.impronta_modo;
     f.impronta_fissa.value = v.impronta_fissa;
     f.impronta_personalizzata.value = v.impronta_personalizzata || "";
+    f.nome_macchina.value = (r.macchina && r.macchina.nome) || "";
+    disegnaImpronte(v.impronte_personalizzate || []);
     const bloccata = r.bloccate.impronta_modo;
     f.impronta_modo.disabled = f.impronta_fissa.disabled = Boolean(bloccata);
     $("#impronta-bloccata").hidden = !bloccata;
@@ -776,6 +778,8 @@
       if (campo.disabled) return;
       corpo[k] = campo.type === "checkbox" ? campo.checked : (campo.value.trim() || null);
     });
+    corpo.impronte_personalizzate = leggiImpronte();
+    if (f.nome_macchina.value.trim()) corpo.nome_macchina = f.nome_macchina.value.trim();
     try {
       compilaImpostazioni(await api("/api/impostazioni", {
         method: "PUT",
@@ -784,6 +788,45 @@
       }));
       esitoImpostazioni("Impostazioni salvate.");
     } catch (e) { esitoImpostazioni(e.message || String(e)); }
+  }
+
+  // Impronte personalizzate: una riga per impronta; si salvano con il pulsante Salva.
+  function rigaImpronta(i) {
+    const ua = (i.client_hints && i.client_hints["sec-ch-ua"]) || "";
+    return `<tr class="impronta">
+      <td><input class="input-field" data-campo="nome" value="${escapa(i.nome || "")}" size="12"></td>
+      <td><input class="input-field" data-campo="user_agent" value="${escapa(i.user_agent || "")}" size="48" placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64) …"></td>
+      <td><input class="input-field" data-campo="accept_language" value="${escapa(i.accept_language || "")}" size="16" placeholder="it-IT,it;q=0.9"></td>
+      <td><input class="input-field" data-campo="sec-ch-ua" value="${escapa(ua)}" size="24" placeholder="ricavato da Iudex"></td>
+      <td class="azioni-td"><button type="button" class="discreto prova-una">Prova</button><button type="button" class="discreto togli-impronta">Togli</button></td>
+    </tr>`;
+  }
+
+  function disegnaImpronte(voci) {
+    $("#lista-impronte").innerHTML = voci.map(rigaImpronta).join("");
+  }
+
+  function voceImpronta(tr) {
+    const campo = (n) => $(`[data-campo="${n}"]`, tr).value.trim();
+    const ua = campo("sec-ch-ua");
+    return { nome: campo("nome"), user_agent: campo("user_agent"), accept_language: campo("accept_language"), client_hints: ua ? { "sec-ch-ua": ua } : {} };
+  }
+
+  function leggiImpronte() {
+    return $$("#lista-impronte tr.impronta").map(voceImpronta).filter((i) => i.nome || i.user_agent);
+  }
+
+  async function provaImpronta(voce) {
+    const esito = $("#esito-impronta");
+    esito.hidden = false;
+    try {
+      const r = await api("/api/impronta/prova", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(voce || {}),
+      });
+      esito.textContent = `${r.nome}\n` + Object.entries(r.header).map(([k, v]) => `${k}: ${v}`).join("\n");
+    } catch (e) { esito.textContent = e.message || String(e); }
   }
 
   async function importaStorico() {
@@ -1201,6 +1244,16 @@
   $$(".scheda").forEach((b) => b.addEventListener("click", () => mostraScheda(b.dataset.scheda)));
   $("#salva-impostazioni").addEventListener("click", salvaImpostazioni);
   $("#importa").addEventListener("click", importaStorico);
+  $("#aggiungi-impronta").addEventListener("click", () => {
+    $("#lista-impronte").insertAdjacentHTML("beforeend", rigaImpronta({}));
+  });
+  $("#prova-impronta").addEventListener("click", () => provaImpronta(null));
+  $("#lista-impronte").addEventListener("click", (e) => {
+    const tr = e.target.closest("tr.impronta");
+    if (!tr) return;
+    if (e.target.closest(".togli-impronta")) tr.remove();
+    if (e.target.closest(".prova-una")) provaImpronta(voceImpronta(tr));
+  });
   $("#impostazioni").addEventListener("submit", (e) => { e.preventDefault(); salvaImpostazioni(); });
   $("#impostazioni").elements.impronta_modo.addEventListener("change", mostraModoImpronta);
 

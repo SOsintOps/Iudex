@@ -119,7 +119,7 @@ def test_impostazioni(client):
     r = c.get("/api/impostazioni", headers=H).json()
     assert r["valori"]["conserva_storico"] is True and r["valori"]["impronta_modo"] == "giorno"
     assert r["bloccate"] == {} and "chrome" in r["codici_impronta"]
-    impronta = {"nome": "Mio", "user_agent": "Mozilla/5.0 x", "accept_language": "it-IT"}
+    impronta = {"nome": "Mio", "user_agent": UA_CHROME_150, "accept_language": "it-IT"}
     r = c.put(
         "/api/impostazioni",
         headers=H,
@@ -147,6 +147,51 @@ def test_impostazioni(client):
         r = c.put("/api/impostazioni", headers=H, json=corpo)
         assert r.status_code == 422 and errore in r.json()["detail"]
     assert c.put("/api/impostazioni", json={}).status_code == 403
+
+
+UA_CHROME_150 = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
+)
+
+
+def test_impronta_personalizzata_usata_dal_client(client):
+    c, mock = client
+    ricerca = mock.post(URL_SOLR + "?app.query").mock(
+        return_value=httpx.Response(200, json=_risposta([_doc(30)], trovati=1))
+    )
+    mia = {"nome": "Ufficio", "user_agent": UA_CHROME_150, "accept_language": "it-IT,it;q=0.9"}
+    # Un'impronta non coerente non si salva.
+    r = c.put(
+        "/api/impostazioni",
+        headers=H,
+        json={"impronte_personalizzate": [{**mia, "client_hints": {"sec-ch-ua": '"X";v="99"'}}]},
+    )
+    assert r.status_code == 422 and "150" in r.json()["detail"]
+    c.put(
+        "/api/impostazioni",
+        headers=H,
+        json={
+            "impronte_personalizzate": [mia],
+            "impronta_modo": "personalizzata",
+            "impronta_personalizzata": "Ufficio",
+        },
+    )
+    prova = c.post("/api/impronta/prova", headers=H).json()
+    assert prova["nome"] == "Ufficio" and 'v="150"' in prova["header"]["sec-ch-ua"]
+    assert c.get("/api/stato", headers=H).json()["impronta"] == "Ufficio"
+    c.get("/api/cerca", params={"testo": "frode"}, headers=H)
+    inviata = ricerca.calls[0].request.headers
+    assert inviata["User-Agent"] == UA_CHROME_150 and inviata["Accept-Language"].startswith("it-IT")
+    # Prova di un'impronta non salvata, e un User-Agent che non è di un browser.
+    altra = c.post("/api/impronta/prova", headers=H, json={**mia, "nome": "Bozza"}).json()
+    assert altra["nome"] == "Bozza"
+    assert (
+        c.post("/api/impronta/prova", headers=H, json={"user_agent": "curl/8"}).status_code == 422
+    )
+    # Il nome di questo computer.
+    r = c.put("/api/impostazioni", headers=H, json={"nome_macchina": "Portatile ufficio"})
+    assert r.json()["macchina"]["nome"] == "Portatile ufficio"
 
 
 def test_impostazioni_bloccate_da_variabile(tmp_path, monkeypatch):

@@ -4,7 +4,68 @@ from datetime import date, timedelta
 
 import pytest
 
-from iudex.impronte import CODICI, IMPRONTE, impronta_del_giorno, sec_ch_ua_chromium
+from iudex.impronte import (
+    CODICI,
+    IMPRONTE,
+    ImprontaNonCoerente,
+    impronta_attiva,
+    impronta_del_giorno,
+    personalizzata,
+    sec_ch_ua_chromium,
+)
+
+UA_EDGE = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0"
+)
+UA_FIREFOX = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0"
+
+
+def test_impronta_personalizzata_coerente():
+    edge = personalizzata("Edge mio", UA_EDGE, "it-IT")
+    assert edge.client_hints["sec-ch-ua"] == sec_ch_ua_chromium(151, "Microsoft Edge")
+    assert edge.client_hints["sec-ch-ua-platform"] == '"Windows"'
+    assert edge.header_comuni()["User-Agent"] == UA_EDGE
+    firefox = personalizzata("Volpe", UA_FIREFOX, "it-IT,it;q=0.8")
+    assert firefox.client_hints == {} and "image/png" in firefox.accept_pagina
+    for argomenti in (
+        ("x", UA_EDGE, "it-IT", {"sec-ch-ua": '"Chromium";v="99"'}),  # versione diversa
+        ("x", UA_FIREFOX, "it-IT", {"sec-ch-ua": '"Firefox";v="150"'}),  # Firefox non li manda
+        ("x", "curl/8.0", "it-IT", {}),
+        ("x", "Mozilla/5.0 (X11) Strano/1.0", "it-IT", {}),
+        ("x", UA_EDGE, " ", {}),
+    ):
+        with pytest.raises(ImprontaNonCoerente):
+            personalizzata(*argomenti)
+
+
+def test_impronta_attiva_nei_quattro_modi():
+    giorno = date(2026, 10, 28)
+    proprie = [
+        {"nome": "Edge mio", "user_agent": UA_EDGE, "accept_language": "it-IT"},
+        {"nome": "Volpe", "user_agent": UA_FIREFOX, "accept_language": "it-IT"},
+    ]
+    assert impronta_attiva(giorno, {"impronta_modo": "giorno"}) is impronta_del_giorno(giorno)
+    fissa = impronta_attiva(giorno, {"impronta_modo": "fissa", "impronta_fissa": "firefox"})
+    assert fissa.codice == "firefox"
+    scelte = {
+        "impronta_modo": "personalizzata",
+        "impronta_personalizzata": "Volpe",
+        "impronte_personalizzate": proprie,
+    }
+    assert impronta_attiva(giorno, scelte).nome == "Volpe"
+    # IUDEX_IMPRONTA vince su tutto.
+    assert impronta_attiva(giorno, scelte, fissata="edge").codice == "edge"
+    solo_proprie = {
+        "impronta_modo": "rotazione",
+        "impronte_personalizzate": proprie,
+        "rotazione_include_predefinite": False,
+    }
+    nomi = {impronta_attiva(giorno + timedelta(d), solo_proprie).nome for d in range(4)}
+    assert nomi == {"Edge mio", "Volpe"}
+    con_predefinite = {**solo_proprie, "rotazione_include_predefinite": True}
+    nomi = {impronta_attiva(giorno + timedelta(d), con_predefinite).nome for d in range(5)}
+    assert len(nomi) == 5
 
 
 def test_stesso_giorno_stessa_impronta_e_rotazione_completa():

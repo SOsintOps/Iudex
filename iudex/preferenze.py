@@ -8,7 +8,7 @@ scheda mostra il campo bloccato con il motivo.
 from __future__ import annotations
 
 from .config import Impostazioni
-from .impronte import CODICI
+from .impronte import CODICI, ImprontaNonCoerente, personalizzata
 
 MODI_IMPRONTA = ("giorno", "fissa", "personalizzata", "rotazione")
 APERTURE_PDF = ("finestra", "programma")
@@ -64,14 +64,18 @@ def _impronte(valore) -> list[dict]:
             isinstance(k, str) and isinstance(v, str) for k, v in suggerimenti.items()
         ):
             raise ImpostazioneNonValida(f"impronta {i}: client_hints deve essere testo: testo")
-        pulite.append(
-            {
-                "nome": nome,
-                "user_agent": voce["user_agent"].strip(),
-                "accept_language": voce["accept_language"].strip(),
-                "client_hints": {k.strip().lower(): v.strip() for k, v in suggerimenti.items()},
-            }
-        )
+        pulita = {
+            "nome": nome,
+            "user_agent": voce["user_agent"].strip(),
+            "accept_language": voce["accept_language"].strip(),
+            "client_hints": {k.strip().lower(): v.strip() for k, v in suggerimenti.items()},
+        }
+        # Un'impronta non credibile non si salva: il client non deve mai trovarla.
+        try:
+            personalizzata(**pulita)
+        except ImprontaNonCoerente as exc:
+            raise ImpostazioneNonValida(str(exc)) from None
+        pulite.append(pulita)
     return pulite
 
 
