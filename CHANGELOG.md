@@ -1,5 +1,11 @@
 # Registro delle modifiche
 
+## Da rilasciare
+
+### Correzioni
+- Windows: avviato dai sorgenti, Iudex ha sulla barra un'identità separata
+  (``SOsintOps.Iudex.Sviluppo``), così non si confonde con l'app installata.
+
 ## 0.8.1 — 2026-10-28
 
 Riordino del repository e una correzione.

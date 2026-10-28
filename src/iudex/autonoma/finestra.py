@@ -17,11 +17,16 @@ from pathlib import Path
 log = logging.getLogger("iudex.autonoma")
 
 
-def identita_windows(titolo: str) -> str:
+def identita_windows(titolo: str, installata: bool | None = None) -> str:
     """L'AppUserModelID dell'app (``SOsintOps.Iudex``), dalla prima parola del titolo. È lo
     stesso dei collegamenti: così Windows raggruppa la finestra sotto il collegamento (con
-    la sua icona) e non sotto ``pythonw.exe``."""
-    return f"SOsintOps.{titolo.split()[0].capitalize()}"
+    la sua icona) e non sotto ``pythonw.exe``. Dai sorgenti si aggiunge ``.Sviluppo``, così
+    sulla barra la versione di sviluppo non si confonde con l'app installata."""
+    from .cartelle import congelata
+
+    nome = f"SOsintOps.{titolo.split()[0].capitalize()}"
+    installata = congelata() if installata is None else installata
+    return nome if installata else f"{nome}.Sviluppo"
 
 
 def _dichiara_identita(titolo: str) -> None:

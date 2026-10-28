@@ -17,8 +17,10 @@ from iudex.autonoma import cartelle, finestra, server
 
 
 def test_identita_windows_dal_titolo():
-    assert finestra.identita_windows("Iudex 0.8.1") == "SOsintOps.Iudex"
-    assert finestra.identita_windows("praeco") == "SOsintOps.Praeco"
+    assert finestra.identita_windows("Iudex 0.8.1", installata=True) == "SOsintOps.Iudex"
+    assert finestra.identita_windows("praeco", installata=True) == "SOsintOps.Praeco"
+    # Dai sorgenti (i test girano così) l'identità è distinta da quella dell'app installata.
+    assert finestra.identita_windows("Iudex 0.8.1") == "SOsintOps.Iudex.Sviluppo"
 
 
 def test_cartelle_per_sistema(monkeypatch, tmp_path):
