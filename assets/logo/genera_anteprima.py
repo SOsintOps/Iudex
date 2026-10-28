@@ -68,7 +68,8 @@ def main() -> None:
         "Stessa sintassi e stessi risultati del sito ufficiale",
         "Una richiesta per ricerca, filtri e materia inclusi",
         "Testo in paragrafi, P.Q.M., riferimenti normativi",
-        "Diario delle consultazioni, export, server MCP",
+        "Memoria delle ricerche, PDF salvati, badge già vista",
+        "App con finestra propria, export e importazione, MCP",
     ]
     corpo = font("segoeui.ttf", 27)
     y += 70

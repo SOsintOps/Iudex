@@ -18,7 +18,7 @@ leggere e confrontare e con una memoria permanente di ciò che hai cercato e con
 ricerche, sentenze uscite da ciascuna, testi e PDF aperti, esportabili e importabili su un
 altro computer.
 
-![Iudex: risultati in vista compatta con il filtro "Civile" attivo, i segnali di orientamento e i filtri con i conteggi](docs/immagini/risultati.png)
+![Iudex 0.8: risultati in vista compatta con il filtro "Civile" attivo, i segnali di orientamento e i filtri con i conteggi](docs/immagini/risultati.png)
 
 ## Che cosa fa
 
@@ -62,24 +62,45 @@ altro computer.
 
 ## Schermate
 
+Il badge **già vista** segna le sentenze già consultate; al passaggio del mouse dice quando,
+da quale ricerca sono state aperte e in quali ricerche sono uscite.
+
+![Iudex: badge "già vista" su una sentenza dei risultati, con il riquadro che indica l'ultima consultazione, la ricerca da cui è stata aperta e le ricerche in cui è uscita](docs/immagini/gia-vista.png)
+
+Nel pannello di lettura, sopra il testo, quante volte hai aperto la sentenza, da quali
+ricerche e in quante ricerche è uscita fra i risultati.
+
+![Iudex: intestazione del pannello di lettura con prima apertura, ricerca di provenienza e ricerche in cui la sentenza è uscita](docs/immagini/lettura.png)
+
 Vista compatta con il tema scuro, che si attiva da solo la sera: solo estremi, date,
 presidente, relatore ed ECLI; a sinistra i segnali di orientamento (qui il filtro
 «Orientamento consolidato» attivo) e i filtri con le barre proporzionali.
 
 ![Iudex: tema scuro, righe compatte, filtro sui provvedimenti che richiamano un orientamento consolidato](docs/immagini/tema-scuro.png)
 
+La Cronologia conserva ogni ricerca per sempre ed esporta lo storico in CSV per Excel, JSONL o
+un pacchetto ZIP con i PDF, che si importa in un altro Iudex.
+
+![Iudex: scheda Cronologia con le ricerche fatte e i pulsanti di esportazione dello storico](docs/immagini/cronologia.png)
+
 Il Diario conserva, giorno per giorno, le ricerche e le sentenze aperte da ciascuna, con il
 testo; da qui si esporta in JSONL, CSV, zip o FollowTheMoney.
 
-![Iudex: scheda Diario con le ricerche di un giorno e le sentenze aperte da ciascuna](docs/immagini/diario.png)
+![Iudex: scheda Diario con le ricerche di un giorno e la sentenza aperta da una di esse](docs/immagini/diario.png)
+
+Le Impostazioni decidono se conservare lo storico, dove salvare e aprire i PDF, quale impronta
+del browser dichiarare alla Corte, gli orari del tema scuro e il nome del computer.
+
+![Iudex: scheda Impostazioni con storico, cartella dei PDF e impronta del browser](docs/immagini/impostazioni.png)
 
 Le pagine informative integrate (domande frequenti, versioni, software simili) usano lo
 stesso stile e sono raggiungibili dal menu Help della barra di navigazione.
 
 ![Iudex: pagina delle domande frequenti](docs/immagini/domande-frequenti.png)
 
-Le schermate mostrano ricerche reali; per rispetto delle persone citate nei provvedimenti
-sono state scelte viste senza nomi delle parti.
+Le schermate mostrano ricerche reali, fatte dalla finestra di Iudex 0.8 con un archivio di
+prova; per rispetto delle persone citate nei provvedimenti sono state scelte viste senza nomi
+delle parti.
 
 ## Come interroga il sito (e perché è più leggero del sito stesso)
 
