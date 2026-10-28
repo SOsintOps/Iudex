@@ -10,6 +10,9 @@ questa cartella. Le regole valgono anche per chi lavora a mano.
    il passo 30 di Praeco).
 2. Prosegui dal primo passo non spuntato; se un piano è "da dettagliare", prima le domande
    all'utente, poi il piano scritto nel repository, poi il codice.
+3. Le note di contesto del PC di lavoro (VM, VPN, strumenti installati), che non stanno in
+   questo repository pubblico, sono nel repository **privato** di Praeco, in `docs/claude/`
+   (`LEGGIMI.md` spiega come rimetterle nella memoria di Claude).
 
 ## Regole di lavoro (decise dall'utente)
 
