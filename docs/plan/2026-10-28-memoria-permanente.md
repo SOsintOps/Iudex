@@ -11,8 +11,8 @@ uscite da quale ricerca e quali sentenze ha consultato (testo e PDF), con i PDF 
 cartella e il tutto esportabile. Vuole inoltre una scheda Impostazioni per decidere se
 conservare lo storico, quale impronta del browser dichiarare e dove aprire i PDF, e
 un'architettura come Voicebox: Iudex vive solo nella sua finestra, non più nel browser.
-Fasi successive, solo progettate qui: estrazione delle entità come in Praeco e dialogo
-Iudex↔Praeco per fare meno richieste al server della Corte.
+Fasi successive, solo progettate qui: estrazione delle entità e dialogo con altre app (Praeco)
+per fare meno richieste al server della Corte.
 
 Stato di partenza (Iudex 0.7.0, `main` a `b37d211`):
 
@@ -28,7 +28,7 @@ Stato di partenza (Iudex 0.7.0, `main` a `b37d211`):
   consultate (zip, ftm), copia del database. Manca l'export delle ricerche con i loro risultati.
 - Impronta (`impronte.py`): Chrome, Edge o Firefox su Windows a rotazione per giorno;
   `IUDEX_IMPRONTA` ne fissa una. Nessuna scheda Impostazioni: tutto da variabili d'ambiente.
-- Architettura (vedi `docs/architettura.md` di Praeco): finestra pywebview con icona
+- Architettura: finestra pywebview con icona
   nell'area di notifica, server FastAPI nello stesso processo, `/health`, argomenti
   `--data-dir/--port/--parent-pid`, installer Inno Setup. Restano la modalità browser
   (`--apri`, `scripts/avvia.cmd`, AppImage che apre il browser) e le API raggiungibili da
@@ -46,7 +46,7 @@ Stato di partenza (Iudex 0.7.0, `main` a `b37d211`):
 5. Cancellazione dello storico: **cancella davvero** (con conferma), come oggi.
 6. Export: **CSV/Excel, JSONL/JSON, pacchetto ZIP con i PDF**.
 7. Piano nel repository su GitHub (`docs/plan/` e `docs/PROGRESS.md`), pushato a ogni passo.
-8. Commit come in Praeco: autore Ramingo, niente trailer AI, un commit pushato per passo dopo
+8. Commit: autore Ramingo, niente trailer AI, un commit pushato per passo dopo
    `ruff format`, `ruff check iudex tests` e `pytest` verdi; CHANGELOG ("Da rilasciare") e
    `iudex/static/versioni.html` aggiornati.
 9. Impostazioni: interruttore **conservazione dello storico**; spento = **non si registra
@@ -59,7 +59,7 @@ Stato di partenza (Iudex 0.7.0, `main` a `b37d211`):
 12. Apertura del PDF **a scelta nelle Impostazioni**: dentro la finestra di Iudex oppure con
     il programma PDF predefinito del PC.
 13. Accesso alle API locali con un **token condiviso nella cartella dei dati**, letto dalla
-    finestra, dal server MCP e in futuro da Praeco.
+    finestra, dal server MCP e in futuro da altre app.
 14. **Importazione** (chiesta durante il passo 8): **unisce** ai dati presenti, con il
     controllo dei duplicati, un **pacchetto ZIP**, un **JSONL** o una **copia del database**
     di Iudex; copia di sicurezza prima.
@@ -74,8 +74,7 @@ Un commit pushato per passo, con la spunta in PROGRESS.md nello stesso commit.
 
 ### 1. Piano nel repository
 
-Questo file e `docs/PROGRESS.md` nel formato di Praeco. Prima: `git pull` di Iudex e di
-Praeco locale (`C:\scripts\Praeco`, poi `uv pip install -e .[desktop]`).
+Questo file e `docs/PROGRESS.md`. Prima: `git pull`.
 
 ### 2. Versionamento dello schema
 
@@ -121,7 +120,7 @@ Come Voicebox, il backend locale serve solo la propria finestra.
 `sec-ch-ua` con la stessa versione maggiore, generabile con `sec_ch_ua_chromium`; User-Agent
 Firefox ⇒ niente client hints; Accept-Language non vuoto) e `impronta_attiva(giorno,
 impostazioni)` per le quattro modalità. Resta invariata la firma `impronta_del_giorno(giorno,
-scelta)`, usata da Praeco. Il client applica la nuova impronta ricreando la sessione (stesso
+scelta)`, usata dalle app che importano Iudex. Il client applica la nuova impronta ricreando la sessione (stesso
 percorso del reset dopo un 403). Il pulsante "Prova" mostra gli header che verrebbero inviati,
 senza contattare la Corte.
 
@@ -147,9 +146,9 @@ l'elenco "uscita in N ricerche". Una consultata senza testo in cache si riapre d
 ### 7. PDF salvati
 
 - `client.py`: download binario dentro lo stesso lock e lo stesso intervallo, con controllo
-  del content-type o dell'intestazione `%PDF` (modello: Praeco `rete.py`).
+  del content-type o dell'intestazione `%PDF`.
 - `/api/pdf/{id}`: la copia locale se c'è, altrimenti scarica, salva `cartella_pdf/<id>.pdf`
-  (stesso nome usato da Praeco, utile per la fase C) e registra
+  (nome stabile, utile per la fase C) e registra
   `pdf(id_sentenza PK, quando, percorso relativo alla cartella, byte, sha256)`. Sentenza in
   fase di oscuramento ⇒ messaggio chiaro. I link dell'interfaccia passano da `/api/pdf/{id}`.
 - Cartella: predefinita `pdf/` nella cartella dei dati; l'installer (`packaging/iudex.iss`)
@@ -219,29 +218,17 @@ provate.
 ### 9. Documentazione e versione 0.8.0
 
 README (togliere "Iudex non scarica i PDF" e la modalità browser), `docs/guida.md`,
-`docs/faq.md` e le pagine `static/*.html`, CHANGELOG, `versioni.html`; aggiornare anche
-`docs/architettura.md` di Praeco, che descrive entrambe le app. Il tag `v0.8.0`, che avvia il
+`docs/faq.md` e le pagine `static/*.html`, CHANGELOG, `versioni.html`. Il tag `v0.8.0`, che avvia il
 workflow di rilascio, solo su conferma dell'utente. La 0.8.0 comprende anche quanto già in
-"Da rilasciare" (avvio nascosto, `flussi_sicuri`), previsto come 0.7.1 nel PROGRESS di Praeco.
+"Da rilasciare" (avvio nascosto, `flussi_sicuri`), prima previsto come 0.7.1.
 
 ## Fasi successive (progettate, da sviluppare dopo)
 
-- **B. Entità come in Praeco.** Aggiornare prima Praeco locale. Riuso di
-  `praeco/analisi/regole.py` (solo libreria standard) e di `tassonomia.py`/`tassonomia.yaml`;
-  tabelle `persone`/`societa`/`parti`/`analisi` con chiave l'id SentenzeWeb e gli stessi `uid`
-  di Praeco. Il modello delle entità di Praeco è in revisione (passo 30, piano
-  `2026-10-27-entita-persone-e-societa.md`: nome e cognome separati, niente codice fiscale
-  calcolato, sesso solo se noto, menzioni con posizione nel testo): Iudex seguirà quello.
-  Motore LLM facoltativo.
-- **C. Dialogo Iudex↔Praeco.** Chiave comune: l'id SentenzeWeb. Oggi la via più semplice è la
-  cartella di sincronizzazione di Praeco (`praeco/sync.py`, `.jsonl.gz` per macchina) con gli
-  ambiti `provvedimento` e `testo`, più un ambito o una cartella condivisa per i PDF
-  (`<id>.pdf`); prima di chiedere un testo o un PDF alla Corte, Iudex guarda nel proprio
-  archivio e in quello di Praeco. Se Praeco passerà all'archivio centrale MongoDB/GridFS
-  (`2026-10-27-architettura-mongodb-gridfs.md`, non ancora deciso), Iudex leggerà da lì.
-- Vincolo: non cambiare le API di Iudex usate da Praeco (`client`, `query`, `export`,
-  `impronte`, `autonoma.*`, comprese le private `_richiesta` e `_entita`); ogni modifica di
-  Iudex va pushata prima dei commit di Praeco che la usano.
+- **B. Entità.** Piano in [2026-10-28-entita.md](2026-10-28-entita.md).
+- **C. Dialogo con altre app (Praeco).** Chiave comune: l'id SentenzeWeb; prima di chiedere un
+  testo o un PDF alla Corte, Iudex guarda nel proprio archivio e in quello dell'altra app. Da
+  progettare.
+- Vincolo: non cambiare le API pubbliche di Iudex senza verificare le app che le usano.
 
 ## Verifica
 

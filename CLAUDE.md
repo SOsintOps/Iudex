@@ -6,13 +6,12 @@ questa cartella. Le regole valgono anche per chi lavora a mano.
 ## Da dove ripartire
 
 1. `git pull`, poi leggi `docs/PROGRESS.md` (passi fatti e da fare, diario) e il piano in
-   corso in `docs/plan/` (il più recente; oggi `2026-10-28-entita.md`, fase B, che parte dopo
-   il passo 30 di Praeco).
+   corso in `docs/plan/` (il più recente; oggi `2026-10-28-entita.md`, fase B, che parte
+   quando è definito il modello delle entità).
 2. Prosegui dal primo passo non spuntato; se un piano è "da dettagliare", prima le domande
    all'utente, poi il piano scritto nel repository, poi il codice.
-3. Le note di contesto del PC di lavoro (VM, VPN, strumenti installati), che non stanno in
-   questo repository pubblico, sono nel repository **privato** di Praeco, in `docs/claude/`
-   (`LEGGIMI.md` spiega come rimetterle nella memoria di Claude).
+3. Note di contesto del PC di lavoro e piani di coordinamento con Praeco: nel repository
+   privato di Praeco (`docs/claude/LEGGIMI.md`), non qui.
 
 ## Regole di lavoro (decise dall'utente)
 
@@ -43,6 +42,9 @@ questa cartella. Le regole valgono anche per chi lavora a mano.
 - Praeco (`SOsintOps/Praeco`) dipende da Iudex: non cambiare le API usate da Praeco (`client`,
   `query`, `export`, `impronte`, `autonoma.*`, comprese `_richiesta` ed `_entita`) senza
   aggiornare Praeco; pubblicare Iudex prima dei commit di Praeco che lo usano.
+- Questo repository è **pubblico**: Praeco si nomina soltanto (app che usa Iudex come
+  libreria), senza percorsi, passi, piani o funzioni interne; i dettagli vanno nel repository
+  privato di Praeco.
 - Iudex si usa solo dalla sua finestra (`python -m iudex.desktop`); pagine e API vogliono il
   token del file `token` nella cartella dei dati.
 

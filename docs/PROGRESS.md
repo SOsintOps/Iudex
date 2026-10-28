@@ -34,19 +34,19 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   installer Windows compilato con Inno Setup 6.7.3; AppImage costruita e provata su Debian 13
   (VM `london`, Xvfb); da fare la prova dell'installer su una VM Windows
 - [x] 9. Documentazione e versione 0.8.0: README, guida, FAQ, SECURITY, CONTRIBUTING,
-  schermate nuove, nota in `docs/architettura.md` di Praeco; tag `v0.8.0` (`6467eed` →
+  schermate nuove; tag `v0.8.0` (`6467eed` →
   `73fd77e`), release pubblicata con installer Windows, AppImage e `latest.json`
 
 ## Fasi successive
 
-- [ ] B. Estrazione delle entità in un modulo comune `iudex/entita/` usato anche da Praeco;
-  consultate e PDF salvati; regole + NER; dopo il passo 30 di Praeco
+- [ ] B. Estrazione delle entità in un modulo comune `iudex/entita/`; consultate e PDF
+  salvati; regole + NER; quando è definito il modello delle entità
   ([plan/2026-10-28-entita.md](plan/2026-10-28-entita.md))
-- [ ] C. Dialogo Iudex↔Praeco per ridurre le richieste alla Corte
+- [ ] C. Dialogo con altre app (Praeco) per ridurre le richieste alla Corte
 
 ## Diario
 
-- 2026-10-28: Iudex aggiornato a 0.7.0 sul PC (`b37d211`), Praeco locale a `16cd3ab`. Piano
+- 2026-10-28: Iudex aggiornato a 0.7.0 sul PC (`b37d211`). Piano
   deciso con l'utente (13 decisioni, vedi il piano). Prossimo: passo 2.
 - 2026-10-28: passo 2 (schema versione 2). `iudex/static/versioni.html` riporta solo le
   versioni rilasciate: si aggiorna al passo 9 insieme alla 0.8.0. `ruff format` (0.17.3)
@@ -80,17 +80,15 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - 2026-10-28: passo 8c (`iudex/importazione.py`, `Archivio.unisci`, `POST /api/importa` con
   il file nel corpo, senza dipendenze nuove per i moduli multipart). Suite verde 5 volte su
   5 con `faulthandler_timeout`. Prossimo: passo 3b (solo finestra e token), poi 4, 8b, 9.
-- 2026-10-28: passo 3b. `Guscio` (usato anche da Praeco) non cambia: è `desktop.py` ad aprire
+- 2026-10-28: passo 3b. `Guscio` non cambia: è `desktop.py` ad aprire
   `/accesso` con il token. Installato l'extra `[mcp]` nel venv del PC: prima i test MCP
   venivano saltati; ora passano anche loro (84 test, 4 giri verdi su 4). Prova dal vivo di
   `python -m iudex` su una cartella provvisoria: `/health` 200, pagina e API senza token 401,
   con token 200, `/accesso` 303. Manca la prova della finestra vera (cookie in WebView2):
   con l'utente. README e guida ancora da aggiornare (passo 9). Prossimo: passo 4.
 - 2026-10-28: passo 4. Firma di `impronta_del_giorno` e costruttore di `ClientSentenzeWeb`
-  compatibili con Praeco (parametro nuovo facoltativo). 87 test. Controllo di compatibilità:
-  il venv di Praeco sul PC importa Iudex da `C:\scripts\Iudex`, e la suite di Praeco passa
-  con l'Iudex di questo passo (93 test; uno fallisce solo per il `.env` locale di Praeco, copia
-  di `.env.example` con `PRAECO_LLM_URL`, e passa senza). Prossimo: passo 8b (installer), poi 9.
+  compatibili con le app che importano Iudex (parametro nuovo facoltativo). 87 test.
+  Compatibilità verificata. Prossimo: passo 8b (installer), poi 9.
 - 2026-10-28: passo 8b, prima parte. Eseguibile Windows costruito sul PC con PyInstaller
   6.22.3 (64 MB, 37 s) e avviato su una cartella provvisoria: finestra "Iudex 0.7.0", token
   creato, pagina senza token 401. Non provati: la compilazione di `iudex.iss` (Inno Setup non
@@ -126,4 +124,4 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   `v0.8.0`; workflow Rilascio verde (windows, linux, pubblica): `Iudex-0.8.0-setup.exe` 21,3 MB,
   `Iudex-0.8.0-x86_64.AppImage` 77,5 MB, `latest.json` con gli sha256; note della release dal
   CHANGELOG. Restano aperti (8b): installazione dell'installer su una VM Windows e avvio
-  dell'AppImage senza WebKitGTK. Prossimo: fasi B (entità come Praeco) e C (dialogo con Praeco).
+  dell'AppImage senza WebKitGTK. Prossimo: fasi B (entità) e C (dialogo con altre app).
