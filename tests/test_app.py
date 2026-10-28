@@ -74,6 +74,55 @@ def test_api_rifiuta_senza_header(client):
     assert c.get("/").status_code == 200
 
 
+def test_impostazioni(client):
+    c, _ = client
+    r = c.get("/api/impostazioni", headers=H).json()
+    assert r["valori"]["conserva_storico"] is True and r["valori"]["impronta_modo"] == "giorno"
+    assert r["bloccate"] == {} and "chrome" in r["codici_impronta"]
+    impronta = {"nome": "Mio", "user_agent": "Mozilla/5.0 x", "accept_language": "it-IT"}
+    r = c.put(
+        "/api/impostazioni",
+        headers=H,
+        json={
+            "conserva_storico": False,
+            "pdf_apertura": "programma",
+            "impronte_personalizzate": [impronta],
+            "impronta_modo": "personalizzata",
+            "impronta_personalizzata": "Mio",
+        },
+    )
+    assert r.status_code == 200
+    v = r.json()["valori"]
+    assert v["conserva_storico"] is False and v["pdf_apertura"] == "programma"
+    assert v["impronte_personalizzate"][0]["client_hints"] == {}
+    # Restano salvate; null riporta al predefinito.
+    v = c.put("/api/impostazioni", headers=H, json={"pdf_apertura": None}).json()["valori"]
+    assert v["pdf_apertura"] == "finestra" and v["conserva_storico"] is False
+    for corpo, errore in (
+        ({"pdf_apertura": "stampante"}, "pdf_apertura"),
+        ({"sconosciuta": 1}, "sconosciuta"),
+        ({"impronta_personalizzata": "Altra"}, "personalizzata"),
+        ({"impronte_personalizzate": [{"nome": "x"}]}, "user_agent"),
+    ):
+        r = c.put("/api/impostazioni", headers=H, json=corpo)
+        assert r.status_code == 422 and errore in r.json()["detail"]
+    assert c.put("/api/impostazioni", json={}).status_code == 403
+
+
+def test_impostazioni_bloccate_da_variabile(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        modulo_app,
+        "impostazioni",
+        Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0, impronta="edge"),
+    )
+    with TestClient(modulo_app.app) as c:
+        r = c.get("/api/impostazioni", headers=H).json()
+        assert r["valori"]["impronta_modo"] == "fissa" and r["valori"]["impronta_fissa"] == "edge"
+        assert "IUDEX_IMPRONTA" in r["bloccate"]["impronta_modo"]
+        r = c.put("/api/impostazioni", headers=H, json={"impronta_modo": "giorno"})
+        assert r.status_code == 422
+
+
 def test_pagine_di_aiuto(client):
     c, _ = client
     for nome in ("guida", "faq", "versioni", "software-simili", "licenza"):

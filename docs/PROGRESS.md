@@ -9,8 +9,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - [x] 1. Piano nel repository (`docs/plan/2026-10-28-memoria-permanente.md`) e questo file
   — `57082ee`
 - [x] 2. Versionamento dello schema (`user_version`, migrazioni numerate, backup prima) e
-  tabella `impostazioni`
-- [ ] 3. Impostazioni: API `GET/PUT /api/impostazioni` e scheda nell'interfaccia
+  tabella `impostazioni` — `75145cc`
+- [x] 3. Impostazioni: API `GET/PUT /api/impostazioni` e scheda nell'interfaccia
+  (`iudex/preferenze.py`); l'editor delle impronte personalizzate arriva con il passo 4
 - [ ] 3b. Solo finestra: API e pagine con token (cookie per la finestra, header per MCP),
   niente più modalità browser
 - [ ] 4. Impronte: fissa, personalizzata, più personalizzate in rotazione
@@ -35,3 +36,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   versioni rilasciate: si aggiorna al passo 9 insieme alla 0.8.0. `ruff format` (0.17.3)
   riformatta anche `client.py` e `mcp_server.py` già su main: lasciati com'erano, fuori dai
   passi. Prossimo: passo 3.
+- 2026-10-28: passo 3. La voce del passo 2 nel CHANGELOG entra con questo commit.
+  `tests/test_client.py::test_prima_la_pagina_poi_la_query_con_intervallo` è instabile su
+  Windows (0,594 s misurati contro 0,6 attesi, risoluzione del timer): passa ripetuto, da
+  sistemare a parte. Interfaccia non ancora provata dal vivo (niente Node per `--check`):
+  prova nella finestra prevista dopo i passi dell'interfaccia. Prossimo: passo 3b.

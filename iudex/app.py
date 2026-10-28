@@ -17,13 +17,14 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import __version__, export
+from . import __version__, export, preferenze
 from .autonoma import aggiornamenti, backup
 from .autonoma.cartelle import congelata
 from .autonoma.server import aggiungi_health
 from .cache import Archivio
 from .client import ClientSentenzeWeb, ErroreRemoto
 from .config import URL_AGGIORNAMENTI, impostazioni
+from .impronte import CODICI
 from .query import (
     CAMPI_FACET,
     ETICHETTE_SEGNALI,
@@ -774,6 +775,48 @@ async def svuota_cache(request: Request) -> dict:
 @app.delete("/api/cache/sentenze")
 async def svuota_sentenze(request: Request) -> dict:
     return {"ok": True, "rimosse": request.app.state.archivio.svuota_sentenze()}
+
+
+def _impostazioni_attuali(archivio: Archivio) -> dict:
+    return {
+        "valori": preferenze.effettive(archivio.impostazioni(), impostazioni),
+        "predefinite": preferenze.PREDEFINITE,
+        "bloccate": preferenze.bloccate(impostazioni),
+        "codici_impronta": list(CODICI),
+        "cartella_pdf_predefinita": str(impostazioni.cartella_dati / "pdf"),
+    }
+
+
+@app.get("/api/impostazioni")
+async def leggi_impostazioni(request: Request) -> dict:
+    return _impostazioni_attuali(request.app.state.archivio)
+
+
+@app.put("/api/impostazioni")
+async def scrivi_impostazioni(request: Request) -> dict:
+    """Salva le chiavi inviate (le altre restano); ``null`` riporta una chiave al predefinito."""
+    archivio: Archivio = request.app.state.archivio
+    try:
+        corpo = await request.json()
+    except ValueError:
+        raise HTTPException(422, "corpo JSON non valido") from None
+    if not isinstance(corpo, dict):
+        raise HTTPException(422, "atteso un oggetto JSON")
+    try:
+        nuove = preferenze.valida(corpo)
+        bloccate = preferenze.bloccate(impostazioni).keys() & nuove.keys()
+        if bloccate:
+            raise preferenze.ImpostazioneNonValida(
+                f"{', '.join(sorted(bloccate))}: fissata da una variabile d'ambiente"
+            )
+        dopo = {**archivio.impostazioni(), **nuove}
+        preferenze.controlla_insieme(
+            preferenze.effettive({k: v for k, v in dopo.items() if v is not None}, impostazioni)
+        )
+    except preferenze.ImpostazioneNonValida as exc:
+        raise HTTPException(422, str(exc)) from None
+    archivio.scrivi_impostazioni(nuove)
+    return _impostazioni_attuali(archivio)
 
 
 @app.get("/api/stato")

@@ -160,7 +160,7 @@
     return p;
   }
 
-  const SCHEDE = ["risultati", "cronologia", "diario", "salvate", "preferiti", "stato"];
+  const SCHEDE = ["risultati", "cronologia", "diario", "salvate", "preferiti", "stato", "impostazioni"];
 
   function leggiHash() {
     const h = location.hash.replace(/^#/, "");
@@ -528,6 +528,7 @@
     if (nome === "salvate") caricaSalvate();
     if (nome === "preferiti") caricaPreferiti();
     if (nome === "stato") caricaStato();
+    if (nome === "impostazioni") caricaImpostazioni();
   }
 
   function descriviVoce(v) {
@@ -659,6 +660,69 @@
       try { const r = await api("/api/aggiornamento/installa", { method: "POST" }); messaggio(`Installer di Iudex ${r.versione} avviato.`); }
       catch (e) { messaggio(e.message || String(e)); pulsante.disabled = false; }
     });
+  }
+
+  // ---------- impostazioni ----------
+
+  const CAMPI_IMPOSTAZIONI = ["conserva_storico", "cartella_pdf", "pdf_apertura", "impronta_modo",
+    "impronta_fissa", "impronta_personalizzata", "rotazione_include_predefinite"];
+
+  function esitoImpostazioni(testo) {
+    const m = $("#impostazioni-esito");
+    m.hidden = !testo;
+    m.textContent = testo || "";
+  }
+
+  function mostraModoImpronta() {
+    const modo = $("#impostazioni").elements.impronta_modo.value;
+    $$("#impostazioni [data-modo]").forEach((el) => { el.hidden = el.dataset.modo !== modo; });
+  }
+
+  function compilaImpostazioni(r) {
+    const f = $("#impostazioni").elements;
+    const v = r.valori;
+    f.impronta_fissa.innerHTML = r.codici_impronta.map((c) => `<option value="${escapa(c)}">${escapa(c)}</option>`).join("");
+    const nomi = (v.impronte_personalizzate || []).map((i) => i.nome);
+    f.impronta_personalizzata.innerHTML = nomi.length
+      ? nomi.map((n) => `<option value="${escapa(n)}">${escapa(n)}</option>`).join("")
+      : '<option value="">nessuna impronta personalizzata</option>';
+    f.conserva_storico.checked = v.conserva_storico;
+    f.rotazione_include_predefinite.checked = v.rotazione_include_predefinite;
+    f.cartella_pdf.value = v.cartella_pdf || "";
+    f.cartella_pdf.placeholder = r.cartella_pdf_predefinita;
+    f.pdf_apertura.value = v.pdf_apertura;
+    f.impronta_modo.value = v.impronta_modo;
+    f.impronta_fissa.value = v.impronta_fissa;
+    f.impronta_personalizzata.value = v.impronta_personalizzata || "";
+    const bloccata = r.bloccate.impronta_modo;
+    f.impronta_modo.disabled = f.impronta_fissa.disabled = Boolean(bloccata);
+    $("#impronta-bloccata").hidden = !bloccata;
+    $("#impronta-bloccata").textContent = bloccata ? `Impronta ${bloccata}.` : "";
+    mostraModoImpronta();
+  }
+
+  async function caricaImpostazioni() {
+    esitoImpostazioni("");
+    try { compilaImpostazioni(await api("/api/impostazioni")); }
+    catch (e) { esitoImpostazioni(e.message || String(e)); }
+  }
+
+  async function salvaImpostazioni() {
+    const f = $("#impostazioni").elements;
+    const corpo = {};
+    CAMPI_IMPOSTAZIONI.forEach((k) => {
+      const campo = f[k];
+      if (campo.disabled) return;
+      corpo[k] = campo.type === "checkbox" ? campo.checked : (campo.value.trim() || null);
+    });
+    try {
+      compilaImpostazioni(await api("/api/impostazioni", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corpo),
+      }));
+      esitoImpostazioni("Impostazioni salvate.");
+    } catch (e) { esitoImpostazioni(e.message || String(e)); }
   }
 
   async function aggiornaPie() {
@@ -1035,6 +1099,9 @@
   $("#svuota-testi").addEventListener("click", async () => { const r = await api("/api/cache/sentenze", { method: "DELETE" }); caricaStato(); aggiornaPie(); messaggio(`Testi in cache rimossi (${r.rimosse}).`); });
 
   $$(".scheda").forEach((b) => b.addEventListener("click", () => mostraScheda(b.dataset.scheda)));
+  $("#salva-impostazioni").addEventListener("click", salvaImpostazioni);
+  $("#impostazioni").addEventListener("submit", (e) => { e.preventDefault(); salvaImpostazioni(); });
+  $("#impostazioni").elements.impronta_modo.addEventListener("change", mostraModoImpronta);
 
   $("#rif").addEventListener("input", suggerisci);
   $("#rif").addEventListener("blur", () => setTimeout(() => { $("#suggerimenti").hidden = true; }, 150));

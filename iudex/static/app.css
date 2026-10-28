@@ -552,6 +552,14 @@ em.hit, mark { font-style: normal; background: var(--evidenziatore); color: inhe
 .stato .orari { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
 .stato .orari input { width: 70px; min-height: 0; padding: 0.3rem 0.5rem; font-size: 0.9rem; }
 
+/* ---------- impostazioni ---------- */
+.impostazioni fieldset { border: 1px solid var(--bordo-input); border-radius: 6px; margin: 0 0 14px; padding: 8px 14px 12px; }
+.impostazioni legend { font-weight: 600; padding: 0 6px; }
+.impostazioni .riga { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+.impostazioni .riga > span { min-width: 11em; }
+.impostazioni .riga[hidden] { display: none; }
+.impostazioni .dettaglio { margin: 4px 0; }
+
 /* ---------- fascicolo (testo della sentenza) ---------- */
 
 .fascicolo {

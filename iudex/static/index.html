@@ -21,6 +21,7 @@
     <li class="scheda" data-scheda="salvate" tabindex="0">Ricerche salvate</li>
     <li class="scheda" data-scheda="preferiti" tabindex="0">Preferiti</li>
     <li class="scheda" data-scheda="stato" tabindex="0">Stato</li>
+    <li class="scheda" data-scheda="impostazioni" tabindex="0">Impostazioni</li>
     <li class="con-sottomenu" tabindex="0">
       <span>Help ▾</span>
       <ul class="submenu">
@@ -178,6 +179,44 @@
       </div></div>
     <div id="stato-esito" class="messaggio" hidden></div>
     <div id="stato" class="stato"></div>
+  </section>
+
+  <section class="pannello" id="pannello-impostazioni" hidden>
+    <div class="barra"><div class="sommario">Impostazioni</div>
+      <div class="strumenti">
+        <button type="button" id="salva-impostazioni">Salva</button>
+      </div></div>
+    <div id="impostazioni-esito" class="messaggio" hidden></div>
+    <form id="impostazioni" class="impostazioni stato" autocomplete="off">
+      <fieldset>
+        <legend>Storico</legend>
+        <label class="riga"><input type="checkbox" name="conserva_storico"> Conserva lo storico</label>
+        <p class="dettaglio">Spento, Iudex non registra niente: ricerche, sentenze uscite, diario, sentenze consultate, testi e PDF. Quello già registrato resta.</p>
+      </fieldset>
+      <fieldset>
+        <legend>PDF delle sentenze</legend>
+        <label class="riga"><span>Cartella</span><input type="text" name="cartella_pdf" class="input-field" size="60"></label>
+        <label class="riga"><span>Apri il PDF</span>
+          <select name="pdf_apertura" class="input-field">
+            <option value="finestra">dentro la finestra di Iudex</option>
+            <option value="programma">con il programma PDF del computer</option>
+          </select></label>
+      </fieldset>
+      <fieldset>
+        <legend>Identità dichiarata al server della Corte</legend>
+        <label class="riga"><span>Impronta del browser</span>
+          <select name="impronta_modo" class="input-field">
+            <option value="giorno">una delle predefinite, a rotazione ogni giorno</option>
+            <option value="fissa">sempre la stessa fra le predefinite</option>
+            <option value="personalizzata">una personalizzata</option>
+            <option value="rotazione">le personalizzate a rotazione ogni giorno</option>
+          </select></label>
+        <label class="riga" data-modo="fissa"><span>Predefinita</span><select name="impronta_fissa" class="input-field"></select></label>
+        <label class="riga" data-modo="personalizzata"><span>Personalizzata</span><select name="impronta_personalizzata" class="input-field"></select></label>
+        <label class="riga" data-modo="rotazione"><input type="checkbox" name="rotazione_include_predefinite"> Includi le predefinite nella rotazione</label>
+        <p class="dettaglio" id="impronta-bloccata" hidden></p>
+      </fieldset>
+    </form>
   </section>
 
   <div class="maniglia" id="maniglia-fascicolo" role="separator" aria-orientation="vertical" aria-label="Larghezza del testo" tabindex="0" title="Trascina per ridimensionare, doppio clic per ripristinare" hidden></div>

@@ -2,6 +2,18 @@
 
 ## Da rilasciare
 
+### Archivio
+- Versione dello schema in `PRAGMA user_version` con migrazioni numerate; prima di migrare un
+  database che contiene dati dell'utente se ne fa una copia in `backup/` (come promesso dalla
+  0.7.0, finora non avveniva). Nuova tabella `impostazioni`.
+
+### Impostazioni
+- Nuova scheda Impostazioni (`GET/PUT /api/impostazioni`, modulo `iudex/preferenze.py`):
+  conservazione dello storico, cartella e apertura dei PDF, modo dell'impronta del browser
+  (rotazione giornaliera, fissa, personalizzata, personalizzate a rotazione). Le scelte si
+  salvano nell'archivio; `IUDEX_IMPRONTA`, se impostata, vince e la scheda mostra il campo
+  bloccato. Le scelte prendono effetto nei passi successivi della 0.8.0.
+
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).
