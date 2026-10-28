@@ -7,7 +7,8 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 ## Passi (0.8.0)
 
 - [x] 1. Piano nel repository (`docs/plan/2026-10-28-memoria-permanente.md`) e questo file
-- [ ] 2. Versionamento dello schema (`user_version`, migrazioni numerate, backup prima) e
+  — `57082ee`
+- [x] 2. Versionamento dello schema (`user_version`, migrazioni numerate, backup prima) e
   tabella `impostazioni`
 - [ ] 3. Impostazioni: API `GET/PUT /api/impostazioni` e scheda nell'interfaccia
 - [ ] 3b. Solo finestra: API e pagine con token (cookie per la finestra, header per MCP),
@@ -30,3 +31,7 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 
 - 2026-10-28: Iudex aggiornato a 0.7.0 sul PC (`b37d211`), Praeco locale a `16cd3ab`. Piano
   deciso con l'utente (13 decisioni, vedi il piano). Prossimo: passo 2.
+- 2026-10-28: passo 2 (schema versione 2). `iudex/static/versioni.html` riporta solo le
+  versioni rilasciate: si aggiorna al passo 9 insieme alla 0.8.0. `ruff format` (0.17.3)
+  riformatta anche `client.py` e `mcp_server.py` già su main: lasciati com'erano, fuori dai
+  passi. Prossimo: passo 3.

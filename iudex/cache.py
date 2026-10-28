@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS consultate (
 
 GIORNO_SQL = "strftime('%Y-%m-%d', quando, 'unixepoch', 'localtime')"
 
-# Colonne aggiunte dopo la 0.1.0: vengono create se mancano (migrazione leggera).
+# Colonne aggiunte dopo la 0.1.0: vengono create se mancano (migrazione 1).
 COLONNE_AGGIUNTE = {
     "salvate": (
         ("ultimo_controllo", "REAL"),
@@ -97,11 +97,39 @@ COLONNE_AGGIUNTE = {
     ),
 }
 
+# Versione dello schema, salvata in ``PRAGMA user_version`` (0 fino alla 0.7.0). Ogni
+# migrazione porta il database dalla versione precedente alla sua ed è idempotente: un
+# archivio della 0.7.0 ha già alcune colonne della migrazione 1.
+VERSIONE_SCHEMA = 2
+
+# Tabelle il cui contenuto è dell'utente: se una ha righe, prima di migrare si fa la copia.
+TABELLE_UTENTE = ("ricerche", "salvate", "preferiti", "diario", "consultate")
+
+
+def _migra_1(conn: sqlite3.Connection) -> None:
+    for tabella, colonne in COLONNE_AGGIUNTE.items():
+        presenti = {r["name"] for r in conn.execute(f"PRAGMA table_info({tabella})")}
+        for nome, tipo in colonne:
+            if nome not in presenti:
+                conn.execute(f"ALTER TABLE {tabella} ADD COLUMN {nome} {tipo}")
+
+
+def _migra_2(conn: sqlite3.Connection) -> None:
+    # Impostazioni scelte dall'utente nella scheda Impostazioni: valore JSON per chiave.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS impostazioni ("
+        " chiave TEXT PRIMARY KEY, valore TEXT NOT NULL, quando REAL NOT NULL)"
+    )
+
+
+MIGRAZIONI = {1: _migra_1, 2: _migra_2}
+
 
 class Archivio:
     def __init__(self, percorso: Path | str):
         percorso = Path(percorso)
-        if str(percorso) != ":memory:":
+        self._percorso = None if str(percorso) == ":memory:" else percorso
+        if self._percorso is not None:
             percorso.parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(str(percorso), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
@@ -111,13 +139,34 @@ class Archivio:
             self._conn.executescript(SCHEMA)
             self._migra()
 
+    @property
+    def versione_schema(self) -> int:
+        with self._lock:
+            return self._conn.execute("PRAGMA user_version").fetchone()[0]
+
     def _migra(self) -> None:
-        for tabella, colonne in COLONNE_AGGIUNTE.items():
-            presenti = {r["name"] for r in self._conn.execute(f"PRAGMA table_info({tabella})")}
-            for nome, tipo in colonne:
-                if nome not in presenti:
-                    self._conn.execute(f"ALTER TABLE {tabella} ADD COLUMN {nome} {tipo}")
-        self._conn.commit()
+        """Applica le migrazioni mancanti; prima, se l'archivio ha già dati dell'utente, ne fa
+        una copia di sicurezza in ``backup/`` accanto al database."""
+        versione = self._conn.execute("PRAGMA user_version").fetchone()[0]
+        if versione >= VERSIONE_SCHEMA:
+            return
+        if self._percorso is not None and any(
+            self._conn.execute(f"SELECT EXISTS(SELECT 1 FROM {t})").fetchone()[0]
+            for t in TABELLE_UTENTE
+        ):
+            from .autonoma import backup
+
+            backup.esegui(
+                self._vacuum_into,
+                self._percorso.parent / "backup",
+                "iudex",
+                f"prima della migrazione dello schema {versione} → {VERSIONE_SCHEMA}",
+            )
+        for numero in range(versione + 1, VERSIONE_SCHEMA + 1):
+            with self._conn:
+                MIGRAZIONI[numero](self._conn)
+            # PRAGMA non accetta parametri; il numero viene da MIGRAZIONI.
+            self._conn.execute(f"PRAGMA user_version = {numero}")
 
     def chiudi(self) -> None:
         self._conn.close()
@@ -487,12 +536,38 @@ class Archivio:
         with self._lock:
             return self._conn.execute("SELECT COUNT(*) FROM consultate").fetchone()[0]
 
+    # --- impostazioni dell'utente ----------------------------------------------------------
+
+    def impostazioni(self) -> dict:
+        """Le impostazioni salvate, ``{chiave: valore}`` (i valori sono JSON)."""
+        with self._lock:
+            righe = self._conn.execute("SELECT chiave, valore FROM impostazioni").fetchall()
+        return {r["chiave"]: json.loads(r["valore"]) for r in righe}
+
+    def scrivi_impostazioni(self, valori: dict) -> None:
+        """Salva le chiavi indicate; ``None`` toglie la chiave (torna il predefinito)."""
+        adesso = time.time()
+        with self._lock, self._conn:
+            for chiave, valore in valori.items():
+                if valore is None:
+                    self._conn.execute("DELETE FROM impostazioni WHERE chiave = ?", (chiave,))
+                else:
+                    self._conn.execute(
+                        "INSERT INTO impostazioni (chiave, valore, quando) VALUES (?, ?, ?)"
+                        " ON CONFLICT(chiave) DO UPDATE SET valore = excluded.valore,"
+                        " quando = excluded.quando",
+                        (chiave, json.dumps(valore, ensure_ascii=False), adesso),
+                    )
+
     # --- copia di sicurezza --------------------------------------------------------------
 
     def copia_di_sicurezza(self, destinazione: Path) -> Path:
         """Copia pulita del database (``VACUUM INTO``), senza il file WAL."""
+        with self._lock:
+            return self._vacuum_into(destinazione)
+
+    def _vacuum_into(self, destinazione: Path) -> Path:
         destinazione = Path(destinazione)
         destinazione.parent.mkdir(parents=True, exist_ok=True)
-        with self._lock:
-            self._conn.execute("VACUUM INTO ?", (str(destinazione),))
+        self._conn.execute("VACUUM INTO ?", (str(destinazione),))
         return destinazione

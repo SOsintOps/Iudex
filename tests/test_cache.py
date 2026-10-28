@@ -1,4 +1,11 @@
-from iudex.cache import Archivio
+import sqlite3
+import zlib
+
+from iudex.cache import SCHEMA, VERSIONE_SCHEMA, Archivio
+
+COLONNE_070_ASSENTI = (
+    "    ultimo_controllo REAL,\n    trovati INTEGER,\n    ultimi_id TEXT,\n    nuovi INTEGER\n"
+)
 
 
 def test_risposte_con_ttl():
@@ -102,4 +109,65 @@ def test_diario_e_consultate_sopravvivono_alla_cache(tmp_path):
     b = Archivio(copia)
     assert b.conta_diario() == 4 and b.grezzo_consultata("id1") == grezzo
     b.chiudi()
+    a.chiudi()
+
+
+def _archivio_070(percorso):
+    """Un database come lo lasciava la 0.7.0: user_version 0, ``salvate`` senza le colonne
+    aggiunte, niente tabella ``impostazioni``, una ricerca e una consultata."""
+    conn = sqlite3.connect(percorso)
+    schema = SCHEMA.replace(COLONNE_070_ASSENTI, "").replace(
+        "    permalink TEXT NOT NULL UNIQUE,\n);", "    permalink TEXT NOT NULL UNIQUE\n);"
+    )
+    conn.executescript(schema)
+    conn.execute(
+        "INSERT INTO ricerche (quando, testo, filtri, ordinamento, righe, trovati, permalink)"
+        " VALUES (1, 'usura', '{}', 'pubblicazione', 10, 3, 'testo=usura')"
+    )
+    conn.execute(
+        "INSERT INTO consultate VALUES ('id1', 1, 2, 2, '{\"id\": \"id1\"}', ?)",
+        (zlib.compress(b'{"id": "id1"}'),),
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_migrazione_da_070_con_copia_di_sicurezza(tmp_path):
+    db = tmp_path / "iudex.sqlite"
+    _archivio_070(db)
+    a = Archivio(db)
+    assert a.versione_schema == VERSIONE_SCHEMA
+    colonne = {r["name"] for r in a._conn.execute("PRAGMA table_info(salvate)")}
+    assert {"ultimo_controllo", "trovati", "ultimi_id", "nuovi"} <= colonne
+    assert a.impostazioni() == {}
+    assert a.cronologia()[0]["permalink"] == "testo=usura"
+    assert a.grezzo_consultata("id1") == {"id": "id1"}
+    copie = list((tmp_path / "backup").glob("iudex-*.sqlite"))
+    assert len(copie) == 1
+    vecchio = sqlite3.connect(copie[0])
+    assert vecchio.execute("PRAGMA user_version").fetchone()[0] == 0
+    assert vecchio.execute("SELECT COUNT(*) FROM ricerche").fetchone()[0] == 1
+    vecchio.close()
+    a.chiudi()
+    # Riaperto, è già alla versione corrente: nessuna nuova copia.
+    Archivio(db).chiudi()
+    assert len(list((tmp_path / "backup").glob("iudex-*.sqlite"))) == 1
+
+
+def test_archivio_nuovo_senza_copia(tmp_path):
+    a = Archivio(tmp_path / "nuovo.sqlite")
+    assert a.versione_schema == VERSIONE_SCHEMA
+    assert not (tmp_path / "backup").exists()
+    a.chiudi()
+
+
+def test_impostazioni():
+    a = Archivio(":memory:")
+    a.scrivi_impostazioni({"conserva_storico": False, "impronte_personalizzate": [{"nome": "x"}]})
+    assert a.impostazioni() == {
+        "conserva_storico": False,
+        "impronte_personalizzate": [{"nome": "x"}],
+    }
+    a.scrivi_impostazioni({"conserva_storico": None})
+    assert a.impostazioni() == {"impronte_personalizzate": [{"nome": "x"}]}
     a.chiudi()
