@@ -28,6 +28,8 @@
 ### Interfaccia
 - Voci del menu in alto più piccole di circa due punti (1,5 rem, 1,15 rem sotto i 1400 px),
   così ci stanno tutte, Impostazioni compresa.
+- Le pagine di aiuto (guida, domande frequenti, versioni, software simili, licenza) hanno lo
+  stesso menu dell'app: prima mostravano solo Ricerca, Cronologia e Help.
 
 ### Memoria delle ricerche
 - Ogni pagina di risultati vista (anche servita dalla cache, anche con "Controlla novità") è
@@ -99,6 +101,10 @@
 - AppImage per Linux: la finestra pywebview con GTK e WebKitGTK del sistema al posto del
   browser; se WebKitGTK manca, un messaggio con il comando per installarlo.
 - Senza installer (Linux, sorgenti) la finestra chiede al primo avvio dove conservare i PDF.
+- Su Linux Iudex spegne il renderer DMABUF di WebKitGTK (`WEBKIT_DISABLE_DMABUF_RENDERER=1`,
+  se non è già impostata): senza accelerazione grafica la finestra restava bianca.
+- Workflow di rilascio: PyGObject sotto la 3.51 e i typelib GIRepository e AyatanaAppIndicator
+  per la build Linux (con PyGObject recente l'hook di PyInstaller non trova GIRepository 2.0).
 - La finestra usa l'icona di Iudex (la stessa dei collegamenti) anche avviata dai sorgenti:
   prima mostrava l'icona di serie di Windows (quella di `pythonw.exe`). Su Windows pywebview
   riceve il `.ico`, su Linux il PNG. Vale anche per Praeco, che usa la stessa finestra.

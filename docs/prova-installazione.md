@@ -52,9 +52,27 @@ python -m PyInstaller --noconfirm --distpath build/dist --workpath build/lavoro 
 ```
 
 ```sh
-# Linux (Debian/Ubuntu)
-sudo apt install libgirepository1.0-dev libcairo2-dev gir1.2-webkit2-4.1
-python -m pip install -e .[desktop] PyGObject pyinstaller==6.22.3
+# Linux (Debian/Ubuntu); PyGObject < 3.51 perché l'hook di PyInstaller vuole GIRepository 2.0
+sudo apt install libgirepository1.0-dev libcairo2-dev gir1.2-webkit2-4.1 \
+  gir1.2-girepository-2.0 gir1.2-ayatanaappindicator3-0.1
+python -m pip install -e .[desktop] "PyGObject<3.51" pyinstaller==6.22.3
 python -m PyInstaller --noconfirm --distpath build/dist --workpath build/lavoro packaging/iudex.spec
 sh packaging/costruisci_appimage.sh 0.8.0
 ```
+
+Senza scrivania (via SSH) la finestra si prova in un display virtuale:
+`Xvfb :99 &` e `DISPLAY=:99 APPIMAGE_EXTRACT_AND_RUN=1 dbus-run-session -- ./Iudex-*.AppImage`,
+poi `import -window root schermata.png` (ImageMagick).
+
+## Esiti
+
+- **2026-10-28, Debian 13 (VM `london`, Python 3.13, snapshot "Speculator installato"):** 90
+  test verdi; eseguibile e AppImage (68 MB) costruiti dopo aver fissato PyGObject 3.50.2.
+  In Xvfb: la finestra entra con il token, senza token 401; icona nell'area di notifica con
+  AyatanaAppIndicator; barra del primo avvio per la cartella dei PDF; importato il pacchetto
+  ZIP dell'archivio Windows (38 ricerche, 3 esecuzioni, 55 voci di diario, 4 consultate, 1 PDF),
+  reimportato senza duplicati. La finestra restava bianca finché non si è spento il renderer
+  DMABUF di WebKitGTK (ora lo fa Iudex). Non provati: avvio senza WebKitGTK (era installato),
+  ricerca e PDF dalla Corte (rete protetta), apertura con `xdg-open`.
+- **2026-10-28, Windows 11:** installer compilato con Inno Setup 6.7.3 (25,5 MB), non ancora
+  installato su una VM Windows.

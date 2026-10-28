@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -33,6 +34,11 @@ MESSAGGIO_WEBKIT = (
 
 
 def main(argv: list[str] | None = None) -> None:
+    if sys.platform.startswith("linux"):
+        # Senza accelerazione grafica (macchine virtuali, alcuni driver) il renderer DMABUF di
+        # WebKitGTK lascia la finestra bianca (visto su Debian 13 in una VM): lo si spegne,
+        # salvo che l'utente abbia già scelto lui.
+        os.environ.setdefault("WEBKIT_DISABLE_DMABUF_RENDERER", "1")
     parser = argparse.ArgumentParser(prog="iudex-finestra", description=f"Iudex {__version__}")
     parser.add_argument("--data-dir", help="cartella dei dati (altrimenti IUDEX_DATI)")
     parser.add_argument("--port", type=int, help="porta (altrimenti IUDEX_PORTA)")

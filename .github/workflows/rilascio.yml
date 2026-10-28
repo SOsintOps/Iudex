@@ -43,10 +43,14 @@ jobs:
       - name: Dipendenze
         # Finestra pywebview con GTK: PyGObject si compila con le intestazioni di sistema;
         # WebKitGTK serve qui per la costruzione, a chi usa l'AppImage lo fornisce il sistema.
+        # PyGObject < 3.51 (libgirepository-1.0): l'hook gi di PyInstaller 6.22.3 vuole
+        # GIRepository 2.0, che le versioni successive non caricano (provato su Debian 13).
+        # AyatanaAppIndicator per l'icona nell'area di notifica (pystray).
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgirepository1.0-dev libcairo2-dev gir1.2-webkit2-4.1
-          python -m pip install -e .[desktop] PyGObject pyinstaller==6.22.3
+          sudo apt-get install -y libgirepository1.0-dev libcairo2-dev gir1.2-webkit2-4.1 \
+            gir1.2-girepository-2.0 gir1.2-ayatanaappindicator3-0.1
+          python -m pip install -e .[desktop] "PyGObject<3.51" pyinstaller==6.22.3
       - name: Eseguibile
         run: python -m PyInstaller --noconfirm --distpath build/dist --workpath build/lavoro packaging/iudex.spec
       - name: AppImage
