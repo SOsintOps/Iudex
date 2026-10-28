@@ -45,6 +45,16 @@
 - Con lo storico spento il PDF si apre da un file provvisorio cancellato alla chiusura.
 - Il vecchio `GET /api/pdf/{id}` (redirect al sito della Corte) è stato tolto.
 
+### Esportazione dello storico
+- `GET /api/export/ricerche` e i pulsanti nella scheda Cronologia: CSV per Excel (UTF-8 con
+  BOM, punto e virgola; per impostazione predefinita la tabella ricerca→sentenza, con
+  consultazioni e PDF), JSONL completo, pacchetto ZIP con i quattro CSV, il JSONL, la risposta
+  intera e il testo delle sentenze consultate e i PDF salvati.
+- Ogni ricerca, esecuzione e voce del diario registra la macchina su cui è stata fatta (id
+  stabile e nome del computer, tabella `macchine`) ed esecuzioni e diario hanno un id stabile
+  (`uid`): schema 5, per unire gli archivi di più computer.
+- L'export del diario non si ferma più a 5000 voci.
+
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).

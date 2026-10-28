@@ -128,7 +128,13 @@
 
   <section class="pannello" id="pannello-cronologia" hidden>
     <div class="barra"><div class="sommario">Cronologia delle ricerche</div>
-      <div class="strumenti"><button type="button" id="svuota-cronologia" class="discreto">Svuota</button></div></div>
+      <div class="strumenti">
+        <label class="etichetta">Esporta lo storico</label>
+        <button type="button" class="discreto esporta-ricerche" data-formato="csv" title="Ogni sentenza uscita in ogni ricerca, con consultazioni e PDF: si apre in Excel">Excel (CSV)</button>
+        <button type="button" class="discreto esporta-ricerche" data-formato="jsonl" title="Tutto lo storico in JSON, un record per riga">JSONL</button>
+        <button type="button" class="discreto esporta-ricerche" data-formato="zip" title="CSV, JSONL, sentenze consultate e PDF salvati: si importa in un altro Iudex">Pacchetto ZIP con i PDF</button>
+        <span class="separatore"></span>
+        <button type="button" id="svuota-cronologia" class="discreto">Svuota</button></div></div>
     <table class="tabella" id="tabella-cronologia" data-chiave="cronologia">
       <thead><tr><th>Quando</th><th>Ricerca</th><th>Risultati</th><th>Ordinamento</th><th>Per pagina</th><th>Azioni</th></tr></thead>
       <tbody id="lista-cronologia"></tbody>

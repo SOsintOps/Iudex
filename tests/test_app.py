@@ -463,6 +463,63 @@ def test_pdf_non_disponibile_o_non_pdf(client):
     assert r.status_code == 502 and "non ha restituito un PDF" in r.json()["errore"]
 
 
+def _storico_di_prova(c, mock):
+    """Una ricerca con due sentenze, una aperta (testo e PDF salvato)."""
+    aperta, vista = _doc(13), _doc(14)
+    mock.post(URL_SOLR + "?app.query").mock(
+        return_value=httpx.Response(200, json=_risposta([aperta, vista], trovati=2))
+    )
+    mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([aperta])))
+    mock.get(url__startswith=URL_PDF).mock(
+        return_value=httpx.Response(
+            200, content=PDF_FINTO, headers={"content-type": "application/pdf"}
+        )
+    )
+    c.get("/api/cerca", params={"testo": "bancarotta"}, headers=H)
+    c.get(f"/api/sentenza/{aperta['id']}", params={"da": "testo=bancarotta"}, headers=H)
+    c.post(f"/api/pdf/{aperta['id']}", headers=H, json={"da": "testo=bancarotta"})
+    return aperta, vista
+
+
+def test_export_del_database_delle_ricerche(client):
+    c, mock = client
+    aperta, vista = _storico_di_prova(c, mock)
+    macchina = modulo_app.app.state.archivio.macchina
+    # CSV per Excel: BOM, punto e virgola, una riga per sentenza uscita.
+    r = c.get("/api/export/ricerche", params={"formato": "csv"}, headers=H)
+    assert r.headers["content-type"].startswith("text/csv")
+    righe = r.content.decode("utf-8-sig").splitlines()
+    assert righe[0].startswith("id_esecuzione;quando;macchina;descrizione") and len(righe) == 3
+    assert "bancarotta" in righe[1] and ";sì;" in righe[1] and ";no;;no;" in righe[2]
+    assert r.content.startswith(b"\xef\xbb\xbf")  # BOM UTF-8
+    consultazioni = c.get(
+        "/api/export/ricerche", params={"formato": "csv", "tabella": "consultazioni"}, headers=H
+    ).content.decode("utf-8-sig")
+    assert ";testo;" in consultazioni and ";pdf;" in consultazioni
+    # JSONL: ogni record con il suo tipo, macchina e uid stabili.
+    import json as _json
+
+    record = [
+        _json.loads(x)
+        for x in c.get(
+            "/api/export/ricerche", params={"formato": "jsonl"}, headers=H
+        ).text.splitlines()
+    ]
+    assert record[0] == {"record": "pacchetto", "app": "iudex", "formato": 1}
+    tipi = {x["record"] for x in record}
+    assert {"macchina", "ricerca", "esecuzione", "risultato", "diario", "consultata", "pdf"} <= tipi
+    esecuzione = next(x for x in record if x["record"] == "esecuzione")
+    assert esecuzione["macchina"] == macchina and len(esecuzione["uid"]) == 32
+    assert next(x for x in record if x["record"] == "macchina")["id"] == macchina
+    # ZIP: CSV, JSONL, consultate, testi e PDF.
+    zip_ = zipfile.ZipFile(io.BytesIO(c.get("/api/export/ricerche", headers=H).content))
+    nomi = set(zip_.namelist())
+    assert {"LEGGIMI.txt", "ricerche.csv", "risultati.csv", "ricerche.jsonl"} <= nomi
+    assert f"pdf/{aperta['id']}.pdf" in nomi and f"consultate/{aperta['id']}.json" in nomi
+    assert f"testi/{aperta['id']}.txt" in nomi and f"pdf/{vista['id']}.pdf" not in nomi
+    assert zip_.read(f"pdf/{aperta['id']}.pdf") == PDF_FINTO
+
+
 def test_cartella_pdf_dall_installer(tmp_path, monkeypatch):
     (tmp_path / "installazione.ini").write_text(
         "[pdf]\ncartella = D:\\Sentenze\n", encoding="utf-8"

@@ -328,3 +328,226 @@ def consultate_zip(coppie) -> bytes:
             zf.writestr(f"{id_sentenza}.json", json.dumps(grezzo, ensure_ascii=False, indent=1))
             zf.writestr(f"{id_sentenza}.txt", _testo_grezzo(grezzo))
     return buffer.getvalue()
+
+
+# --- database delle ricerche -----------------------------------------------------------------
+
+# Il BOM fa riconoscere a Excel la codifica UTF-8 (accenti) aprendo il CSV con un doppio clic.
+BOM = "\ufeff"
+# Versione del formato del pacchetto, letta dall'importazione.
+FORMATO_PACCHETTO = 1
+
+COLONNE_RICERCHE = (
+    "id",
+    "prima_volta",
+    "ultima_volta",
+    "volte",
+    "descrizione",
+    "testo",
+    "riferimenti",
+    "filtri",
+    "ordinamento",
+    "righe",
+    "trovati",
+    "macchina",
+    "permalink",
+)
+COLONNE_ESECUZIONI = (
+    "id",
+    "quando",
+    "macchina",
+    "origine",
+    "descrizione",
+    "pagina",
+    "righe",
+    "trovati",
+    "dalla_cache",
+    "ricerca",
+    "permalink",
+    "uid",
+)
+COLONNE_RISULTATI = (
+    "id_esecuzione",
+    "quando",
+    "macchina",
+    "descrizione",
+    "pagina",
+    "posizione",
+    "id_sentenza",
+    "estremi",
+    "data_deposito",
+    "ecli",
+    "consultata",
+    "ultima_consultazione",
+    "pdf_salvato",
+    "ricerca",
+)
+COLONNE_CONSULTAZIONI = (
+    "id",
+    "quando",
+    "macchina",
+    "tipo",
+    "id_sentenza",
+    "estremi",
+    "da_ricerca",
+    "uid",
+)
+
+
+def _csv(colonne: tuple[str, ...], righe: list[dict]) -> str:
+    buffer = io.StringIO()
+    scrittore = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
+    scrittore.writerow(colonne)
+    for riga in righe:
+        scrittore.writerow(["" if riga.get(c) is None else riga.get(c) for c in colonne])
+    return BOM + buffer.getvalue()
+
+
+def _tabelle_ricerche(dati: dict, descrivi) -> dict[str, list[dict]]:
+    """Le righe dei quattro CSV, con date leggibili, estremi per esteso e il nome della
+    macchina. ``descrivi`` trasforma un permalink nella descrizione della ricerca."""
+    nomi = {k: v["nome"] for k, v in dati["macchine"].items()}
+    esecuzione_macchina = {e["id"]: e.get("macchina") for e in dati["esecuzioni"]}
+    pdf_salvati = {p["id_sentenza"] for p in dati["pdf"]}
+    ultime: dict[str, float] = {}
+    for c in dati["consultazioni"]:
+        ultime[c["id_sentenza"]] = c["quando"]
+    ricerche = [
+        {
+            **r,
+            "prima_volta": _ora_locale(r.get("prima_volta")),
+            "ultima_volta": _ora_locale(r.get("quando")),
+            "descrizione": descrivi(r["permalink"]),
+            "filtri": json.dumps(r.get("filtri") or {}, ensure_ascii=False),
+            "macchina": nomi.get(r.get("macchina"), r.get("macchina")),
+        }
+        for r in dati["ricerche"]
+    ]
+    esecuzioni = [
+        {
+            **e,
+            "quando": _ora_locale(e["quando"]),
+            "dalla_cache": "sì" if e["dalla_cache"] else "no",
+            "macchina": nomi.get(e.get("macchina"), e.get("macchina")),
+        }
+        for e in dati["esecuzioni"]
+    ]
+    risultati = [
+        {
+            **r,
+            "quando": _ora_locale(r["quando"]),
+            "macchina": nomi.get(esecuzione_macchina.get(r["id_esecuzione"]), ""),
+            "estremi": estremi_brevi(r["estremi"]),
+            "data_deposito": r["estremi"].get("data_deposito"),
+            "ecli": r["estremi"].get("ecli"),
+            "consultata": "sì" if r["id_sentenza"] in ultime else "no",
+            "ultima_consultazione": _ora_locale(ultime.get(r["id_sentenza"])),
+            "pdf_salvato": "sì" if r["id_sentenza"] in pdf_salvati else "no",
+        }
+        for r in dati["risultati"]
+    ]
+    consultazioni = [
+        {
+            "id": c["id"],
+            "uid": c.get("uid"),
+            "quando": _ora_locale(c["quando"]),
+            "macchina": nomi.get(c.get("macchina"), c.get("macchina")),
+            "tipo": "testo" if c["tipo"] == "sentenza" else "pdf",
+            "id_sentenza": c["id_sentenza"],
+            "estremi": estremi_brevi(c["documento"]) if c.get("documento") else "",
+            "da_ricerca": descrivi(c["permalink"]) if c.get("permalink") else "",
+        }
+        for c in dati["consultazioni"]
+    ]
+    return {
+        "ricerche": ricerche,
+        "esecuzioni": esecuzioni,
+        "risultati": risultati,
+        "consultazioni": consultazioni,
+    }
+
+
+def ricerche_csv(dati: dict, descrivi) -> dict[str, str]:
+    """``{nome del file: contenuto}`` dei quattro CSV, apribili in Excel."""
+    t = _tabelle_ricerche(dati, descrivi)
+    return {
+        "ricerche.csv": _csv(COLONNE_RICERCHE, t["ricerche"]),
+        "esecuzioni.csv": _csv(COLONNE_ESECUZIONI, t["esecuzioni"]),
+        "risultati.csv": _csv(COLONNE_RISULTATI, t["risultati"]),
+        "consultazioni.csv": _csv(COLONNE_CONSULTAZIONI, t["consultazioni"]),
+    }
+
+
+# Record del JSONL, nell'ordine in cui l'importazione li legge: le macchine e le ricerche prima
+# delle esecuzioni, le esecuzioni prima dei loro risultati.
+TIPI_JSONL = (
+    ("macchina", "macchine"),
+    ("ricerca", "ricerche"),
+    ("esecuzione", "esecuzioni"),
+    ("risultato", "risultati"),
+    ("diario", "diario"),
+    ("consultata", "consultate"),
+    ("pdf", "pdf"),
+)
+
+
+def ricerche_jsonl(dati: dict, descrivi) -> str:
+    """Un record JSON per riga con il campo ``record`` (macchina, ricerca, esecuzione,
+    risultato, diario, consultata, pdf); date in secondi (``quando``) e locali
+    (``quando_locale``). La prima riga descrive il pacchetto."""
+    righe = [
+        json.dumps(
+            {"record": "pacchetto", "app": "iudex", "formato": FORMATO_PACCHETTO},
+            ensure_ascii=False,
+        )
+    ]
+    for tipo, chiave in TIPI_JSONL:
+        voci = dati[chiave]
+        if tipo == "macchina":
+            voci = [{"id": k, "nome": v["nome"]} for k, v in voci.items()]
+        for voce in voci:
+            record = {"record": tipo, **voce}
+            if tipo == "ricerca":
+                record["descrizione"] = descrivi(voce["permalink"])
+            if "quando" in voce:
+                record["quando_locale"] = _ora_locale(voce.get("quando"))
+            righe.append(json.dumps(record, ensure_ascii=False))
+    return "\n".join(righe) + "\n"
+
+
+LEGGIMI_RICERCHE = """Iudex: database delle ricerche
+
+ricerche.csv       una riga per ricerca (quante volte, la prima e l'ultima, la macchina)
+esecuzioni.csv     ogni pagina di risultati vista, anche dalla cache, con la macchina
+risultati.csv      le sentenze mostrate in ogni esecuzione: da quale ricerca è uscita ognuna
+consultazioni.csv  le aperture del testo e del PDF, con la ricerca di provenienza
+ricerche.jsonl     tutto quanto sopra in JSON, un record per riga (campo "record")
+consultate/        la risposta intera del server per ogni sentenza consultata, <id>.json
+testi/             il testo delle sentenze consultate, <id>.txt
+pdf/               i PDF salvati, <id>.pdf
+
+I CSV usano il punto e virgola e la codifica UTF-8 con BOM: si aprono in Excel con un doppio
+clic. Il pacchetto si importa in un altro Iudex (scheda Impostazioni, Importa): i dati si
+uniscono a quelli presenti senza duplicati.
+"""
+
+
+def ricerche_zip(dati: dict, descrivi, pdf_files: dict[str, object], consultate) -> bytes:
+    """Pacchetto con i CSV, il JSONL, i PDF salvati (``{id: percorso}``) e, per ogni
+    sentenza consultata (tuple ``(id, documento, grezzo)``), la risposta intera e il testo."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("LEGGIMI.txt", LEGGIMI_RICERCHE)
+        for nome, contenuto in ricerche_csv(dati, descrivi).items():
+            zf.writestr(nome, contenuto)
+        zf.writestr("ricerche.jsonl", ricerche_jsonl(dati, descrivi))
+        for id_sentenza, documento, grezzo in consultate:
+            zf.writestr(
+                f"consultate/{id_sentenza}.json",
+                json.dumps({"documento": documento, "grezzo": grezzo}, ensure_ascii=False),
+            )
+            zf.writestr(f"testi/{id_sentenza}.txt", _testo_grezzo(grezzo))
+        for id_sentenza, percorso in pdf_files.items():
+            # I PDF sono già compressi: si archiviano senza ricomprimerli.
+            zf.write(percorso, f"pdf/{id_sentenza}.pdf", compress_type=zipfile.ZIP_STORED)
+    return buffer.getvalue()

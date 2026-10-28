@@ -4,9 +4,11 @@ diario delle consultazioni e sentenze consultate (archivio personale permanente)
 from __future__ import annotations
 
 import json
+import socket
 import sqlite3
 import threading
 import time
+import uuid
 import zlib
 from pathlib import Path
 
@@ -100,7 +102,7 @@ COLONNE_AGGIUNTE = {
 # Versione dello schema, salvata in ``PRAGMA user_version`` (0 fino alla 0.7.0). Ogni
 # migrazione porta il database dalla versione precedente alla sua ed è idempotente: un
 # archivio della 0.7.0 ha già alcune colonne della migrazione 1.
-VERSIONE_SCHEMA = 4
+VERSIONE_SCHEMA = 5
 
 # Tabelle il cui contenuto è dell'utente: se una ha righe, prima di migrare si fa la copia.
 TABELLE_UTENTE = ("ricerche", "salvate", "preferiti", "diario", "consultate")
@@ -169,7 +171,37 @@ def _migra_4(conn: sqlite3.Connection) -> None:
     )
 
 
-MIGRAZIONI = {1: _migra_1, 2: _migra_2, 3: _migra_3, 4: _migra_4}
+def _migra_5(conn: sqlite3.Connection) -> None:
+    # Macchina su cui è stata fatta ogni ricerca e ogni consultazione, e id stabili (``uid``)
+    # di esecuzioni e voci del diario: servono a unire gli archivi di più computer senza
+    # duplicati. Quello che c'era prima è stato fatto su questa macchina.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS macchine ("
+        " id TEXT PRIMARY KEY, nome TEXT NOT NULL, locale INTEGER NOT NULL DEFAULT 0,"
+        " prima_volta REAL NOT NULL)"
+    )
+    riga = conn.execute("SELECT id FROM macchine WHERE locale = 1").fetchone()
+    if riga:
+        locale = riga["id"]
+    else:
+        locale = uuid.uuid4().hex
+        conn.execute(
+            "INSERT INTO macchine (id, nome, locale, prima_volta) VALUES (?, ?, 1, ?)",
+            (locale, socket.gethostname() or "questo computer", time.time()),
+        )
+    for tabella, con_uid in (("esecuzioni", True), ("diario", True), ("ricerche", False)):
+        presenti = {r["name"] for r in conn.execute(f"PRAGMA table_info({tabella})")}
+        if "macchina" not in presenti:
+            conn.execute(f"ALTER TABLE {tabella} ADD COLUMN macchina TEXT")
+        conn.execute(f"UPDATE {tabella} SET macchina = ? WHERE macchina IS NULL", (locale,))
+        if con_uid:
+            if "uid" not in presenti:
+                conn.execute(f"ALTER TABLE {tabella} ADD COLUMN uid TEXT")
+            conn.execute(f"UPDATE {tabella} SET uid = lower(hex(randomblob(16))) WHERE uid IS NULL")
+            conn.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS {tabella}_uid ON {tabella} (uid)")
+
+
+MIGRAZIONI = {1: _migra_1, 2: _migra_2, 3: _migra_3, 4: _migra_4, 5: _migra_5}
 
 # Estremi di una sentenza conservati con ogni risultato: bastano a riconoscerla e a
 # esportarla anche se il testo non è mai stato aperto.
@@ -202,6 +234,31 @@ class Archivio:
             self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.executescript(SCHEMA)
             self._migra()
+            self.macchina = self._conn.execute(
+                "SELECT id FROM macchine WHERE locale = 1"
+            ).fetchone()["id"]
+
+    # --- macchine -------------------------------------------------------------------------
+
+    def macchine(self) -> dict[str, dict]:
+        """``{id: {nome, locale}}`` delle macchine che compaiono nell'archivio."""
+        with self._lock:
+            righe = self._conn.execute("SELECT * FROM macchine ORDER BY prima_volta").fetchall()
+        return {r["id"]: {"nome": r["nome"], "locale": bool(r["locale"])} for r in righe}
+
+    def nome_macchina(self, nome: str) -> None:
+        """Rinomina questa macchina (il nome si vede nelle ricerche e negli export)."""
+        with self._lock, self._conn:
+            self._conn.execute("UPDATE macchine SET nome = ? WHERE locale = 1", (nome,))
+
+    def conosci_macchina(self, id_macchina: str, nome: str) -> None:
+        """Una macchina vista in un'importazione (non cambia il nome di una già nota)."""
+        with self._lock, self._conn:
+            self._conn.execute(
+                "INSERT OR IGNORE INTO macchine (id, nome, locale, prima_volta)"
+                " VALUES (?, ?, 0, ?)",
+                (id_macchina, nome, time.time()),
+            )
 
     @property
     def versione_schema(self) -> int:
@@ -350,7 +407,8 @@ class Archivio:
         with self._lock, self._conn:
             self._conn.execute(
                 "INSERT INTO ricerche (quando, testo, riferimenti, filtri, ordinamento, righe,"
-                " trovati, permalink, prima_volta, volte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
+                " trovati, permalink, prima_volta, volte, macchina)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)"
                 " ON CONFLICT(permalink) DO UPDATE SET quando = excluded.quando,"
                 " trovati = excluded.trovati, volte = ricerche.volte + 1",
                 (
@@ -363,6 +421,7 @@ class Archivio:
                     trovati,
                     permalink,
                     adesso,
+                    self.macchina,
                 ),
             )
 
@@ -385,7 +444,8 @@ class Archivio:
         with self._lock, self._conn:
             cur = self._conn.execute(
                 "INSERT INTO esecuzioni (quando, ricerca, permalink, descrizione, pagina, righe,"
-                " trovati, dalla_cache, origine) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " trovati, dalla_cache, origine, uid, macchina)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     time.time(),
                     ricerca,
@@ -396,6 +456,8 @@ class Archivio:
                     trovati,
                     int(dalla_cache),
                     origine,
+                    uuid.uuid4().hex,
+                    self.macchina,
                 ),
             )
             id_esecuzione = cur.lastrowid
@@ -440,6 +502,49 @@ class Archivio:
                 {"ricerca": r["ricerca"], "descrizione": r["descrizione"], "quando": r["quando"]}
             )
         return esito
+
+    def dati_ricerche(self) -> dict[str, list[dict]]:
+        """Tutto il database delle ricerche per l'export: ``ricerche``, ``esecuzioni``,
+        ``risultati`` (con ricerca, pagina e quando dell'esecuzione) e ``consultazioni``
+        (aperture del testo e del PDF), ognuno dal più vecchio al più recente."""
+        with self._lock:
+            ricerche = self._conn.execute(
+                "SELECT * FROM ricerche ORDER BY prima_volta, id"
+            ).fetchall()
+            esecuzioni = self._conn.execute("SELECT * FROM esecuzioni ORDER BY id").fetchall()
+            risultati = self._conn.execute(
+                "SELECT r.id_esecuzione, e.uid AS uid_esecuzione, e.quando, e.ricerca,"
+                " e.descrizione, e.pagina, r.posizione, r.id_sentenza, r.estremi"
+                " FROM risultati r JOIN esecuzioni e ON e.id = r.id_esecuzione"
+                " ORDER BY r.id_esecuzione, r.posizione"
+            ).fetchall()
+            diario = self._conn.execute(
+                "SELECT d.*, c.documento AS documento FROM diario d"
+                " LEFT JOIN consultate c USING (id_sentenza) ORDER BY d.quando, d.id"
+            ).fetchall()
+            consultate = self._conn.execute(
+                "SELECT id_sentenza, prima_volta, ultima_volta, volte FROM consultate"
+                " ORDER BY prima_volta"
+            ).fetchall()
+            pdf = self._conn.execute("SELECT * FROM pdf ORDER BY quando").fetchall()
+        voci_diario = [
+            dict(
+                r,
+                filtri=json.loads(r["filtri"]) if r["filtri"] else None,
+                documento=json.loads(r["documento"]) if r["documento"] else None,
+            )
+            for r in diario
+        ]
+        return {
+            "macchine": self.macchine(),
+            "ricerche": [dict(r, filtri=json.loads(r["filtri"] or "{}")) for r in ricerche],
+            "esecuzioni": [dict(r, dalla_cache=bool(r["dalla_cache"])) for r in esecuzioni],
+            "risultati": [dict(r, estremi=json.loads(r["estremi"])) for r in risultati],
+            "diario": voci_diario,
+            "consultazioni": [v for v in voci_diario if v["tipo"] in ("sentenza", "pdf")],
+            "consultate": [dict(r) for r in consultate],
+            "pdf": [dict(r) for r in pdf],
+        }
 
     def conta_esecuzioni(self) -> int:
         with self._lock:
@@ -564,7 +669,8 @@ class Archivio:
         with self._lock, self._conn:
             self._conn.execute(
                 "INSERT INTO diario (quando, tipo, testo, riferimenti, filtri, ordinamento,"
-                " pagina, permalink, trovati) VALUES (?, 'ricerca', ?, ?, ?, ?, ?, ?, ?)",
+                " pagina, permalink, trovati, uid, macchina)"
+                " VALUES (?, 'ricerca', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     time.time(),
                     testo,
@@ -574,6 +680,8 @@ class Archivio:
                     pagina,
                     permalink,
                     trovati,
+                    uuid.uuid4().hex,
+                    self.macchina,
                 ),
             )
 
@@ -584,8 +692,16 @@ class Archivio:
         PDF); ``permalink`` è la ricerca da cui è stata aperta."""
         with self._lock, self._conn:
             self._conn.execute(
-                "INSERT INTO diario (quando, tipo, permalink, id_sentenza) VALUES (?, ?, ?, ?)",
-                (time.time(), tipo, permalink or None, id_sentenza),
+                "INSERT INTO diario (quando, tipo, permalink, id_sentenza, uid, macchina)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    time.time(),
+                    tipo,
+                    permalink or None,
+                    id_sentenza,
+                    uuid.uuid4().hex,
+                    self.macchina,
+                ),
             )
 
     def consultazioni(self, ids: list[str]) -> dict[str, dict]:
@@ -627,7 +743,8 @@ class Archivio:
     def diario(
         self, giorno: str | None = None, id_sentenza: str | None = None, limite: int = 500
     ) -> list[dict]:
-        """Voci in ordine cronologico inverso, per giorno (``AAAA-MM-GG``) o per sentenza."""
+        """Voci in ordine cronologico inverso, per giorno (``AAAA-MM-GG``) o per sentenza;
+        ``limite`` negativo = tutte."""
         condizioni, valori = [], []
         if giorno:
             condizioni.append(f"{GIORNO_SQL} = ?")

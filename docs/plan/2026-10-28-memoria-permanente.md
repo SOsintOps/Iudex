@@ -60,6 +60,13 @@ Stato di partenza (Iudex 0.7.0, `main` a `b37d211`):
     il programma PDF predefinito del PC.
 13. Accesso alle API locali con un **token condiviso nella cartella dei dati**, letto dalla
     finestra, dal server MCP e in futuro da Praeco.
+14. **Importazione** (chiesta durante il passo 8): **unisce** ai dati presenti, con il
+    controllo dei duplicati, un **pacchetto ZIP**, un **JSONL** o una **copia del database**
+    di Iudex; copia di sicurezza prima.
+15. Ogni ricerca, esecuzione e voce del diario registra la **macchina** su cui è stata fatta
+    (id stabile e nome del computer, rinominabile).
+16. Id stabili (`uid`) di esecuzioni e voci del diario, per riconoscere i duplicati fra
+    archivi di macchine diverse.
 
 ## Passi
 
@@ -165,6 +172,26 @@ l'elenco "uscita in N ricerche". Una consultata senza testo in cache si riapre d
 JSONL con un record per riga e il campo `tipo`; ZIP con CSV, JSONL, `pdf/` e `testi/`. Export
 del diario in streaming, senza il tetto di 5000 righe. Pulsanti nelle schede Diario e
 Impostazioni.
+
+### 8c. Importazione con unione e controllo dei duplicati
+
+`POST /api/importa` (file caricato dalla scheda Impostazioni): pacchetto ZIP o JSONL
+dell'export del passo 8, oppure un `.sqlite` di Iudex (letto in sola lettura, convertito con
+`Archivio.dati_ricerche`). Prima una copia di sicurezza. Regole di unione:
+
+- macchine: aggiunte se nuove (il nome locale non cambia);
+- ricerche: per permalink; `prima_volta` la minima, `quando` la massima, `volte` la massima
+  fra quella locale e le esecuzioni di pagina 1;
+- esecuzioni e voci del diario: per `uid`, mai duplicate; i risultati seguono la loro
+  esecuzione;
+- consultate: per id della sentenza; si aggiunge la risposta intera se manca, `prima_volta`
+  la minima, `ultima_volta` la massima, `volte` dal diario;
+- PDF: per id; il file si copia se manca, controllando lo sha256 dichiarato; se c'è già con
+  uno sha256 diverso resta quello locale e lo si segnala.
+
+Il riepilogo dice quanti record sono stati aggiunti e quanti erano già presenti. Test: doppia
+importazione dello stesso pacchetto senza duplicati, unione di due archivi con macchine
+diverse, `.sqlite` di una 0.7.0.
 
 ### 8b. Installazione su Windows e su Linux
 

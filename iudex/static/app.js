@@ -1156,6 +1156,7 @@
     apriFascicolo(a.dataset.id);
   });
   $$(".esporta-diario").forEach((b) => b.addEventListener("click", () => scarica("/api/export/diario?formato=" + b.dataset.formato).catch((err) => messaggio("Esportazione non riuscita: " + err.message))));
+  $$(".esporta-ricerche").forEach((b) => b.addEventListener("click", () => scarica("/api/export/ricerche?formato=" + b.dataset.formato).catch((err) => messaggio("Esportazione non riuscita: " + err.message))));
   $("#esporta-consultate").addEventListener("click", () => scarica("/api/export/consultate").catch((err) => messaggio("Esportazione non riuscita: " + err.message)));
   $("#esporta-ftm").addEventListener("click", () => scarica("/api/export/consultate?formato=ftm").catch((err) => messaggio("Esportazione non riuscita: " + err.message)));
   $("#copia-sicurezza").addEventListener("click", async (e) => {

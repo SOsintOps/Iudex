@@ -850,11 +850,47 @@ def _allegato(contenuto: str | bytes, nome: str, tipo: str) -> Response:
 async def esporta_diario(
     request: Request, formato: str = Query("jsonl", pattern="^(jsonl|csv)$")
 ) -> Response:
-    voci = request.app.state.archivio.diario(limite=5000)
+    # Tutto il diario: il vecchio tetto di 5000 voci troncava l'export senza avvisare.
+    voci = request.app.state.archivio.diario(limite=-1)
     marca = time.strftime("%Y%m%d-%H%M%S")
     if formato == "csv":
         return _allegato(export.diario_csv(voci), f"iudex-diario-{marca}.csv", "text/csv")
     return _allegato(export.diario_jsonl(voci), f"iudex-diario-{marca}.jsonl", "application/jsonl")
+
+
+@app.get("/api/export/ricerche")
+async def esporta_ricerche(
+    request: Request,
+    formato: str = Query("zip", pattern="^(csv|jsonl|zip)$"),
+    tabella: str = Query("risultati", pattern="^(ricerche|esecuzioni|risultati|consultazioni)$"),
+) -> Response:
+    """Il database delle ricerche: un CSV per Excel (``tabella``, predefinita la tabella
+    ricerca→sentenza), il JSONL completo o il pacchetto ZIP con CSV, JSONL, consultate e PDF,
+    che si può importare in un altro Iudex."""
+    archivio: Archivio = request.app.state.archivio
+    dati = archivio.dati_ricerche()
+    marca = time.strftime("%Y%m%d-%H%M%S")
+    if formato == "csv":
+        tabelle = export.ricerche_csv(dati, _descrivi_permalink)
+        return _allegato(tabelle[f"{tabella}.csv"], f"iudex-{tabella}-{marca}.csv", "text/csv")
+    if formato == "jsonl":
+        return _allegato(
+            export.ricerche_jsonl(dati, _descrivi_permalink),
+            f"iudex-ricerche-{marca}.jsonl",
+            "application/jsonl",
+        )
+    base = _cartella_pdf(_scelte(request))
+    pdf_files = {}
+    for voce in dati["pdf"]:
+        percorso = pdf_locali.risolvi(base, voce["percorso"])
+        if percorso.exists():
+            pdf_files[voce["id_sentenza"]] = percorso
+    documenti = {c["id_sentenza"]: c["documento"] for c in archivio.consultate()}
+    consultate = (
+        (id_s, documenti.get(id_s), grezzo) for id_s, grezzo in archivio.grezzi_consultate()
+    )
+    contenuto = export.ricerche_zip(dati, _descrivi_permalink, pdf_files, consultate)
+    return _allegato(contenuto, f"iudex-ricerche-{marca}.zip", "application/zip")
 
 
 @app.get("/api/export/consultate")

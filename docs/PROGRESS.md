@@ -22,7 +22,10 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   (la voce `pdf` del diario si scrive al passo 7) — `7ee9f86`
 - [x] 7. PDF salvati nella cartella scelta (Impostazioni; `installazione.ini` letto, la pagina
   dell'installer che lo scrive è nel passo 8b), aperti in finestra o con il programma del PC
-- [ ] 8. Export del database delle ricerche: CSV/Excel, JSONL, ZIP con i PDF
+  — `4178ec2`
+- [x] 8. Export del database delle ricerche: CSV/Excel, JSONL, ZIP con i PDF; macchina e
+  `uid` (schema 5) per l'importazione
+- [ ] 8c. Importazione con unione e controllo dei duplicati (ZIP, JSONL, copia del database)
 - [ ] 8b. Installazione su Windows (Inno Setup) e Linux (AppImage) adattata e provata su VM
 - [ ] 9. Documentazione e versione 0.8.0 (tag solo su conferma)
 
@@ -56,3 +59,11 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
   dell'interfaccia) e si mostra con `GET /pdf/{id}` fuori da `/api/`, che serve solo file
   locali e non contatta mai la Corte: un iframe non può mandare l'header. Con il token del
   passo 3b anche `/pdf/` sarà protetto. Prossimo: passo 8 (export).
+- 2026-10-28: passo 8 (schema 5). L'utente ha chiesto l'importazione (decisioni 14-16 nel
+  piano, nuovo passo 8c) e la macchina di ogni ricerca: introdotte qui, prima dell'export,
+  così il pacchetto le contiene già. Migrazione a 5 provata sulla copia dell'archivio vero
+  (macchina "greydog", 37 ricerche e 47 voci di diario con macchina e uid). Prossimo: 8c.
+  **Aperto:** prima del commit la suite è fallita una volta su sei e una ripetizione si è
+  bloccata oltre dieci minuti (fermata a mano), senza poter vedere quale test; poi 12 giri
+  verdi su 12 con `-o faulthandler_timeout=30`. Da indagare: usare sempre quell'opzione
+  nelle ripetizioni, per avere la traccia se si blocca di nuovo.
