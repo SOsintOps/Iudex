@@ -1,6 +1,6 @@
 name: Segnalazione
 description: Un errore o un risultato diverso dal sito ufficiale
-labels: ["difetto"]
+labels: ["bug"]
 body:
   - type: textarea
     id: cosa

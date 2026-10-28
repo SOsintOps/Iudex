@@ -1,6 +1,6 @@
 name: Proposta
 description: Un'idea o una funzione nuova
-labels: ["funzione"]
+labels: ["enhancement"]
 body:
   - type: textarea
     id: problema
