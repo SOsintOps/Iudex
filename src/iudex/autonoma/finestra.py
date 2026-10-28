@@ -17,6 +17,24 @@ from pathlib import Path
 log = logging.getLogger("iudex.autonoma")
 
 
+def identita_windows(titolo: str) -> str:
+    """L'AppUserModelID dell'app (``SOsintOps.Iudex``), dalla prima parola del titolo. È lo
+    stesso dei collegamenti: così Windows raggruppa la finestra sotto il collegamento (con
+    la sua icona) e non sotto ``pythonw.exe``."""
+    return f"SOsintOps.{titolo.split()[0].capitalize()}"
+
+
+def _dichiara_identita(titolo: str) -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(identita_windows(titolo))
+    except (AttributeError, OSError):
+        log.warning("AppUserModelID non impostato: sulla barra resta l'icona del programma")
+
+
 class Guscio:
     """La finestra e l'icona di un'app; ``avvia()`` blocca finché l'utente non esce."""
 
@@ -106,6 +124,7 @@ class Guscio:
     def avvia(self) -> None:
         import webview
 
+        _dichiara_identita(self.titolo)
         self.finestra = webview.create_window(
             self.titolo,
             self.url,

@@ -40,8 +40,8 @@ Name: "desktop"; Description: "Icona sul desktop"; GroupDescription: "Collegamen
 Source: "{#Sorgente}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
-Name: "{group}\Iudex"; Filename: "{app}\Iudex.exe"
-Name: "{userdesktop}\Iudex"; Filename: "{app}\Iudex.exe"; Tasks: desktop
+Name: "{group}\Iudex"; Filename: "{app}\Iudex.exe"; AppUserModelID: "SOsintOps.Iudex"
+Name: "{userdesktop}\Iudex"; Filename: "{app}\Iudex.exe"; AppUserModelID: "SOsintOps.Iudex"; Tasks: desktop
 
 [Run]
 Filename: "{app}\Iudex.exe"; Description: "Avvia Iudex"; Flags: nowait postinstall skipifsilent

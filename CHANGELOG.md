@@ -2,7 +2,13 @@
 
 ## 0.8.1 — 2026-10-28
 
-Nessun cambiamento nell'uso dell'app: riordino del repository.
+Riordino del repository e una correzione.
+
+### Correzioni
+- Windows: sulla barra delle applicazioni la finestra aveva l'icona di Python quando Iudex
+  partiva dai sorgenti (`pythonw.exe`). Ora Iudex dichiara la sua identità
+  (AppUserModelID `SOsintOps.Iudex`), la stessa dei collegamenti dell'installer: icona di
+  Iudex e collegamento fissato che riapre Iudex. Vale anche per Praeco, che usa la stessa finestra.
 
 ### Repository
 - Codice nella cartella `src/` (layout `src`, consigliato per i pacchetti Python): i test
