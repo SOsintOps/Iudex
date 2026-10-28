@@ -151,9 +151,6 @@ Dalla pagina delle [release](https://github.com/SOsintOps/Iudex/releases/latest)
   Debian e Ubuntu; se manca, Iudex lo dice) e al primo avvio chiede la cartella dei PDF;
   dati in `~/.local/share/iudex`.
 
-Le prove da fare sugli installer prima di una versione sono in
-[docs/prova-installazione.md](docs/prova-installazione.md).
-
 ### Dai sorgenti
 
 Serve Python 3.11 o successivo.
@@ -303,7 +300,7 @@ Struttura:
 | `iudex/autonoma/` | app autonoma: cartelle dei dati per sistema, server con `/health`, porta e sorveglianza del processo genitore, finestra con icona nell'area di notifica |
 | `iudex/static/` | interfaccia e pagine di aiuto (HTML, CSS, JavaScript senza dipendenze), font, icone |
 | `tests/` | test automatici (senza rete) |
-| `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini; piano dei lavori (`plan/`) e avanzamento (`PROGRESS.md`); prove degli installer |
+| `docs/` | analisi del sito, guida, domande frequenti, software simili, immagini |
 | `assets/logo/` | logo originale e script che generano logo, marchio, favicon e anteprima social (`docs/immagini/anteprima-social.png`) |
 | `scripts/` | avviatori per Windows |
 | `.github/` | integrazione continua (ruff + pytest), Dependabot, modelli per segnalazioni e pull request |

@@ -4,8 +4,8 @@
 
 ### Documentazione
 - Domande frequenti: nuova sezione "Lo sviluppo" sull'uso dell'intelligenza artificiale.
-- `CLAUDE.md`: istruzioni per riprendere il lavoro da qualunque computer (da dove ripartire,
-  regole dei commit, vincoli del progetto).
+- Il repository contiene solo il materiale per chi usa e sviluppa l'app: tolti piani di
+  lavoro, avanzamento e liste di prova interne.
 
 ## 0.8.0 — 2026-10-28
 

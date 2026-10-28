@@ -33,7 +33,7 @@ token del file `token` nella cartella dei dati.
   `iudex/static/versioni.html`, che riporta lo stesso registro dentro l'app.
 - Lo schema del database cambia solo con una migrazione numerata nuova in `iudex/cache.py`
   (`VERSIONE_SCHEMA`, `MIGRAZIONI`), mai modificando quelle già rilasciate.
-- I lavori lunghi hanno un piano in `docs/plan/` e l'avanzamento in `docs/PROGRESS.md`.
+- I lavori lunghi si discutono prima in una segnalazione.
 
 ## Struttura del repository
 
