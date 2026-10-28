@@ -100,7 +100,7 @@ COLONNE_AGGIUNTE = {
 # Versione dello schema, salvata in ``PRAGMA user_version`` (0 fino alla 0.7.0). Ogni
 # migrazione porta il database dalla versione precedente alla sua ed è idempotente: un
 # archivio della 0.7.0 ha già alcune colonne della migrazione 1.
-VERSIONE_SCHEMA = 3
+VERSIONE_SCHEMA = 4
 
 # Tabelle il cui contenuto è dell'utente: se una ha righe, prima di migrare si fa la copia.
 TABELLE_UTENTE = ("ricerche", "salvate", "preferiti", "diario", "consultate")
@@ -159,7 +159,17 @@ def _migra_3(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE ricerche ADD COLUMN volte INTEGER NOT NULL DEFAULT 1")
 
 
-MIGRAZIONI = {1: _migra_1, 2: _migra_2, 3: _migra_3}
+def _migra_4(conn: sqlite3.Connection) -> None:
+    # PDF salvati: il file è ``<id_sentenza>.pdf`` nella cartella dei PDF (stesso nome usato
+    # da Praeco); ``percorso`` è relativo a quella cartella quando ci sta dentro.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS pdf ("
+        " id_sentenza TEXT PRIMARY KEY, quando REAL NOT NULL, percorso TEXT NOT NULL,"
+        " byte INTEGER NOT NULL, sha256 TEXT NOT NULL)"
+    )
+
+
+MIGRAZIONI = {1: _migra_1, 2: _migra_2, 3: _migra_3, 4: _migra_4}
 
 # Estremi di una sentenza conservati con ogni risultato: bastano a riconoscerla e a
 # esportarla anche se il testo non è mai stato aperto.
@@ -724,6 +734,32 @@ class Archivio:
     def conta_consultate(self) -> int:
         with self._lock:
             return self._conn.execute("SELECT COUNT(*) FROM consultate").fetchone()[0]
+
+    # --- PDF salvati ---------------------------------------------------------------------
+
+    def pdf(self, id_sentenza: str) -> dict | None:
+        with self._lock:
+            riga = self._conn.execute(
+                "SELECT * FROM pdf WHERE id_sentenza = ?", (id_sentenza,)
+            ).fetchone()
+        return dict(riga) if riga else None
+
+    def registra_pdf(self, id_sentenza: str, percorso: str, byte: int, sha256: str) -> None:
+        with self._lock, self._conn:
+            self._conn.execute(
+                "INSERT OR REPLACE INTO pdf (id_sentenza, quando, percorso, byte, sha256)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (id_sentenza, time.time(), percorso, byte, sha256),
+            )
+
+    def pdf_salvati(self) -> list[dict]:
+        with self._lock:
+            righe = self._conn.execute("SELECT * FROM pdf ORDER BY quando").fetchall()
+        return [dict(r) for r in righe]
+
+    def conta_pdf(self) -> int:
+        with self._lock:
+            return self._conn.execute("SELECT COUNT(*) FROM pdf").fetchone()[0]
 
     # --- impostazioni dell'utente ----------------------------------------------------------
 

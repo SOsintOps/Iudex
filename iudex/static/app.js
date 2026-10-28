@@ -245,7 +245,7 @@
         </div>
         <div class="azioni">
           <button type="button" class="discreto apri">Apri testo</button>
-          ${doc.pdf ? `<a class="discreto" href="${escapa(doc.pdf)}" target="_blank" rel="noopener">PDF ufficiale</a>` : ""}
+          ${doc.pdf ? '<button type="button" class="discreto apri-pdf" title="Apri il PDF ufficiale: la prima volta si scarica e si salva, poi si apre dalla copia locale">PDF</button>' : ""}
           <button type="button" class="discreto preferisci ${doc.preferito ? "attivo" : ""}">${doc.preferito ? "★ Preferita" : "☆ Preferisci"}</button>
         </div>
         ${doc.frammenti && doc.frammenti.length ? `<ul class="frammenti">${doc.frammenti.map((f) => `<li>… ${conMarcature(f)} …</li>`).join("")}</ul>` : ""}
@@ -387,7 +387,9 @@
         </div>
         ${consultazioneHtml(d.consultazione)}`;
       const pdf = $("#fascicolo-pdf");
-      if (doc.pdf) { pdf.hidden = false; pdf.href = doc.pdf; } else { pdf.hidden = true; }
+      pdf.hidden = !doc.pdf;
+      pdf.dataset.id = id;
+      pdf.dataset.da = daiRisultati && stato.risposta && stato.risposta.permalink ? stato.risposta.permalink : "";
       $("#copia-citazione").dataset.citazione = citazione(doc);
       aggiornaBottonePreferito(doc.preferito);
       $("#preferito").dataset.id = id;
@@ -438,6 +440,41 @@
       c.uscita_in.forEach((u) => righe.push(`  · ${u.descrizione || "ricerca"} (${quando(u.quando)})`));
     }
     return `<span class="gia-vista" title="${escapa(righe.join("\n"))}">già vista</span>`;
+  }
+
+  // PDF: Iudex lo prepara (copia locale o primo scaricamento) e lo mostra nel pannello di
+  // lettura, oppure lo apre con il programma del computer, come scelto nelle Impostazioni.
+  async function apriPdf(id, da) {
+    messaggio("");
+    try {
+      const r = await api("/api/pdf/" + encodeURIComponent(id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ da: da || null }),
+      });
+      if (r.aperto_con_programma) {
+        messaggio("PDF aperto con il programma del computer" + (r.salvato ? ` (salvato in ${r.percorso})` : " (non salvato: storico spento)") + ".");
+        return;
+      }
+      mostraPdf(id, r);
+    } catch (e) { messaggio("PDF non disponibile: " + (e.message || String(e))); }
+  }
+
+  function mostraPdf(id, r) {
+    $("#fascicolo").hidden = false;
+    $("#maniglia-fascicolo").hidden = false;
+    $("#corpo").classList.add("con-fascicolo");
+    $("#evidenziatore").hidden = true;
+    $("#vai-pqm").hidden = true;
+    if (stato.idAperto !== id) {
+      stato.idAperto = id;
+      $$(".voce").forEach((v) => v.classList.toggle("aperta", v.dataset.id === id));
+      $("#fascicolo-estremi").textContent = "PDF della sentenza";
+    }
+    const nota = r.salvato ? `${r.gia_locale ? "Dalla copia locale" : "Scaricato e salvato"}: ${escapa(r.percorso)}` : "Non salvato: storico spento";
+    $("#fascicolo-corpo").innerHTML = `
+      <div class="visore-barra"><button type="button" class="discreto torna-al-testo" data-id="${escapa(id)}">Torna al testo</button> <span class="dettaglio">${nota}</span></div>
+      <iframe class="visore-pdf" src="${escapa(r.url)}" title="PDF della sentenza"></iframe>`;
   }
 
   function consultazioneHtml(c) {
@@ -656,7 +693,7 @@
         <td><a class="titolo apri-preferito" href="#" data-id="${escapa(v.id_sentenza)}">${estremiDoc(e)}</a> ${badgeVista(v.consultazione)}${e.data_deposito ? `<div class="dettaglio">dep. ${dataIt(e.data_deposito)}</div>` : ""}</td>
         <td><span class="ecli">${escapa(e.ecli || "")}</span></td>
         <td><input class="nota" type="text" value="${escapa(v.nota || "")}" placeholder="aggiungi una nota" data-id="${escapa(v.id_sentenza)}"></td>
-        <td class="azioni-td">${e.pdf ? `<a class="discreto" href="${escapa(e.pdf)}" target="_blank" rel="noopener">PDF</a>` : ""}<button type="button" class="discreto rimuovi-preferito" data-id="${escapa(v.id_sentenza)}">Rimuovi</button></td>
+        <td class="azioni-td">${e.pdf ? `<button type="button" class="discreto apri-pdf" data-id="${escapa(v.id_sentenza)}">PDF</button>` : ""}<button type="button" class="discreto rimuovi-preferito" data-id="${escapa(v.id_sentenza)}">Rimuovi</button></td>
       </tr>`;
     }).join("");
   }
@@ -671,7 +708,8 @@
          identità dichiarata oggi: <b>${escapa(s.impronta)}</b>${s.impronta_fissa ? " (fissa)" : ""}</p>
       <p>Cache locale: <b>${s.sentenze_in_cache}</b> testi di sentenze, <b>${s.risposte_in_cache}</b> risposte di ricerca · archivio: <code>${escapa(s.percorso_dati)}</code></p>
       ${s.aggiornamento && s.aggiornamento.disponibile ? `<p class="aggiornamento">È disponibile Iudex <b>${escapa(s.aggiornamento.versione)}</b> (in uso ${escapa(s.aggiornamento.attuale)})${s.aggiornamento.note ? ": " + escapa(s.aggiornamento.note) : ""}. <button type="button" id="installa-aggiornamento">Scarica e installa</button> <span class="dettaglio">l'installer si avvia dopo il controllo dello sha256 e chiude Iudex</span></p>` : ""}
-      <p>Diario: <b>${numero(s.voci_diario)}</b> voci, <b>${numero(s.sentenze_consultate)}</b> sentenze consultate con il testo conservato (non vengono toccate dai pulsanti della cache).</p>
+      <p>Diario: <b>${numero(s.voci_diario)}</b> voci, <b>${numero(s.sentenze_consultate)}</b> sentenze consultate con il testo conservato (non vengono toccate dai pulsanti della cache) · <b>${numero(s.esecuzioni)}</b> pagine di risultati ricordate.</p>
+      <p>PDF salvati: <b>${numero(s.pdf_salvati)}</b> in <code>${escapa(s.cartella_pdf)}</code></p>
       <div class="orari"><span class="etichetta">Tema scuro automatico</span>
         dalle <input id="tema-inizio" class="input-field" type="number" min="0" max="23" value="${orari.inizio}"> alle
         <input id="tema-fine" class="input-field" type="number" min="0" max="23" value="${orari.fine}">
@@ -951,6 +989,7 @@
       commutaPreferito(doc.id, estremiPerPreferito(doc), doc.preferito).catch((err) => messaggio(err.message));
       return;
     }
+    if (e.target.closest(".apri-pdf")) { apriPdf(voce.dataset.id, stato.risposta.permalink); return; }
     if (e.target.closest(".apri") || e.target.closest(".estremi")) apriFascicolo(voce.dataset.id, true);
   });
 
@@ -989,7 +1028,14 @@
   $("#carattere-meno").addEventListener("click", () => applicaCarattere((memoria("iudex.carattere") || 16) - 1));
   $("#carattere-piu").addEventListener("click", () => applicaCarattere((memoria("iudex.carattere") || 16) + 1));
 
+  $("#fascicolo-pdf").addEventListener("click", (e) => {
+    const b = e.currentTarget;
+    apriPdf(b.dataset.id, b.dataset.da || null);
+  });
+
   $("#fascicolo-corpo").addEventListener("click", (e) => {
+    const torna = e.target.closest(".torna-al-testo");
+    if (torna) { apriFascicolo(torna.dataset.id); return; }
     const chip = e.target.closest(".rnc .chip");
     if (!chip) return;
     $("#rif").value = chip.dataset.ricerca;
@@ -1078,6 +1124,8 @@
   $("#lista-preferiti").addEventListener("click", async (e) => {
     const r = e.target.closest(".rimuovi-preferito");
     if (r) { await api("/api/preferiti/" + encodeURIComponent(r.dataset.id), { method: "DELETE" }); caricaPreferiti(); return; }
+    const p = e.target.closest(".apri-pdf");
+    if (p) { apriPdf(p.dataset.id, null); return; }
     const a = e.target.closest(".apri-preferito");
     if (a) { e.preventDefault(); mostraScheda("risultati"); $("#benvenuto").hidden = true; apriFascicolo(a.dataset.id); }
   });

@@ -56,6 +56,16 @@ HEADER_XHR = {
     "Sec-Fetch-Mode": "cors",
     "Sec-Fetch-Site": "same-origin",
 }
+# Il PDF si apre dal sito come un documento (link in una nuova scheda), non come XHR.
+HEADER_PDF = {
+    "Accept": "application/pdf,text/html,application/xhtml+xml,*/*;q=0.8",
+    "Referer": URL_SNCASS,
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+}
 
 @dataclass
 class VoceRegistro:
@@ -278,6 +288,15 @@ class ClientSentenzeWeb:
 
     async def dettaglio(self, parametri: list[tuple[str, str]]) -> dict:
         return await self._solr(parametri, suffisso="", tipo="dettaglio")
+
+    async def scarica_pdf(self, url: str) -> bytes:
+        """Il PDF di una sentenza (URL di ``query.url_pdf``), con lock, sessione e intervallo
+        minimo come ogni altra richiesta; una pagina al posto del PDF è un errore."""
+        risposta = await self._richiesta("GET", url, tipo="pdf", headers=HEADER_PDF)
+        tipo = risposta.headers.get("content-type", "")
+        if "pdf" not in tipo and not risposta.content.startswith(b"%PDF"):
+            raise ErroreRemoto("il server non ha restituito un PDF")
+        return risposta.content
 
     def _testo_estremi(self, risposta: httpx.Response) -> str:
         """Il servizio estremi risponde in testo semplice; una pagina HTML è un errore

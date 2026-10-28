@@ -32,6 +32,19 @@
 - Una sentenza consultata il cui testo è stato tolto dalla cache si riapre dalla risposta
   intera conservata, senza una nuova richiesta al server.
 
+### PDF
+- Il pulsante PDF passa da Iudex (`POST /api/pdf/{id}`): la prima volta scarica il PDF
+  ufficiale (una richiesta, con lo stesso ritmo e la stessa sessione delle altre) e lo salva
+  come `<id>.pdf` nella cartella dei PDF (tabella `pdf` con dimensione e sha256, schema 4),
+  poi lo apre sempre dalla copia locale. Si mostra nel pannello di lettura (`GET /pdf/{id}`,
+  solo file locali) o con il programma PDF del computer, come scelto nelle Impostazioni.
+  Ogni apertura è una consultazione (voce `pdf` del diario).
+- Cartella dei PDF: `pdf/` nella cartella dei dati, oppure quella scritta dall'installer in
+  `installazione.ini` (`[pdf] cartella = ...`) o scelta nelle Impostazioni; cambiandola, i PDF
+  già salvati si spostano nella nuova. La scheda Stato mostra quanti PDF sono salvati e dove.
+- Con lo storico spento il PDF si apre da un file provvisorio cancellato alla chiusura.
+- Il vecchio `GET /api/pdf/{id}` (redirect al sito della Corte) è stato tolto.
+
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
   (avvio con il sistema, usato da Praeco).

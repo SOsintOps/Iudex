@@ -6,6 +6,8 @@ import asyncio
 import json
 import logging
 import math
+import shutil
+import tempfile
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -13,11 +15,12 @@ from urllib.parse import parse_qs, urlencode
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import __version__, export, preferenze
+from . import pdf as pdf_locali
 from .autonoma import aggiornamenti, backup
 from .autonoma.cartelle import congelata
 from .autonoma.server import aggiungi_health
@@ -65,6 +68,12 @@ async def ciclo_vita(app: FastAPI):
     app.state.archivio = Archivio(impostazioni.percorso_db)
     app.state.client = ClientSentenzeWeb(impostazioni)
     app.state.sigle = None
+    # PDF aperti con lo storico spento: file provvisori, cancellati alla chiusura.
+    app.state.pdf_provvisori = {}
+    # La cartella dei PDF scelta nell'installer vale finché l'utente non ne sceglie un'altra.
+    scelta_installer = pdf_locali.da_installazione(impostazioni.cartella_dati)
+    if scelta_installer and "cartella_pdf" not in app.state.archivio.impostazioni():
+        app.state.archivio.scrivi_impostazioni({"cartella_pdf": scelta_installer})
     # Le voci di cache scadute non servono più: si tolgono all'avvio (diario e sentenze
     # consultate restano).
     rimosse = app.state.archivio.pulisci_scadute(
@@ -93,6 +102,8 @@ async def ciclo_vita(app: FastAPI):
     yield
     await app.state.client.chiudi()
     app.state.archivio.chiudi()
+    for provvisorio in app.state.pdf_provvisori.values():
+        provvisorio.unlink(missing_ok=True)
 
 
 app = FastAPI(
@@ -538,12 +549,85 @@ async def sentenza(
     }
 
 
-@app.get("/api/pdf/{id_sentenza}")
-async def pdf(request: Request, id_sentenza: str) -> RedirectResponse:
-    documento, _, _, _ = await _carica_sentenza(request, id_sentenza)
-    if not documento.get("pdf"):
-        raise HTTPException(404, "PDF non disponibile")
-    return RedirectResponse(documento["pdf"], status_code=307)
+def _cartella_pdf(scelte: dict) -> Path:
+    return pdf_locali.cartella(scelte.get("cartella_pdf"), impostazioni.cartella_dati)
+
+
+def _pdf_locale(request: Request, id_sentenza: str, scelte: dict) -> Path | None:
+    """Il file già sul disco: quello salvato, o il provvisorio aperto con lo storico spento."""
+    registrato = request.app.state.archivio.pdf(id_sentenza)
+    if registrato:
+        percorso = pdf_locali.risolvi(_cartella_pdf(scelte), registrato["percorso"])
+        if percorso.exists():
+            return percorso
+    provvisorio = request.app.state.pdf_provvisori.get(id_sentenza)
+    return provvisorio if provvisorio and provvisorio.exists() else None
+
+
+class AperturaPdf(BaseModel):
+    da: str | None = Field(default=None, max_length=4000)
+
+
+@app.post("/api/pdf/{id_sentenza}")
+async def prepara_pdf(request: Request, id_sentenza: str, corpo: AperturaPdf | None = None) -> dict:
+    """Il PDF di una sentenza: dalla copia locale se c'è, altrimenti scaricato una volta e
+    salvato nella cartella dei PDF (con lo storico spento: un file provvisorio). L'apertura
+    è una consultazione (voce ``pdf`` del diario, ``da`` = ricerca di provenienza). Con
+    "apri con il programma del computer" il file si apre subito lì."""
+    if not pdf_locali.id_valido(id_sentenza):
+        raise HTTPException(404, "sentenza sconosciuta")
+    archivio: Archivio = request.app.state.archivio
+    scelte = _scelte(request)
+    conserva = bool(scelte["conserva_storico"])
+    percorso = _pdf_locale(request, id_sentenza, scelte)
+    gia_locale = percorso is not None
+    if percorso is None:
+        documento, _, _, _ = await _carica_sentenza(request, id_sentenza)
+        if not documento.get("pdf"):
+            raise HTTPException(404, "PDF non disponibile: la sentenza è in fase di oscuramento")
+        contenuto = await request.app.state.client.scarica_pdf(documento["pdf"])
+        if conserva:
+            base = _cartella_pdf(scelte)
+            percorso = pdf_locali.file_di(base, id_sentenza)
+            sha = pdf_locali.salva(percorso, contenuto)
+            archivio.registra_pdf(
+                id_sentenza, pdf_locali.relativo(base, percorso), len(contenuto), sha
+            )
+        else:
+            cartella = Path(tempfile.gettempdir()) / "iudex-pdf"
+            percorso = pdf_locali.file_di(cartella, id_sentenza)
+            pdf_locali.salva(percorso, contenuto)
+            request.app.state.pdf_provvisori[id_sentenza] = percorso
+    if conserva:
+        archivio.annota_sentenza(id_sentenza, (corpo.da if corpo else None), tipo="pdf")
+    con_programma = scelte["pdf_apertura"] == "programma"
+    if con_programma:
+        pdf_locali.apri_con_programma(percorso)
+    return {
+        "url": f"/pdf/{id_sentenza}",
+        "gia_locale": gia_locale,
+        "salvato": conserva,
+        "percorso": str(percorso) if conserva else None,
+        "byte": percorso.stat().st_size,
+        "aperto_con_programma": con_programma,
+    }
+
+
+@app.get("/pdf/{id_sentenza}", include_in_schema=False)
+async def pdf_file(request: Request, id_sentenza: str) -> FileResponse:
+    """Il file locale, da mostrare nella finestra (nessuna richiesta al server della Corte:
+    il PDF si prepara prima con ``POST /api/pdf/{id}``)."""
+    if not pdf_locali.id_valido(id_sentenza):
+        raise HTTPException(404)
+    percorso = _pdf_locale(request, id_sentenza, _scelte(request))
+    if percorso is None:
+        raise HTTPException(404, "PDF non ancora scaricato")
+    return FileResponse(
+        percorso,
+        media_type="application/pdf",
+        filename=f"{id_sentenza}.pdf",
+        content_disposition_type="inline",
+    )
 
 
 # --- riferimenti normativi (suggerimenti locali) --------------------------------------------
@@ -907,8 +991,33 @@ async def scrivi_impostazioni(request: Request) -> dict:
         )
     except preferenze.ImpostazioneNonValida as exc:
         raise HTTPException(422, str(exc)) from None
+    prima = preferenze.effettive(archivio.impostazioni(), impostazioni)
+    if "cartella_pdf" in nuove:
+        _sposta_pdf(
+            archivio,
+            _cartella_pdf(prima),
+            pdf_locali.cartella(nuove["cartella_pdf"], impostazioni.cartella_dati),
+        )
     archivio.scrivi_impostazioni(nuove)
     return _impostazioni_attuali(archivio)
+
+
+def _sposta_pdf(archivio: Archivio, vecchia: Path, nuova: Path) -> None:
+    """Porta nella nuova cartella i PDF salvati in quella vecchia (percorsi relativi)."""
+    if vecchia.resolve() == nuova.resolve():
+        return
+    try:
+        nuova.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise HTTPException(422, f"cartella dei PDF non utilizzabile: {exc}") from None
+    for voce in archivio.pdf_salvati():
+        if Path(voce["percorso"]).is_absolute():
+            continue
+        origine = vecchia / voce["percorso"]
+        if origine.exists():
+            destinazione = nuova / voce["percorso"]
+            destinazione.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(origine), str(destinazione))
 
 
 @app.get("/api/stato")
@@ -926,6 +1035,9 @@ async def stato(request: Request) -> dict:
         "risposte_in_cache": archivio.conta_risposte(),
         "voci_diario": archivio.conta_diario(),
         "sentenze_consultate": archivio.conta_consultate(),
+        "pdf_salvati": archivio.conta_pdf(),
+        "cartella_pdf": str(_cartella_pdf(_scelte(request))),
+        "esecuzioni": archivio.conta_esecuzioni(),
         "percorso_dati": str(impostazioni.percorso_db),
         "aggiornamento": getattr(request.app.state, "aggiornamento", None),
         "registro": [

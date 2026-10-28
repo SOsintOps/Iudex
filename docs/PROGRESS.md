@@ -19,9 +19,9 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - [x] 5. Memoria delle ricerche e provenienza (`esecuzioni`, `risultati`); storico spento
   rispettato — `6faf807`
 - [x] 6. Consultazioni (testo e PDF) e badge "già vista" con tooltip; riapertura dal grezzo
-  (la voce `pdf` del diario si scrive al passo 7)
-- [ ] 7. PDF salvati nella cartella scelta (installer e Impostazioni), aperti in finestra o
-  con il programma del PC
+  (la voce `pdf` del diario si scrive al passo 7) — `7ee9f86`
+- [x] 7. PDF salvati nella cartella scelta (Impostazioni; `installazione.ini` letto, la pagina
+  dell'installer che lo scrive è nel passo 8b), aperti in finestra o con il programma del PC
 - [ ] 8. Export del database delle ricerche: CSV/Excel, JSONL, ZIP con i PDF
 - [ ] 8b. Installazione su Windows (Inno Setup) e Linux (AppImage) adattata e provata su VM
 - [ ] 9. Documentazione e versione 0.8.0 (tag solo su conferma)
@@ -52,3 +52,7 @@ trattino lungo. Il file si aggiorna nello stesso commit del lavoro. Piano in cor
 - 2026-10-28: passo 6. Nel badge dei risultati appena arrivati le ricerche "uscita in" sono
   quelle precedenti (l'esecuzione in corso si registra dopo la risposta); il pannello di
   lettura le elenca tutte. Prossimo: passo 7 (PDF).
+- 2026-10-28: passo 7 (schema 4). Il PDF si prepara con una POST (con l'header
+  dell'interfaccia) e si mostra con `GET /pdf/{id}` fuori da `/api/`, che serve solo file
+  locali e non contatta mai la Corte: un iframe non può mandare l'header. Con il token del
+  passo 3b anche `/pdf/` sarà protetto. Prossimo: passo 8 (export).

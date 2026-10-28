@@ -563,6 +563,10 @@ em.hit, mark { font-style: normal; background: var(--evidenziatore); color: inhe
 /* ---------- badge "già vista" ---------- */
 .gia-vista { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; line-height: 1.6; vertical-align: middle; background: var(--accento-chiaro); color: var(--primary-color); border: 1px solid var(--primary-color); cursor: help; white-space: nowrap; }
 
+/* ---------- visore del PDF nel pannello di lettura ---------- */
+.visore-barra { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.visore-pdf { width: 100%; height: calc(100vh - var(--navbar) - 170px); min-height: 420px; border: 1px solid var(--bordo-input); border-radius: 4px; background: var(--superficie); }
+
 /* ---------- fascicolo (testo della sentenza) ---------- */
 
 .fascicolo {

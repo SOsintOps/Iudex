@@ -9,7 +9,7 @@ import respx
 from fastapi.testclient import TestClient
 
 import iudex.app as modulo_app
-from iudex.config import URL_SNCASS, URL_SOLR, Impostazioni
+from iudex.config import URL_PDF, URL_SNCASS, URL_SOLR, Impostazioni
 
 H = {"X-Iudex": "1"}
 
@@ -383,6 +383,96 @@ def test_badge_gia_vista_e_riapertura_dal_grezzo(client):
     assert dettaglio.call_count == chiamate and r["dalla_cache"] is True
     assert "Testo del provvedimento" in str(r["testo"])
     assert c.get("/api/diario/giorni", headers=H).json()[0]["pdf"] == 1
+
+
+PDF_FINTO = b"%PDF-1.7\n% sentenza di prova\n%%EOF\n"
+
+
+def test_pdf_salvato_una_volta_e_servito_in_locale(client, tmp_path):
+    c, mock = client
+    archivio = modulo_app.app.state.archivio
+    doc = _doc(9)
+    mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([doc])))
+    scarica = mock.get(url__startswith=URL_PDF).mock(
+        return_value=httpx.Response(
+            200, content=PDF_FINTO, headers={"content-type": "application/pdf"}
+        )
+    )
+    assert c.get(f"/pdf/{doc['id']}").status_code == 404  # non ancora scaricato
+    r = c.post(f"/api/pdf/{doc['id']}", headers=H, json={"da": "testo=usura"}).json()
+    assert r["url"] == f"/pdf/{doc['id']}" and r["gia_locale"] is False and r["salvato"] is True
+    assert scarica.call_count == 1
+    file_ = tmp_path / "pdf" / f"{doc['id']}.pdf"
+    assert file_.read_bytes() == PDF_FINTO
+    voce = archivio.pdf(doc["id"])
+    assert voce["percorso"] == f"{doc['id']}.pdf" and voce["byte"] == len(PDF_FINTO)
+    # Seconda apertura: dalla copia locale, nessuna richiesta.
+    r = c.post(f"/api/pdf/{doc['id']}", headers=H).json()
+    assert r["gia_locale"] is True and scarica.call_count == 1
+    servito = c.get(f"/pdf/{doc['id']}")
+    assert servito.status_code == 200 and servito.content == PDF_FINTO
+    assert servito.headers["content-type"] == "application/pdf"
+    assert servito.headers["content-disposition"].startswith("inline")
+    # Due consultazioni di tipo pdf nel diario, la prima con la ricerca di provenienza.
+    voci = [v for v in archivio.diario(id_sentenza=doc["id"]) if v["tipo"] == "pdf"]
+    assert len(voci) == 2 and voci[-1]["permalink"] == "testo=usura"
+    stato = c.get("/api/stato", headers=H).json()
+    assert stato["pdf_salvati"] == 1 and stato["cartella_pdf"].endswith("pdf")
+    # Cambiando cartella i PDF salvati si spostano e restano raggiungibili.
+    nuova = tmp_path / "altrove"
+    c.put("/api/impostazioni", headers=H, json={"cartella_pdf": str(nuova)})
+    assert (nuova / f"{doc['id']}.pdf").exists() and not file_.exists()
+    assert c.get(f"/pdf/{doc['id']}").content == PDF_FINTO
+    # Id non validi: nessun percorso fuori dalla cartella.
+    assert c.get("/pdf/..%2F..%2Fsegreto").status_code == 404
+    assert c.post("/api/pdf/a.b", headers=H).status_code == 404
+
+
+def test_pdf_con_storico_spento_non_si_salva(client, tmp_path):
+    c, mock = client
+    archivio = modulo_app.app.state.archivio
+    doc = _doc(10)
+    mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([doc])))
+    mock.get(url__startswith=URL_PDF).mock(
+        return_value=httpx.Response(
+            200, content=PDF_FINTO, headers={"content-type": "application/pdf"}
+        )
+    )
+    c.put("/api/impostazioni", headers=H, json={"conserva_storico": False})
+    r = c.post(f"/api/pdf/{doc['id']}", headers=H).json()
+    assert r["salvato"] is False and r["percorso"] is None
+    assert c.get(f"/pdf/{doc['id']}").content == PDF_FINTO
+    assert archivio.conta_pdf() == 0 and archivio.conta_diario() == 0
+    assert not (tmp_path / "pdf").exists()
+
+
+def test_pdf_non_disponibile_o_non_pdf(client):
+    c, mock = client
+    oscurata = {**_doc(11), "filename": []}
+    mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([oscurata])))
+    r = c.post(f"/api/pdf/{oscurata['id']}", headers=H)
+    assert r.status_code == 404 and "oscuramento" in r.json()["detail"]
+    doc = _doc(12)
+    mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([doc])))
+    mock.get(url__startswith=URL_PDF).mock(
+        return_value=httpx.Response(
+            200, text="<html>errore</html>", headers={"content-type": "text/html"}
+        )
+    )
+    r = c.post(f"/api/pdf/{doc['id']}", headers=H)
+    assert r.status_code == 502 and "non ha restituito un PDF" in r.json()["errore"]
+
+
+def test_cartella_pdf_dall_installer(tmp_path, monkeypatch):
+    (tmp_path / "installazione.ini").write_text(
+        "[pdf]\ncartella = D:\\Sentenze\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(
+        modulo_app, "impostazioni", Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0)
+    )
+    with TestClient(modulo_app.app) as c:
+        valori = c.get("/api/impostazioni", headers=H).json()["valori"]
+        assert valori["cartella_pdf"] == "D:\\Sentenze"
 
 
 def test_errori_di_validazione_e_interni_in_json(client, monkeypatch):
