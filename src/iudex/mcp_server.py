@@ -36,6 +36,8 @@ def _header() -> dict:
     (``IUDEX_TOKEN`` lo sostituisce), così vale anche dopo una rigenerazione."""
     token = os.environ.get("IUDEX_TOKEN") or accesso.leggi(impostazioni.cartella_dati)
     return {**HEADER, "X-Iudex-Token": token} if token else dict(HEADER)
+
+
 RIGHE_MASSIME = 20
 CARATTERI_MASSIMI = 30000
 # Strumenti in sola lettura per chi li chiama (Iudex aggiorna solo cache e diario locali),
@@ -50,7 +52,8 @@ mcp = FastMCP(
         "riferimento normativo, leggi_sentenza per il testo integrale (la prima lettura "
         "mostra inizio e fine, dove sta il dispositivo). Ogni ricerca costa una richiesta al "
         "server della Corte: non ripetere ricerche identiche e non scorrere molte pagine. "
-        "Non cercare per nome di persona."
+        "Per un nome di persona o di società usa la frase esatta fra virgolette; molti nomi "
+        "nelle sentenze sono oscurati e lo stesso nome può essere di persone diverse."
     ),
 )
 
@@ -174,9 +177,8 @@ def cerca_per_norma(
         parametri["kind"] = archivio
     d = _chiama("/api/cerca", parametri)
     righe_testo = [_riga(doc) for doc in d["documenti"]]
-    return (
-        f"{d['trovati']} provvedimenti per «{d['descrizione']}»{_segnali(d)}\n"
-        + "\n".join(righe_testo)
+    return f"{d['trovati']} provvedimenti per «{d['descrizione']}»{_segnali(d)}\n" + "\n".join(
+        righe_testo
     )
 
 

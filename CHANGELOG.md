@@ -2,7 +2,17 @@
 
 ## Da rilasciare
 
+### Novità
+- Indice locale del testo delle sentenze già salvate e ricerca `GET /api/locale/cerca`:
+  trova un nome o una frase senza nessuna richiesta alla Corte, non scrive nel diario e
+  serve anche ad altre app che usano Iudex. L'indice si costruisce da solo all'apertura
+  (schema dell'archivio 6) e resta nel database locale.
+- Ricerca per nome di persona o di società: ammessa, come ogni altra ricerca; FAQ e
+  istruzioni del server MCP aggiornate.
+
 ### Correzioni
+- La cronologia mette prima la ricerca più recente anche quando due ricerche cadono nello
+  stesso istante.
 - Windows: avviato dai sorgenti, Iudex ha sulla barra un'identità separata
   (``SOsintOps.Iudex.Sviluppo``), così non si confonde con l'app installata.
 

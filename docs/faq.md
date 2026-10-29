@@ -18,10 +18,15 @@ e la memoria delle tue ricerche e consultazioni.
 consultazione. Iudex salva il PDF ufficiale di una sentenza solo quando lo apri, una volta, e
 non scarica mai in blocco.
 
-**Perché non cercare per nome di persona?** Le sentenze contengono dati personali e talvolta
-categorie particolari di dati; nel 2024 il Garante per la protezione dei dati personali ha
-ammonito la Corte per la presenza di dati relativi alla salute e a vittime di reati nei testi
-pubblicati. Iudex non costruisce indici nominativi.
+**Si può cercare un nome di persona o di società?** Sì. Sulla Corte la ricerca usa lo stesso
+motore del sito: un nome fra virgolette trova le sentenze che lo contengono nel testo, una
+richiesta alla volta come ogni altra ricerca. Fra le sentenze già salvate su questo computer
+Iudex cerca con un indice locale, senza nessuna richiesta alla Corte: l'indice sta nel database
+di Iudex e non viene mai inviato. Usa i risultati con cautela: molti nomi nelle sentenze sono
+oscurati, e lo stesso nome può appartenere a persone diverse. Le sentenze contengono dati
+personali e talvolta categorie particolari di dati; nel 2024 il Garante per la protezione dei
+dati personali ha ammonito la Corte per la presenza di dati relativi alla salute e a vittime di
+reati nei testi pubblicati: quello che trovi va trattato con la stessa riservatezza.
 
 ## La ricerca
 

@@ -748,3 +748,33 @@ def test_preferiti_con_nota_e_svuota_cache(client):
     assert c.get("/api/preferiti", headers=H).json()[0]["nota"] == "da citare"
     assert c.put("/api/preferiti/zzz", json={"nota": "x"}, headers=H).status_code == 404
     assert c.delete("/api/cache/sentenze", headers=H).json()["ok"] is True
+
+
+def test_ricerca_locale_non_chiede_nulla_alla_corte(client):
+    c, mock = client
+    doc = _doc(7)
+    doc["ocr"] = ["Ricorso proposto da Carlo Bianchi, nato a Cosenza. P.Q.M. La Corte rigetta."]
+    rotta = mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([doc])))
+    c.get(f"/api/sentenza/{doc['id']}", headers=H)
+    assert rotta.call_count == 1
+    diario_prima = len(c.get("/api/diario", headers=H).json())
+
+    r = c.get(
+        "/api/locale/cerca", params={"testo": '"Bianchi Carlo" OR "Carlo Bianchi"'}, headers=H
+    )
+    d = r.json()
+    assert r.status_code == 200 and d["trovati"] == 1
+    assert d["risultati"][0]["id_sentenza"] == doc["id"]
+    assert d["risultati"][0]["estremi"]["numero"] == doc["numdec"]
+    # Nessuna nuova richiesta alla Corte, nessuna voce nel diario.
+    assert rotta.call_count == 1
+    assert len(c.get("/api/diario", headers=H).json()) == diario_prima
+    assert c.get("/api/locale/cerca", params={"testo": "x" * 501}, headers=H).status_code == 422
+    assert (
+        c.get(
+            "/api/locale/cerca",
+            params={"testo": "Bianchi"},
+            headers={"X-Iudex": "1", "X-Iudex-Token": ""},
+        ).status_code
+        == 401
+    )

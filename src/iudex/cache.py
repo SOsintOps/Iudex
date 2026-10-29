@@ -4,6 +4,7 @@ diario delle consultazioni e sentenze consultate (archivio personale permanente)
 from __future__ import annotations
 
 import json
+import re
 import socket
 import sqlite3
 import threading
@@ -102,7 +103,7 @@ COLONNE_AGGIUNTE = {
 # Versione dello schema, salvata in ``PRAGMA user_version`` (0 fino alla 0.7.0). Ogni
 # migrazione porta il database dalla versione precedente alla sua ed è idempotente: un
 # archivio della 0.7.0 ha già alcune colonne della migrazione 1.
-VERSIONE_SCHEMA = 5
+VERSIONE_SCHEMA = 6
 
 # Tabelle il cui contenuto è dell'utente: se una ha righe, prima di migrare si fa la copia.
 TABELLE_UTENTE = ("ricerche", "salvate", "preferiti", "diario", "consultate")
@@ -201,7 +202,63 @@ def _migra_5(conn: sqlite3.Connection) -> None:
             conn.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS {tabella}_uid ON {tabella} (uid)")
 
 
-MIGRAZIONI = {1: _migra_1, 2: _migra_2, 3: _migra_3, 4: _migra_4, 5: _migra_5}
+def testo_da_grezzo(grezzo: dict) -> str:
+    """Testo integrale dalla risposta intera del server (come ``app._da_grezzo``)."""
+    valore = grezzo.get("ocrfull") or grezzo.get("testoocr") or grezzo.get("ocr") or ""
+    return "\n".join(str(v) for v in valore) if isinstance(valore, list) else str(valore)
+
+
+def _indicizza(conn: sqlite3.Connection, id_sentenza: str, testo: str | None) -> None:
+    """Una riga dell'indice locale per sentenza: la nuova sostituisce la vecchia."""
+    conn.execute("DELETE FROM testi_fts WHERE id_sentenza = ?", (id_sentenza,))
+    if testo:
+        conn.execute(
+            "INSERT INTO testi_fts (id_sentenza, testo) VALUES (?, ?)", (id_sentenza, testo)
+        )
+
+
+def _migra_6(conn: sqlite3.Connection) -> None:
+    # Indice locale del testo delle sentenze gia' salvate su questo computer, per cercare un
+    # nome o una frase senza chiedere nulla alla Corte (decisione dell'utente del 2026-10-29).
+    # Resta nel database locale e non viene mai inviato.
+    conn.execute(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS testi_fts USING fts5("
+        "id_sentenza UNINDEXED, testo, tokenize = 'unicode61 remove_diacritics 2')"
+    )
+    conn.execute("DELETE FROM testi_fts")
+    for riga in conn.execute("SELECT id_sentenza, grezzo FROM consultate").fetchall():
+        grezzo = json.loads(zlib.decompress(riga["grezzo"]).decode("utf-8"))
+        _indicizza(conn, riga["id_sentenza"], testo_da_grezzo(grezzo))
+    for riga in conn.execute(
+        "SELECT id_sentenza, testo FROM sentenze WHERE testo IS NOT NULL"
+        " AND id_sentenza NOT IN (SELECT id_sentenza FROM consultate)"
+    ).fetchall():
+        _indicizza(conn, riga["id_sentenza"], riga["testo"])
+
+
+def query_locale(testo: str) -> str:
+    """Dalla frase dell'utente alla sintassi FTS5: frasi fra virgolette, parole sciolte e OR.
+
+    Tutto il resto (punteggiatura, operatori di Solr) si toglie, cosi' nessun testo
+    dell'utente rompe la query; l'apostrofo separa le parole come nel tokenizer.
+    """
+    termini: list[str] = []
+    for frase, parola in re.findall(r'"([^"]*)"|(\S+)', testo or ""):
+        if parola and parola.upper() == "OR":
+            if termini and termini[-1] != "OR":
+                termini.append("OR")
+            continue
+        if parola and parola.upper() == "AND":
+            continue  # in FTS5 le parole accostate sono gia' in AND
+        parole = re.sub(r"[^\w]+", " ", frase or parola).split()
+        if parole:
+            termini.append('"' + " ".join(parole) + '"')
+    while termini and termini[-1] == "OR":
+        termini.pop()
+    return " ".join(termini)
+
+
+MIGRAZIONI = {1: _migra_1, 2: _migra_2, 3: _migra_3, 4: _migra_4, 5: _migra_5, 6: _migra_6}
 
 # Estremi di una sentenza conservati con ogni risultato: bastano a riconoscerla e a
 # esportarla anche se il testo non è mai stato aperto.
@@ -381,6 +438,8 @@ class Archivio:
                 " VALUES (?, ?, ?, ?)",
                 (id_sentenza, time.time(), json.dumps(documento, ensure_ascii=False), testo),
             )
+            if testo:
+                _indicizza(self._conn, id_sentenza, testo)
 
     def conta_sentenze(self) -> int:
         with self._lock:
@@ -388,7 +447,12 @@ class Archivio:
 
     def svuota_sentenze(self) -> int:
         with self._lock, self._conn:
-            return self._conn.execute("DELETE FROM sentenze").rowcount
+            tolte = self._conn.execute("DELETE FROM sentenze").rowcount
+            self._conn.execute(
+                "DELETE FROM testi_fts"
+                " WHERE id_sentenza NOT IN (SELECT id_sentenza FROM consultate)"
+            )
+            return tolte
 
     # --- cronologia ----------------------------------------------------------------------
 
@@ -700,6 +764,7 @@ class Archivio:
                         blob,
                     ),
                 )
+                _indicizza(c, id_sentenza, testo_da_grezzo(grezzo or {}))
             # Conteggi ricalcolati sull'unione: le volte di una ricerca non sono meno delle sue
             # esecuzioni di pagina 1, le aperture di una consultata non meno di quelle nel diario.
             c.execute(
@@ -727,7 +792,10 @@ class Archivio:
     def cronologia(self, limite: int = 200) -> list[dict]:
         with self._lock:
             righe = self._conn.execute(
-                "SELECT * FROM ricerche ORDER BY quando DESC LIMIT ?", (limite,)
+                # A parità di istante (due ricerche nello stesso tick) vale l'ordine di
+                # inserimento: senza, la più recente poteva finire seconda.
+                "SELECT * FROM ricerche ORDER BY quando DESC, id DESC LIMIT ?",
+                (limite,),
             ).fetchall()
         return [dict(r, filtri=json.loads(r["filtri"] or "{}")) for r in righe]
 
@@ -974,6 +1042,7 @@ class Archivio:
                 " volte = volte + 1, documento = excluded.documento, grezzo = excluded.grezzo",
                 (id_sentenza, adesso, adesso, json.dumps(documento, ensure_ascii=False), blob),
             )
+            _indicizza(self._conn, id_sentenza, testo_da_grezzo(grezzo))
 
     def consultata(self, id_sentenza: str) -> dict | None:
         with self._lock:
@@ -991,6 +1060,39 @@ class Archivio:
                 " FROM consultate ORDER BY ultima_volta DESC"
             ).fetchall()
         return [dict(r, documento=json.loads(r["documento"])) for r in righe]
+
+    def cerca_locale(self, testo: str, limite: int = 20) -> list[dict]:
+        """Sentenze gia' salvate su questo computer che contengono la frase, dalla piu'
+        pertinente: id, estremi e un estratto con la frase fra «». Non chiede nulla alla Corte.
+        """
+        query = query_locale(testo)
+        if not query:
+            return []
+        with self._lock:
+            try:
+                righe = self._conn.execute(
+                    "SELECT id_sentenza, snippet(testi_fts, 1, '«', '»', ' … ', 24) AS estratto"
+                    " FROM testi_fts WHERE testi_fts MATCH ? ORDER BY rank LIMIT ?",
+                    (query, max(1, min(limite, 100))),
+                ).fetchall()
+            except sqlite3.OperationalError:
+                return []
+            risultati = []
+            for r in righe:
+                doc = self._conn.execute(
+                    "SELECT documento FROM consultate WHERE id_sentenza = ?"
+                    " UNION ALL SELECT documento FROM sentenze WHERE id_sentenza = ? LIMIT 1",
+                    (r["id_sentenza"], r["id_sentenza"]),
+                ).fetchone()
+                documento = json.loads(doc["documento"]) if doc else {}
+                risultati.append(
+                    {
+                        "id_sentenza": r["id_sentenza"],
+                        "estremi": {k: documento.get(k) for k in CAMPI_ESTREMI},
+                        "estratto": r["estratto"],
+                    }
+                )
+        return risultati
 
     def grezzo_consultata(self, id_sentenza: str) -> dict | None:
         with self._lock:

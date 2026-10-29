@@ -171,3 +171,61 @@ def test_impostazioni():
     a.scrivi_impostazioni({"conserva_storico": None})
     assert a.impostazioni() == {"impronte_personalizzate": [{"nome": "x"}]}
     a.chiudi()
+
+
+# --- indice locale del testo (ricerca per nominativo senza chiedere alla Corte) ----------
+
+
+def _grezzo(testo: str) -> dict:
+    return {"ocr": [testo], "tipoprov": "Sentenza", "numdec": "1", "anno": "2026"}
+
+
+def test_indice_locale_trova_nomi_senza_accenti_e_parole_invertite():
+    a = Archivio(":memory:")
+    a.scrivi_consultata(
+        "snpen1",
+        {"numero": "1", "anno": "2026"},
+        _grezzo("ricorso di Niccolò D'Angelo contro la sentenza"),
+    )
+    a.scrivi_consultata(
+        "snpen2",
+        {"numero": "2", "anno": "2026"},
+        _grezzo("nei confronti di ROSSI MARIO, nato a Roma"),
+    )
+    a.scrivi_sentenza("snciv3", {"numero": "3"}, "la società Edil Sud s.r.l. in liquidazione")
+
+    assert [r["id_sentenza"] for r in a.cerca_locale('"Niccolo D Angelo"')] == ["snpen1"]
+    trovate = a.cerca_locale('"Mario Rossi" OR "Rossi Mario"')
+    assert [r["id_sentenza"] for r in trovate] == ["snpen2"]
+    assert "«ROSSI» «MARIO»" in trovate[0]["estratto"] or "«ROSSI MARIO»" in trovate[0]["estratto"]
+    assert trovate[0]["estremi"]["numero"] == "2"
+    assert [r["id_sentenza"] for r in a.cerca_locale("Edil Sud")] == ["snciv3"]
+    assert a.cerca_locale('"Giuseppe Verdi"') == []
+    # Testo che non e' una query valida: nessun errore, nessun risultato.
+    assert a.cerca_locale('") OR (') == []
+    a.chiudi()
+
+
+def test_indice_locale_si_aggiorna_e_si_svuota_con_le_sentenze():
+    a = Archivio(":memory:")
+    a.scrivi_sentenza("snciv3", {}, "Alfa Beta")
+    a.scrivi_sentenza("snciv3", {}, "Gamma Delta")
+    assert a.cerca_locale("Alfa") == [] and len(a.cerca_locale("Gamma")) == 1
+    a.svuota_sentenze()
+    assert a.cerca_locale("Gamma") == []
+    a.chiudi()
+
+
+def test_migrazione_6_indicizza_le_sentenze_gia_salvate(tmp_path):
+    percorso = tmp_path / "c.sqlite"
+    a = Archivio(percorso)
+    a.scrivi_consultata("snpen9", {"numero": "9"}, _grezzo("imputato Carlo Bianchi"))
+    # Come un archivio della versione 5: niente indice.
+    a._conn.execute("DROP TABLE testi_fts")
+    a._conn.execute("PRAGMA user_version = 5")
+    a._conn.commit()
+    a.chiudi()
+    b = Archivio(percorso)
+    assert b.versione_schema == VERSIONE_SCHEMA == 6
+    assert [r["id_sentenza"] for r in b.cerca_locale('"Carlo Bianchi"')] == ["snpen9"]
+    b.chiudi()

@@ -9,7 +9,7 @@ Grazie dell'interesse. Poche regole, per tenere il progetto coerente.
 - Apri una segnalazione per descrivere il problema o l'idea, così si evita lavoro doppio.
 - Iudex interroga un server pubblico della Corte di Cassazione: ogni modifica che
   aggiunge richieste al server va discussa prima. Non sono accettate funzioni di
-  scaricamento massivo, scansione dell'archivio o ricerca per nome di persona.
+  scaricamento massivo o di scansione dell'archivio.
 
 ## Ambiente
 

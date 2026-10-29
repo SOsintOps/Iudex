@@ -68,6 +68,7 @@ HEADER_PDF = {
     "Upgrade-Insecure-Requests": "1",
 }
 
+
 @dataclass
 class VoceRegistro:
     quando: float
@@ -194,9 +195,7 @@ class ClientSentenzeWeb:
                 )
             except httpx.TransportError as exc:
                 durata = int((time.monotonic() - inizio) * 1000)
-                self.stat.registro.append(
-                    VoceRegistro(time.time(), tipo, None, durata, str(exc))
-                )
+                self.stat.registro.append(VoceRegistro(time.time(), tipo, None, durata, str(exc)))
                 log.warning("%s %s: errore di rete (%s)", metodo, tipo, exc)
                 if tentativi >= 2:
                     raise ErroreRemoto(f"errore di rete: {exc}") from exc
@@ -242,9 +241,7 @@ class ClientSentenzeWeb:
             residua = self.pausa_residua()
             if residua:
                 # Rifiuto locale: nessuna richiesta parte finché dura la pausa chiesta dal server.
-                raise ErroreRemoto(
-                    f"il server ha chiesto una pausa: riprova fra {residua} s", 429
-                )
+                raise ErroreRemoto(f"il server ha chiesto una pausa: riprova fra {residua} s", 429)
             impronta = self.impronta_corrente()
             if impronta != self._impronta:
                 # Giorno nuovo, browser nuovo: cookie e header ripartono da zero.

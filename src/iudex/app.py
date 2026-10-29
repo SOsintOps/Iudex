@@ -865,6 +865,19 @@ async def consultate(request: Request) -> list[dict]:
     return request.app.state.archivio.consultate()
 
 
+@app.get("/api/locale/cerca")
+async def cerca_locale(request: Request, testo: str = "", limite: int = 20) -> dict:
+    """Ricerca nel testo delle sentenze gia' salvate su questo computer (indice locale).
+
+    Non chiede mai nulla alla Corte, non scrive nel diario e non segna consultazioni: serve
+    anche ad altre app (Acta Diurna) per cercare un nominativo prima di interrogare la Corte.
+    """
+    if len(testo) > 500:
+        raise HTTPException(422, "testo troppo lungo")
+    risultati = request.app.state.archivio.cerca_locale(testo, limite)
+    return {"testo": testo, "trovati": len(risultati), "risultati": risultati}
+
+
 @app.get("/api/consultate/{id_sentenza}/grezzo")
 async def grezzo_consultata(request: Request, id_sentenza: str) -> dict:
     grezzo = request.app.state.archivio.grezzo_consultata(id_sentenza)
