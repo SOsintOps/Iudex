@@ -16,6 +16,10 @@
 - Windows: avviato dai sorgenti, Iudex ha sulla barra un'identità separata
   (``SOsintOps.Iudex.Sviluppo``), così non si confonde con l'app installata.
 
+### Documentazione
+- FAQ nel formato comune ai progetti SOsintOps (indice delle domande, una domanda per
+  titolo), in `docs/faq.md` e nella pagina Domande frequenti dell'app.
+
 ## 0.8.1 — 2026-10-28
 
 Riordino del repository e una correzione.

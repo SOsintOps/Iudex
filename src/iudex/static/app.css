@@ -681,7 +681,7 @@ main.informativa {
 .pagina-info nav a:hover { color: var(--primary-color); }
 .documento h1 { font-size: 2rem; margin: 16px 0; text-align: center; font-weight: 600; }
 .documento h2 { font-size: 1.2rem; margin: 24px 0 12px; color: var(--primary-color); border-bottom: 1px solid var(--primary-color); padding-bottom: 0.5rem; scroll-margin-top: calc(var(--navbar) + 16px); font-weight: 600; }
-.documento h3 { font-size: 1.1rem; margin: 16px 0 6px; }
+.documento h3 { font-size: 1.1rem; margin: 16px 0 6px; scroll-margin-top: calc(var(--navbar) + 16px); }
 .documento p, .documento li { max-width: 76ch; line-height: 1.6; }
 .documento ul { padding-left: 20px; }
 .documento dt { font-weight: 600; margin-top: 14px; }
