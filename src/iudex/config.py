@@ -64,6 +64,10 @@ class Impostazioni:
     # installata (dai sorgenti si aggiorna con git); IUDEX_AGGIORNAMENTI=0 lo spegne, =1 lo
     # accende anche dai sorgenti.
     aggiornamenti: str = os.environ.get("IUDEX_AGGIORNAMENTI", "")
+    # Limite di cortesia verso l'API Open Data di Normattiva (testo delle norme): secondi
+    # minimi fra due richieste, con un lock separato da quello della Corte. Si cambia con
+    # IUDEX_INTERVALLO_NORMATTIVA (per esempio 3.5).
+    intervallo_normattiva: float = _env_float("IUDEX_INTERVALLO_NORMATTIVA", 2.0)
 
     @property
     def percorso_db(self) -> Path:

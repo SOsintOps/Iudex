@@ -216,3 +216,102 @@ def test_normalizza_facet():
     f = normalizza_facet({"kind": ["snciv", 3658, "snpen", 367], "anno": ["2021", 1, "2026", 2]})
     assert f["kind"][0] == {"codice": "snciv", "etichetta": "Civile", "conteggio": 3658}
     assert [v["codice"] for v in f["anno"]] == ["2026", "2021"]
+
+
+def test_formatta_riferimenti_codici_del_ced_con_suffisso():
+    # Riferimenti inventati: i codici arrivano come "COD" con il codice in "rnc-gen".
+    rnc = {
+        "sp": ["COD", "COD", "COD"],
+        "gen": ["PC", "PV", "CC"],
+        "art": ["0380 02", "0111 03", "2043 00"],
+    }
+    voci = formatta_riferimenti(rnc)
+    assert [v["testo"] for v in voci] == [
+        "art. 380-bis c.p.c.",
+        "art. 111-ter c.p.p.",
+        "art. 2043 c.c.",
+    ]
+    assert voci[0] == {
+        "tipo": "c.p.c.",
+        "numero": "",
+        "anno": "",
+        "articolo": "380-bis",
+        "testo": "art. 380-bis c.p.c.",
+        "ricerca": "art. 380-bis c.p.c.",
+    }
+
+
+def test_formatta_riferimenti_decreto_con_numero_e_anno():
+    rnc = {
+        "sp": ["COD", "DPR", "COD"],
+        "gen": ["CC", "LS", "CR"],
+        "num": ["0309"],
+        "dat": ["1990 10 09"],
+        "art": ["2043 00", "0073 00", "0111 00"],
+    }
+    voci = formatta_riferimenti(rnc)
+    assert [v["testo"] for v in voci] == [
+        "art. 2043 c.c.",
+        "art. 73 d.P.R. 309/1990",
+        "art. 111 Cost.",
+    ]
+    assert (voci[1]["numero"], voci[1]["anno"], voci[1]["tipo"]) == ("309", "1990", "d.P.R.")
+
+
+def test_formatta_riferimenti_num_piu_corto_dell_elenco():
+    # rnc-num e rnc-dat portano solo i valori degli atti che non sono codici.
+    rnc = {
+        "sp": ["COD", "DLG", "COD", "LS", "COD"],
+        "gen": ["PV", "LS", "CP", "LS", "PV"],
+        "num": ["0271", "0241"],
+        "dat": ["1989 07 28", "1990"],
+        "art": ["0310 00", "0173 00", "0001 00", "0002 02", "0582 00"],
+    }
+    assert [v["testo"] for v in formatta_riferimenti(rnc)] == [
+        "art. 310 c.p.p.",
+        "art. 173 d.lgs. 271/1989",
+        "art. 1 c.p.",
+        "art. 2-bis legge 241/1990",
+        "art. 582 c.p.p.",
+    ]
+
+
+def test_formatta_riferimenti_riferimento_senza_numero():
+    # Tre atti e due numeri: non si sa quale atto ne è privo, nessuno riceve un numero a caso.
+    rnc = {
+        "sp": ["LS", "RD", "DPR"],
+        "gen": ["LS", "LS", "LS"],
+        "num": ["0241", "0115"],
+        "dat": ["1990", "2002"],
+        "art": ["0001 00", "0013 00", "0010 00"],
+    }
+    voci = formatta_riferimenti(rnc)
+    assert [v["testo"] for v in voci] == ["art. 1 legge", "art. 13 r.d.", "art. 10 d.P.R."]
+    assert all(v["numero"] == "" and v["anno"] == "" for v in voci)
+
+
+def test_formatta_riferimenti_articoli_compattati_solo_dove_certi():
+    # Un articolo in meno: manca a uno dei due d.P.R. citati per intero. I codici fra i due
+    # non si possono allineare; quello dopo l'ultimo d.P.R. sì.
+    rnc = {
+        "sp": ["DPR", "COD", "COD", "DPR", "COD"],
+        "gen": ["LS", "PV", "CP", "LS", "PV"],
+        "num": ["0309", "0309"],
+        "dat": ["1990", "1990"],
+        "art": ["0238 00", "0603 00", "0073 00", "0597 00"],
+    }
+    assert [v["testo"] for v in formatta_riferimenti(rnc)] == [
+        "d.P.R. 309/1990",
+        "c.p.p.",
+        "c.p.",
+        "art. 597 c.p.p.",
+    ]
+    # Se mancano tanti articoli quanti sono gli atti non codici, l'allineamento è certo.
+    rnc = {
+        "sp": ["DPR", "COD"],
+        "gen": ["LS", "CC"],
+        "num": ["0115"],
+        "dat": ["2002"],
+        "art": ["2043 00"],
+    }
+    assert [v["testo"] for v in formatta_riferimenti(rnc)] == ["d.P.R. 115/2002", "art. 2043 c.c."]

@@ -1,0 +1,51 @@
+{
+  "numero": 5,
+  "metodo": "POST",
+  "endpoint": "/atto/dettaglio-atto",
+  "corpo": {
+    "dataGU": "1990-08-18",
+    "codiceRedazionale": "090G0294",
+    "idArticolo": 2,
+    "sottoArticolo": 2,
+    "sottoArticolo1": 0,
+    "flagTipoArticolo": 0,
+    "dataVigenza": "2026-10-30"
+  },
+  "intestazioni_inviate": {
+    "User-Agent": "Iudex/0.9.0 (sonda; +https://github.com/SOsintOps/Iudex)",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "http": 200,
+  "durata_s": 0.332,
+  "risposta": {
+    "code": null,
+    "message": null,
+    "data": {
+      "atto": {
+        "titolo": "LEGGE 7 agosto 1990, n. 241",
+        "sottoTitolo": "  Nuove norme in materia di procedimento amministrativo e di diritto\r\ndi accesso ai documenti amministrativi.\r\n",
+        "articoloHtml": "<div class=\"bodyTesto\">\n        <h2 class=\"preamble-title-akn\"></h2>\n        <h2 class=\"preamble-end-akn\"></h2>\n        <h2 class=\"article-num-akn\" id=\"art_2-bis\">Art. 2-bis</h2>\n        <div class=\"article-heading-akn\">Conseguenze per il ritardo dell'amministrazione nella conclusione del procedimento).</div>\n        <div class=\"art-commi-div-akn\">\n            <div class=\"art-comma-div-akn\">\n                <span class=\"comma-num-akn\">1. </span><span class=\"art_text_in_comma\">Le pubbliche amministrazioni e i soggetti di cui all'articolo 1, comma 1-ter, sono tenuti al risarcimento del danno ingiusto cagionato in conseguenza dell'inosservanza dolosa o colposa del termine di conclusione del procedimento. \n                    <br>\n                    \n                </span>\n            </div>\n            <div class=\"ins-akn\" eId=\"ins_1\">\n                <div class=\"art-comma-div-akn\">\n                    <span class=\"art_text_in_comma\">((1-bis. Fatto salvo quanto previsto dal comma 1 e ad esclusione delle ipotesi di silenzio qualificato e dei concorsi pubblici, in caso di inosservanza del termine di conclusione del procedimento ad istanza di parte, per il quale sussiste l'obbligo di pronunziarsi, l'istante ha diritto di ottenere un indennizzo per il mero ritardo alle condizioni e con le modalit&agrave; stabilite dalla legge o, sulla base della legge, da un regolamento emanato ai sensi dell'<a href=\"http://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:1988-08-23;400~art17-com2\" target=\"_blank\">articolo 17, comma 2, della legge 23 agosto 1988, n. 400</a>. In tal caso le somme corrisposte o da corrispondere a titolo di indennizzo sono detratte dal risarcimento))</span>\n                </div>\n            </div>\n            <div class=\"ins-akn\" eId=\"ins_2\">\n                <div class=\"art-comma-div-akn\">\n                    <span class=\"art_text_in_comma\">((29))</span>\n                </div>\n            </div>\n            <div class=\"art-comma-div-akn\">\n                <span class=\"comma-num-akn\">2. </span><span class=\"art_text_in_comma\">COMMA ABROGATO DAL <a href=\"http://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2010-07-02;104\" target=\"_blank\">D.LGS. 2 LUGLIO 2010, N. 104</a>. \n                    <br>\n                     \n                    <br>\n                    \n                </span>\n            </div>\n        </div>\n        <div class=\"art_aggiornamento-akn\">\n            <div class=\"art_aggiornamento_separator-akn\">---------------</div>\n            <div class=\"art_aggiornamento_title-akn\">AGGIORNAMENTO (29)</div>\n            <div class=\"art_aggiornamento_testo-akn\">\n                <br>\n                 Il <a href=\"http://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legge:2013-06-21;69\" target=\"_blank\">D.L. 21 giugno 2013, n. 69</a>, convertito con modificazioni dalla <a href=\"http://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2013-08-09;98\" target=\"_blank\">L. 9 agosto 2013, n. 98</a> ha disposto (con l'art. 28, comma 10) che \"Le disposizioni del presente articolo si applicano, in via sperimentale e dalla data di entrata in vigore della legge di conversione del presente decreto, ai procedimenti amministrativi relativi all'avvio e all'esercizio dell'attivit&agrave; di impresa iniziati successivamente alla medesima data di entrata in vigore. \". \n            </div>\n        </div>\n    </div>",
+        "tipoProvvedimentoDescrizione": "LEGGE",
+        "tipoProvvedimentoCodice": "PLE",
+        "annoProvvedimento": 1990,
+        "meseProvvedimento": 8,
+        "giornoProvvedimento": 7,
+        "numeroProvvedimento": 241,
+        "tipoSupplementoCode": "NO",
+        "numeroSupplemento": 0,
+        "annoGU": 1990,
+        "meseGU": 8,
+        "giornoGU": 18,
+        "numeroGU": 192,
+        "dataPubblicazioneInGazzetta": null,
+        "articoloDataInizioVigenza": "20130821",
+        "articoloDataFineVigenza": "99999999",
+        "testoInVigore": null
+      },
+      "message": null
+    },
+    "success": true
+  },
+  "errore": null
+}

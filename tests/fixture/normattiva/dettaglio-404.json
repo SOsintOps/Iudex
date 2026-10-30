@@ -1,0 +1,26 @@
+{
+  "numero": 4,
+  "metodo": "POST",
+  "endpoint": "/atto/dettaglio-atto",
+  "corpo": {
+    "dataGU": "1942-04-04",
+    "codiceRedazionale": "042U0262",
+    "idArticolo": 2043,
+    "sottoArticolo": 1,
+    "sottoArticolo1": 0,
+    "flagTipoArticolo": 0,
+    "dataVigenza": "2026-10-30"
+  },
+  "intestazioni_inviate": {
+    "User-Agent": "Iudex/0.9.0 (sonda; +https://github.com/SOsintOps/Iudex)",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "http": 404,
+  "durata_s": 0.154,
+  "risposta": {
+    "message": "dataPubblicazioneGazzetta:Sat Apr 04 00:00:00 CEST 1942 codiceRedazionale:042U0262 idArticolo:2043 idSottoArticolo:1 idSottoArticolo1:null flagTipoArticolo:0",
+    "code": null
+  },
+  "errore": null
+}

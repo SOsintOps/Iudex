@@ -1,0 +1,86 @@
+{
+  "numero": 3,
+  "metodo": "POST",
+  "endpoint": "/ricerca/avanzata",
+  "corpo": {
+    "denominazioneAtto": "REGIO DECRETO",
+    "numeroProvvedimento": "262",
+    "annoProvvedimento": "1942",
+    "vigenza": "2026-10-30",
+    "orderType": "recente",
+    "paginazione": {
+      "paginaCorrente": 1,
+      "numeroElementiPerPagina": 10
+    }
+  },
+  "intestazioni_inviate": {
+    "User-Agent": "Iudex/0.9.0 (sonda; +https://github.com/SOsintOps/Iudex)",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "http": 200,
+  "durata_s": 0.043,
+  "risposta": {
+    "listaAtti": [
+      {
+        "numeroAtto": "262",
+        "numeroAttoAlfanumerico": "262",
+        "dataGU": "1942-04-04",
+        "numeroGU": "79",
+        "codiceRedazionale": "042U0262",
+        "titoloAtto": "[Approvazione del testo del Codice civile. (042U0262) \r ]",
+        "giornoProvvedimento": "16",
+        "meseProvvedimento": "3",
+        "meseProvvedimentoIta": "marzo",
+        "meseProvvedimentoEng": "March",
+        "annoProvvedimento": "1942",
+        "numeroProvvedimento": "262",
+        "denominazioneAtto": "REGIO DECRETO",
+        "numeroSupplemento": "0",
+        "tipoSupplemento": "NO",
+        "suffissoArticoloSelezionato": 1,
+        "subArt1ArticoloSelezionato": 0,
+        "hlTitoli": null,
+        "hlArticoli": null,
+        "annoDataGU": "1942",
+        "dataGUStr": "04-04-1942",
+        "tipoSupplementoIt": "",
+        "tipoSupplementoEn": "",
+        "dataEmanazione": "1942-03-16T00:00:00Z",
+        "descrizioneAtto": "REGIO DECRETO 16 marzo 1942, n. 262",
+        "dataUltimaModifica": null,
+        "ultimiAttiModificanti": null
+      }
+    ],
+    "facetMap": {
+      "anno_provvedimento": [
+        {
+          "codice": "1942",
+          "valore": 1,
+          "descrizione": "1942"
+        }
+      ],
+      "codice_tipo_provvedimento": [
+        {
+          "codice": "PRD",
+          "valore": 1,
+          "descrizione": "REGIO DECRETO"
+        }
+      ],
+      "descrizione_emettitore": [
+        {
+          "codice": "---",
+          "valore": 1,
+          "descrizione": "STATO"
+        }
+      ]
+    },
+    "numeroPagine": 1,
+    "numeroAttiTrovati": 1,
+    "paginaCorrente": 1,
+    "numeroElementiPerPagina": 0,
+    "message": null,
+    "numeroFileRicerca": 0
+  },
+  "errore": null
+}

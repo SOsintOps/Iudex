@@ -9,8 +9,23 @@
   (schema dell'archivio 6) e resta nel database locale.
 - Ricerca per nome di persona o di società: ammessa, come ogni altra ricerca; FAQ e
   istruzioni del server MCP aggiornate.
+- Modulo `norme`: lettura del testo di un articolo dall'API Open Data di Normattiva
+  (`api.normattiva.it`; dati dell'Istituto Poligrafico e Zecca dello Stato in licenza
+  CC BY 4.0, "Fonte: Normattiva (IPZS)"). Un articolo per richiesta, con un limite di
+  cortesia proprio (2 s fra due richieste, `IUDEX_INTERVALLO_NORMATTIVA`), pausa su 409/429
+  e un solo nuovo tentativo quando la fonte non risponde: in quel caso il messaggio dice
+  che Normattiva non è disponibile, mai che la norma non esiste. Codici (c.c., c.p.,
+  c.p.c., c.p.p., Costituzione) letti dall'allegato dell'atto d'origine. Il bottone per
+  aprire il testo dalla sentenza arriva con i passi successivi.
 
 ### Correzioni
+- Riferimenti normativi delle sentenze letti correttamente: i codici, che il CED indica come
+  `COD` con il codice a parte, ora compaiono come "art. 2043 c.c." o "art. 380-bis c.p.c."
+  (prima per esempio "art. 238 cod 309/1990"); numeri e anni degli atti, che il CED elenca
+  solo dove ci sono, vanno all'atto giusto ("art. 73 d.P.R. 309/1990"); i suffissi bis, ter...
+  non si perdono più. Quando l'abbinamento fra atto, numero e articolo non è certo, Iudex
+  mostra l'atto senza il numero o l'articolo invece di un riferimento sbagliato. Il testo
+  dei riferimenti cambia di conseguenza, anche nelle esportazioni.
 - La cronologia mette prima la ricerca più recente anche quando due ricerche cadono nello
   stesso istante.
 - Windows: avviato dai sorgenti, Iudex ha sulla barra un'identità separata

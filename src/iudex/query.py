@@ -68,6 +68,31 @@ TIPI_ATTO = {
     "DIR": "dir. UE",
 }
 CODICI_SENZA_ESTREMI = {"CC", "CPC", "CP", "CPP", "COST", "CEDU", "TUE", "TFUE"}
+# Il CED indica i codici con "rnc-sp" = "COD" e il codice in "rnc-gen" (per le leggi "rnc-gen"
+# vale "LS"). "CR" per la Costituzione è dedotto dagli articoli citati, non documentato.
+CODICI_CED = {"CC": "CC", "CP": "CP", "PC": "CPC", "PV": "CPP", "CR": "COST"}
+# Suffissi degli articoli nell'ordine del CED ("0380 02" = 380-bis) e di Normattiva
+# (sottoArticolo 2 = bis): indice + 1 = codice numerico, "" = articolo semplice.
+SUFFISSI = (
+    "",
+    "bis",
+    "ter",
+    "quater",
+    "quinquies",
+    "sexies",
+    "septies",
+    "octies",
+    "novies",
+    "decies",
+    "undecies",
+    "duodecies",
+    "terdecies",
+    "quaterdecies",
+    "quinquiesdecies",
+    "sexiesdecies",
+    "septiesdecies",
+    "octiesdecies",
+)
 
 ARCHIVI = {"snciv": "Civile", "snpen": "Penale"}
 SEZIONI = {
@@ -385,31 +410,120 @@ def _senza_zeri(valore: str) -> str:
     return v or "0"
 
 
+def _anno_ced(valore: str) -> str:
+    """L'anno di ``rnc-dat``, che a volte porta la data intera ("1989 07 28")."""
+    trovato = re.match(r"\s*(\d{4})", valore)
+    return trovato.group(1) if trovato else ""
+
+
+def _articolo_ced(valore: str) -> str:
+    """Il numero di articolo da ``rnc-art``: "0001 00" -> "1", "0380 02" -> "380-bis".
+
+    Un suffisso numerico fuori dalla tabella dà una stringa vuota: meglio nessun articolo
+    che l'articolo sbagliato.
+    """
+    parti = valore.split()
+    if not parti or not parti[0].isdigit():
+        return ""
+    numero = _senza_zeri(parti[0])
+    if len(parti) > 1 and parti[1].isdigit():
+        indice = int(parti[1])
+        if indice > len(SUFFISSI):
+            return ""
+        if indice >= 2:
+            numero += "-" + SUFFISSI[indice - 1]
+    return numero
+
+
+def _allinea_estremi(valori: list[str], codici: list[bool]) -> list[str]:
+    """Numeri (o anni) di ciascun riferimento.
+
+    Il CED compatta ``rnc-num`` e ``rnc-dat``: contengono solo i valori presenti, cioè quelli
+    degli atti che non sono codici. Se la lista è lunga quanto quei riferimenti si allinea a
+    loro, se è lunga quanto l'elenco intero (dati non compattati) si allinea per indice;
+    altrimenti non si sa a chi appartiene ogni valore e nessuno ne riceve uno.
+    """
+    altri = [i for i, codice in enumerate(codici) if not codice]
+    risultato = [""] * len(codici)
+    if len(valori) == len(altri):
+        for i, valore in zip(altri, valori, strict=True):
+            risultato[i] = valore
+    elif len(valori) == len(codici):
+        risultato = list(valori)
+    return risultato
+
+
+def _allinea_articoli(valori: list[str], codici: list[bool]) -> list[str]:
+    """Articolo di ciascun riferimento, solo dove l'allineamento è certo.
+
+    Anche ``rnc-art`` è compattata: mancano gli articoli degli atti citati per intero. Un
+    codice si cita sempre con un articolo, quindi i valori mancanti appartengono ad atti che
+    non sono codici. Per un codice preceduto da ``prima`` di quegli atti e seguito da ``dopo``,
+    i mancanti prima di lui sono almeno ``mancanti - dopo`` e al massimo ``min(mancanti,
+    prima)``: l'articolo è certo solo quando i due limiti coincidono. Per gli altri atti
+    l'articolo è certo solo se nessuno manca (lista completa) o se mancano tutti.
+    """
+    if len(valori) == len(codici):
+        return list(valori)
+    risultato = [""] * len(codici)
+    mancanti = len(codici) - len(valori)
+    altri_totali = sum(1 for codice in codici if not codice)
+    if mancanti < 0 or mancanti > altri_totali:
+        return risultato
+    prima = 0
+    for i, codice in enumerate(codici):
+        if not codice:
+            prima += 1
+            continue
+        dopo = altri_totali - prima
+        minimo, massimo = max(0, mancanti - dopo), min(mancanti, prima)
+        if minimo == massimo:
+            risultato[i] = valori[i - minimo]
+    return risultato
+
+
 def formatta_riferimenti(rnc: dict) -> list[dict]:
     """Trasforma le liste parallele ``rnc-*`` di un provvedimento in riferimenti leggibili.
 
-    Ogni indice descrive un riferimento: ``sp`` tipo di atto, ``num`` numero, ``dat`` anno,
-    ``art`` articolo ("0001 00"), ``com`` comma. Restituisce voci con il testo da mostrare e
-    il testo da usare nel campo "Riferimento normativo".
+    ``sp`` è il tipo di atto (``COD`` per i codici, con il codice in ``gen``: CC, CP, PC =
+    c.p.c., PV = c.p.p., CR = Costituzione), ``num`` il numero, ``dat`` l'anno, ``art``
+    l'articolo ("0001 00", "0380 02" = 380-bis), ``com`` il comma. ``sp`` e ``gen`` hanno un
+    valore per riferimento; ``num``, ``dat`` e ``art`` sono compattate dal CED (solo i valori
+    presenti) e vengono riallineate dove l'allineamento è certo, altrimenti il valore si lascia
+    vuoto. Restituisce voci con il testo da mostrare e il testo da usare nel campo
+    "Riferimento normativo".
     """
     if not rnc:
         return []
-    liste = {k: (v if isinstance(v, list) else [v]) for k, v in rnc.items()}
-    quanti = max((len(v) for v in liste.values()), default=0)
+    liste = {k: (v if isinstance(v, list) else [v]) for k, v in rnc.items() if v is not None}
 
-    def voce(campo: str, i: int) -> str:
-        lista = liste.get(campo, [])
-        return str(lista[i]).strip() if i < len(lista) and lista[i] is not None else ""
+    def lista(campo: str) -> list[str]:
+        return ["" if v is None else str(v).strip() for v in liste.get(campo, [])]
+
+    sp, gen = lista("sp"), lista("gen")
+    quanti = max(len(sp), len(gen))
+    if not quanti:
+        # Senza tipi di atto: un riferimento per indice, come per i dati più vecchi.
+        quanti = max((len(v) for v in liste.values()), default=0)
+    sp += [""] * (quanti - len(sp))
+    gen += [""] * (quanti - len(gen))
+    codici = [voce.upper() == "COD" for voce in sp]
+    numeri = _allinea_estremi(lista("num"), codici)
+    anni = _allinea_estremi(lista("dat"), codici)
+    articoli = _allinea_articoli(lista("art"), codici)
 
     risultato: list[dict] = []
     visti: set[str] = set()
     for i in range(quanti):
-        codice = voce("sp", i).upper()
+        if codici[i]:
+            codice = CODICI_CED.get(gen[i].upper(), gen[i].upper())
+            numero, anno = "", ""
+        else:
+            codice = sp[i].upper()
+            numero = _senza_zeri(numeri[i]) if numeri[i] else ""
+            anno = _anno_ced(anni[i])
         tipo = TIPI_ATTO.get(codice, codice.lower() if codice else "")
-        numero = _senza_zeri(voce("num", i)) if voce("num", i) else ""
-        anno = voce("dat", i)
-        articolo_grezzo = voce("art", i).split()
-        articolo = _senza_zeri(articolo_grezzo[0]) if articolo_grezzo else ""
+        articolo = _articolo_ced(articoli[i])
         # Il campo "com" (comma) non risulta allineato agli altri nei dati osservati:
         # non viene mostrato per non attribuire commi sbagliati.
         parti_atto = [tipo]
