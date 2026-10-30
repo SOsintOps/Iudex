@@ -881,6 +881,7 @@ async def norma(
 # codice di Iudex per sapere se Normattiva lo legge.
 _CODICI_DA_ETICHETTA = {etichetta: codice for codice, etichetta in TIPI_ATTO.items()}
 _PREFISSO_EURLEX = "https://eur-lex.europa.eu/"
+_TIPI_EURLEX = ("REG", "DIR", "TUE", "TFUE")
 
 
 def _norma_del_riferimento(riferimento: dict) -> dict | None:
@@ -907,18 +908,22 @@ def _norma_del_riferimento(riferimento: dict) -> dict | None:
 
 
 def _url_eurlex_del_riferimento(riferimento: dict) -> str | None:
-    """Il link a EUR-Lex di un regolamento o di una direttiva, solo se ``norme`` lo calcola.
+    """Il link a EUR-Lex di un regolamento, una direttiva o un trattato UE, se ``norme`` lo calcola.
 
     Nessun link costruito qui: senza ``norme.url_eurlex`` (o con un risultato che non punta a
-    eur-lex.europa.eu) il riferimento resta senza link.
+    eur-lex.europa.eu) il riferimento resta senza link. Regolamenti e direttive solo con
+    numero e anno certi; TUE e TFUE portano ai testi consolidati, senza estremi.
     """
     codice = _CODICI_DA_ETICHETTA.get(str(riferimento.get("tipo") or ""))
-    if codice not in ("REG", "DIR") or not hasattr(modulo_norme, "url_eurlex"):
+    if codice not in _TIPI_EURLEX or not hasattr(modulo_norme, "url_eurlex"):
         return None
-    numero = str(riferimento.get("numero") or "")
-    anno = str(riferimento.get("anno") or "")
-    if not _NUMERO_ATTO.match(numero) or not _ANNO_ATTO.match(anno):
-        return None
+    if codice in ("TUE", "TFUE"):
+        numero = anno = ""
+    else:
+        numero = str(riferimento.get("numero") or "")
+        anno = str(riferimento.get("anno") or "")
+        if not _NUMERO_ATTO.match(numero) or not _ANNO_ATTO.match(anno):
+            return None
     try:
         risultato = modulo_norme.url_eurlex(codice, numero, anno)
     except (TypeError, ValueError):

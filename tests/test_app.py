@@ -994,6 +994,27 @@ def test_link_eurlex_solo_dalla_funzione_di_norme(monkeypatch):
     assert "norma_url_eurlex" not in modulo_app._con_norma([regolamento])[0]
 
 
+def test_link_eurlex_dei_regolamenti_direttive_e_trattati():
+    # Con la funzione vera di norme: il link CELEX in italiano, nessuna richiesta di rete.
+    riferimenti = [
+        {"tipo": "reg. UE", "numero": "2024", "anno": "1999", "articolo": "3"},
+        {"tipo": "dir. UE", "numero": "1024", "anno": "2019", "articolo": ""},
+        {"tipo": "TUE", "numero": "", "anno": "", "articolo": "6"},
+        {"tipo": "TFUE", "numero": "", "anno": "", "articolo": "267"},
+        {"tipo": "reg. UE", "numero": "679", "anno": "", "articolo": "6"},
+        {"tipo": "legge", "numero": "241", "anno": "1990", "articolo": "2"},
+    ]
+    voci = modulo_app._con_norma(riferimenti)
+    celex = "https://eur-lex.europa.eu/legal-content/IT/TXT/?uri=CELEX:"
+    assert voci[0]["norma_url_eurlex"] == celex + "31999R2024"
+    assert voci[1]["norma_url_eurlex"] == celex + "32019L1024"
+    assert voci[2]["norma_url_eurlex"] == celex + "12016M/TXT"
+    assert voci[3]["norma_url_eurlex"] == celex + "12016E/TXT"
+    # Senza anno nessun link; gli atti italiani hanno il bottone Testo, non EUR-Lex.
+    assert "norma_url_eurlex" not in voci[4] and "norma_url_eurlex" not in voci[5]
+    assert all("norma" not in voce for voce in voci[:5])
+
+
 def test_sentenza_con_norma_nei_riferimenti(client):
     c, mock = client
     doc = _doc(5)

@@ -22,6 +22,7 @@ from iudex.norme import (
     NormaNonTrovata,
     articolo_da_html,
     dividi_articolo,
+    url_eurlex,
     url_normattiva,
 )
 
@@ -318,6 +319,43 @@ def test_url_normattiva_dei_codici():
         "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:costituzione:1947-12-27~art111"
     )
     assert url_normattiva(norme.CODICI["CPC"], "380-bis").endswith(";1443:1~art380bis")
+
+
+def test_url_eurlex_regolamenti_e_direttive():
+    gdpr = url_eurlex("REG", "679", "2016")
+    assert gdpr == {
+        "eli": "https://eur-lex.europa.eu/eli/reg/2016/679/oj/ita",
+        "celex": "32016R0679",
+        "url": "https://eur-lex.europa.eu/legal-content/IT/TXT/?uri=CELEX:32016R0679",
+    }
+    direttiva = url_eurlex("DIR", "1024", "2019")
+    assert direttiva["celex"] == "32019L1024"
+    assert direttiva["eli"] == "https://eur-lex.europa.eu/eli/dir/2019/1024/oj/ita"
+    assert direttiva["url"].endswith("?uri=CELEX:32019L1024")
+    # Numero portato a quattro cifre nel CELEX, senza zeri iniziali nell'ELI.
+    breve = url_eurlex("reg", "0012", "2003")
+    assert breve["celex"] == "32003R0012"
+    assert breve["eli"].endswith("/eli/reg/2003/12/oj/ita")
+
+
+def test_url_eurlex_trattati_e_altri_tipi():
+    tue = url_eurlex("TUE", "", "")
+    assert tue["celex"] == "12016M/TXT" and tue["eli"] is None
+    assert tue["url"] == "https://eur-lex.europa.eu/legal-content/IT/TXT/?uri=CELEX:12016M/TXT"
+    assert url_eurlex("TFUE", "", "")["celex"] == "12016E/TXT"
+    for tipo, numero, anno in (
+        ("LS", "241", "1990"),
+        ("CC", "", ""),
+        ("CEDU", "", ""),
+        ("", "679", "2016"),
+        ("REG", "", "2016"),
+        ("REG", "679", ""),
+        ("REG", "679/2016", "2016"),
+        ("REG", "0", "2016"),
+        ("REG", "12345", "2016"),
+        ("DIR", "1024", "19"),
+    ):
+        assert url_eurlex(tipo, numero, anno) is None, (tipo, numero, anno)
 
 
 def test_articolo_da_html_sulle_fixture():

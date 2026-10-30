@@ -63,6 +63,7 @@ __all__ = [
     "NormaNonTrovata",
     "articolo_da_html",
     "dividi_articolo",
+    "url_eurlex",
     "url_normattiva",
 ]
 
@@ -209,6 +210,45 @@ def url_normattiva(atto: Atto, articolo: str) -> str:
         }
     )
     return f"{URL_SITO}/atto/caricaDettaglioAtto?{parametri}"
+
+
+URL_EURLEX = "https://eur-lex.europa.eu"
+_URL_CELEX = URL_EURLEX + "/legal-content/IT/TXT/?uri=CELEX:"
+# Settore 3 (atti di diritto derivato) e lettera del tipo nel numero CELEX; sigla dell'ELI.
+_EURLEX_DERIVATI = {"REG": ("R", "reg"), "DIR": ("L", "dir")}
+# Trattati: i testi consolidati (versione 2016), sempre gli stessi.
+_EURLEX_TRATTATI = {"TUE": "12016M/TXT", "TFUE": "12016E/TXT"}
+_NUMERO_EURLEX = re.compile(r"^\s*0*(\d{1,4})\s*$")
+_ANNO_EURLEX = re.compile(r"^\s*(\d{4})\s*$")
+
+
+def url_eurlex(tipo: str, numero: str, anno: str) -> dict | None:
+    """I link a EUR-Lex di un regolamento, una direttiva o un trattato UE; nessuna richiesta.
+
+    Per REG e DIR un dizionario con ``eli`` (``/eli/{reg|dir}/{anno}/{numero}/oj/ita``),
+    ``celex`` (il numero CELEX, per esempio ``32016R0679``) e ``url`` (la pagina dell'atto in
+    italiano per numero CELEX). Per TUE e TFUE i testi consolidati (``12016M/TXT`` e
+    ``12016E/TXT``), senza ELI. ``None`` per gli altri tipi e per numero o anno non numerici.
+    """
+    codice = str(tipo or "").strip().upper()
+    if codice in _EURLEX_TRATTATI:
+        celex = _EURLEX_TRATTATI[codice]
+        return {"eli": None, "celex": celex, "url": _URL_CELEX + celex}
+    if codice not in _EURLEX_DERIVATI:
+        return None
+    trovato_numero = _NUMERO_EURLEX.match(str(numero or ""))
+    trovato_anno = _ANNO_EURLEX.match(str(anno or ""))
+    if not trovato_numero or not trovato_anno or int(trovato_numero.group(1)) == 0:
+        return None
+    valore = int(trovato_numero.group(1))
+    anno_atto = trovato_anno.group(1)
+    lettera, sigla = _EURLEX_DERIVATI[codice]
+    celex = f"3{anno_atto}{lettera}{valore:04d}"
+    return {
+        "eli": f"{URL_EURLEX}/eli/{sigla}/{anno_atto}/{valore}/oj/ita",
+        "celex": celex,
+        "url": _URL_CELEX + celex,
+    }
 
 
 def _data_vigenza(valore) -> str | None:

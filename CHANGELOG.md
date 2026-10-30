@@ -53,9 +53,15 @@
   4.0" e il link "Apri su Normattiva"). Compare solo dove il riferimento ha tutti i dati certi
   (campo nuovo `norma` nei riferimenti di `/api/sentenza`, gli altri campi non cambiano); una
   richiesta per clic, nessuna all'apertura della sentenza, nessun nuovo tentativo automatico
-  dopo un errore. Il testo entra nella pagina solo come testo, mai come HTML. Regolamenti e
-  direttive UE avranno il link EUR-Lex quando Iudex saprà costruirlo. Nella scheda Stato le
-  richieste a Normattiva e gli articoli in cache. Guida e FAQ aggiornate.
+  dopo un errore. Il testo entra nella pagina solo come testo, mai come HTML. Nella scheda
+  Stato le richieste a Normattiva e gli articoli in cache. Guida e FAQ aggiornate.
+- Link **EUR-Lex** accanto ai riferimenti a regolamenti e direttive UE e ai trattati (TUE,
+  TFUE): apre l'atto in italiano su EUR-Lex nel browser, con il numero CELEX (per esempio
+  `32016R0679` per il regolamento 2016/679); per i trattati il testo consolidato
+  (`12016M/TXT`, `12016E/TXT`). Funzione `url_eurlex` nel modulo `norme`, che dà anche il
+  link ELI (`/eli/reg/2016/679/oj/ita`); solo link, Iudex non chiede nulla a EUR-Lex. Il
+  link compare solo dove numero e anno dell'atto sono certi (campo `norma_url_eurlex` nei
+  riferimenti di `/api/sentenza`).
 
 ### Correzioni
 - Riferimenti normativi delle sentenze letti correttamente: i codici, che il CED indica come
