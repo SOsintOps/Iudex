@@ -22,6 +22,19 @@
   dopo 30 giorni, quello chiesto a una data precisa resta). Sono cache, non dati
   dell'utente: non entrano nell'esportazione dell'archivio. Prima della migrazione Iudex
   fa come sempre una copia di sicurezza in `backup/` se l'archivio ha già dati.
+- API `GET /api/norma?tipo=&numero=&anno=&articolo=&vigenza=`: il testo di un articolo da
+  Normattiva, prima dalla cache delle norme e solo se manca con una lettura dalla rete
+  (`da_cache` lo dice). Parametri espliciti, nessuna deduzione: `numero` e `anno` servono
+  per tutti gli atti salvo i codici (CC, CP, CPC, CPP, COST), l'articolo è un numero con il
+  suffisso facoltativo ("2-bis"), la vigenza facoltativa è una data `AAAA-MM-GG`. Errori:
+  400 parametri non validi, 404 quando Normattiva non ha l'articolo, 422 per gli atti che
+  Normattiva non ha (leggi regionali, regolamenti UE, CEDU...), 429 con i secondi di pausa
+  chiesti dalla fonte, 502 quando la fonte non risponde (mai "norma non trovata" in quel
+  caso). Nessuna lettura anticipata: Iudex non chiede nulla a Normattiva se l'utente non
+  apre un testo.
+- Pannello Stato: statistiche proprie di Normattiva in `/api/stato` (`normattiva`:
+  richieste fatte, pausa residua, intervallo minimo, norme in cache, ultime richieste).
+  All'avvio Iudex toglie anche il testo vigente delle norme scaduto (oltre 30 giorni).
 
 ### Correzioni
 - Riferimenti normativi delle sentenze letti correttamente: i codici, che il CED indica come

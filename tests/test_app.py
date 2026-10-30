@@ -1,7 +1,9 @@
 """Le API rispondono solo con l'header dell'interfaccia e orchestrano client e cache."""
 
 import io
+import json
 import zipfile
+from pathlib import Path
 
 import httpx
 import pytest
@@ -10,6 +12,7 @@ from fastapi.testclient import TestClient
 
 import iudex.app as modulo_app
 from iudex.config import URL_PDF, URL_SNCASS, URL_SOLR, Impostazioni
+from iudex.norme import FONTE, URL_API
 
 H = {"X-Iudex": "1"}
 
@@ -65,7 +68,9 @@ def _risposta(docs: list[dict], trovati: int | None = None, highlighting=None) -
 def client(tmp_path, monkeypatch):
     # Le impostazioni sono immutabili: si sostituisce l'oggetto usato dal modulo.
     monkeypatch.setattr(
-        modulo_app, "impostazioni", Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0)
+        modulo_app,
+        "impostazioni",
+        Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0, intervallo_normattiva=0.0),
     )
     with respx.mock(assert_all_called=False) as mock:
         mock.get(URL_SNCASS).mock(return_value=httpx.Response(200, text=""))
@@ -700,7 +705,9 @@ def test_cartella_pdf_dall_installer(tmp_path, monkeypatch):
         "[pdf]\ncartella = D:\\Sentenze\n", encoding="utf-8"
     )
     monkeypatch.setattr(
-        modulo_app, "impostazioni", Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0)
+        modulo_app,
+        "impostazioni",
+        Impostazioni(cartella_dati=tmp_path, intervallo_minimo=0.0, intervallo_normattiva=0.0),
     )
     with ClientIudex(modulo_app.app) as c:
         r = c.get("/api/impostazioni", headers=H).json()
@@ -778,3 +785,159 @@ def test_ricerca_locale_non_chiede_nulla_alla_corte(client):
         ).status_code
         == 401
     )
+
+
+# --- /api/norma: testo delle norme da Normattiva (nessuna rete: respx sulle fixture) -------
+
+FIXTURE_NORMATTIVA = Path(__file__).parent / "fixture" / "normattiva"
+RICERCA_NORMATTIVA = URL_API + "/ricerca/avanzata"
+DETTAGLIO_NORMATTIVA = URL_API + "/atto/dettaglio-atto"
+DETTAGLIO_URN_NORMATTIVA = URL_API + "/atto/dettaglio-atto-urn"
+LEGGE_241 = {"tipo": "LS", "numero": "241", "anno": "1990", "articolo": "2-bis"}
+
+
+def _normattiva(nome: str) -> httpx.Response:
+    dati = json.loads((FIXTURE_NORMATTIVA / nome).read_text(encoding="utf-8"))
+    return httpx.Response(dati["http"], json=dati["risposta"])
+
+
+def _richieste_normattiva(mock) -> int:
+    return sum(1 for chiamata in mock.calls if chiamata.request.url.host == "api.normattiva.it")
+
+
+def test_avvio_e_stato_senza_richieste_a_normattiva(client):
+    c, mock = client
+    normattiva = c.app.state.normattiva
+    assert normattiva.stat.chiamate == 0
+    # Pannello Stato, ricerca locale e pagina: nessuna lettura di norme senza /api/norma.
+    stato = c.get("/api/stato", headers=H).json()["normattiva"]
+    assert stato == {
+        "chiamate": 0,
+        "pausa_residua_s": 0,
+        "intervallo_minimo_s": 0.0,
+        "norme_in_cache": 0,
+        "registro": [],
+    }
+    c.get("/", headers=H)
+    c.get("/api/locale/cerca", params={"testo": "art. 2043"}, headers=H)
+    assert normattiva.stat.chiamate == 0 and _richieste_normattiva(mock) == 0
+
+
+def test_norma_dalla_rete_poi_dalla_cache(client):
+    c, mock = client
+    ricerca = mock.post(RICERCA_NORMATTIVA).mock(
+        return_value=_normattiva("ricerca-legge-241-1990.json")
+    )
+    dettaglio = mock.post(DETTAGLIO_NORMATTIVA).mock(
+        return_value=_normattiva("dettaglio-art-2bis-l-241-1990.json")
+    )
+    prima = c.get("/api/norma", params=LEGGE_241, headers=H)
+    assert prima.status_code == 200
+    dati = prima.json()
+    assert dati["da_cache"] is False
+    assert dati["atto"]["codice_redazionale"] == "090G0294"
+    assert dati["atto"]["data_gu"] == "1990-08-18"
+    assert dati["articolo"]["numero"] == "2-bis" and dati["articolo"]["testo"]
+    assert dati["vigenza"]["richiesta"] is None
+    assert dati["fonte"] == FONTE
+    assert dati["url"].endswith("urn:nir:stato:legge:1990-08-07;241~art2bis")
+    assert ricerca.call_count == 1 and dettaglio.call_count == 1
+    # Stessa richiesta: dalla cache, nessuna richiesta a Normattiva.
+    seconda = c.get("/api/norma", params=LEGGE_241, headers=H)
+    assert seconda.status_code == 200 and seconda.json()["da_cache"] is True
+    assert {k: v for k, v in seconda.json().items() if k != "da_cache"} == {
+        k: v for k, v in dati.items() if k != "da_cache"
+    }
+    assert ricerca.call_count == 1 and dettaglio.call_count == 1
+    # Lo stesso atto a un'altra data: l'atto viene dalla cache, l'articolo dalla rete.
+    datata = c.get("/api/norma", params={**LEGGE_241, "vigenza": "2020-01-01"}, headers=H)
+    assert datata.status_code == 200 and datata.json()["da_cache"] is False
+    assert datata.json()["vigenza"]["richiesta"] == "2020-01-01"
+    assert json.loads(dettaglio.calls[1].request.content)["dataVigenza"] == "2020-01-01"
+    assert ricerca.call_count == 1 and dettaglio.call_count == 2
+    stato = c.get("/api/stato", headers=H).json()["normattiva"]
+    assert stato["chiamate"] == 3 and stato["norme_in_cache"] == 2
+    assert [v["tipo"] for v in stato["registro"]] == ["ricerca", "articolo", "articolo"]
+
+
+def test_norma_di_un_codice_via_urn(client):
+    c, mock = client
+    urn = mock.post(DETTAGLIO_URN_NORMATTIVA).mock(return_value=_normattiva("urn-art-2043-cc.json"))
+    r = c.get("/api/norma", params={"tipo": "cc", "articolo": "2043"}, headers=H)
+    assert r.status_code == 200
+    assert r.json()["articolo"]["numero"] == "2043" and r.json()["da_cache"] is False
+    corpo = json.loads(urn.calls[0].request.content)
+    assert corpo == {"urn": "urn:nir:stato:regio.decreto:1942-03-16;262:2~art2043"}
+    assert c.get("/api/norma", params={"tipo": "CC", "articolo": "2043"}, headers=H).json()[
+        "da_cache"
+    ]
+    assert urn.call_count == 1
+
+
+@pytest.mark.parametrize(
+    "parametri",
+    [
+        {"articolo": "1"},
+        {"tipo": "LS", "articolo": "1"},
+        {"tipo": "LS", "numero": "241", "articolo": "1"},
+        {"tipo": "LS", "numero": "241", "anno": "90", "articolo": "1"},
+        {**LEGGE_241, "articolo": ""},
+        {**LEGGE_241, "articolo": "2-foo"},
+        {**LEGGE_241, "articolo": "12345"},
+        {**LEGGE_241, "articolo": "art. 2"},
+        {**LEGGE_241, "vigenza": "30/10/2026"},
+        {**LEGGE_241, "vigenza": "2026-13-40"},
+        {"tipo": "L.S.", "numero": "241", "anno": "1990", "articolo": "1"},
+    ],
+)
+def test_norma_parametri_non_validi_400(client, parametri):
+    c, mock = client
+    r = c.get("/api/norma", params=parametri, headers=H)
+    assert r.status_code == 400 and r.json()["errore"]
+    assert _richieste_normattiva(mock) == 0
+
+
+def test_norma_tipo_non_leggibile_422(client):
+    c, mock = client
+    for tipo in ("REG", "LR", "CEDU"):
+        r = c.get(
+            "/api/norma",
+            params={"tipo": tipo, "numero": "679", "anno": "2016", "articolo": "6"},
+            headers=H,
+        )
+        assert r.status_code == 422 and "non leggibile" in r.json()["errore"]
+    assert _richieste_normattiva(mock) == 0
+
+
+def test_norma_non_trovata_404(client):
+    c, mock = client
+    mock.post(RICERCA_NORMATTIVA).mock(return_value=_normattiva("ricerca-legge-241-1990.json"))
+    mock.post(DETTAGLIO_NORMATTIVA).mock(return_value=_normattiva("dettaglio-404.json"))
+    r = c.get("/api/norma", params={**LEGGE_241, "articolo": "999"}, headers=H)
+    assert r.status_code == 404
+    assert r.json()["errore"].startswith("Normattiva non ha questo articolo")
+    assert c.get("/api/stato", headers=H).json()["normattiva"]["norme_in_cache"] == 0
+
+
+def test_norma_fonte_non_disponibile_502(client):
+    c, mock = client
+    urn = mock.post(DETTAGLIO_URN_NORMATTIVA).mock(return_value=httpx.Response(500))
+    r = c.get("/api/norma", params={"tipo": "CP", "articolo": "575"}, headers=H)
+    assert r.status_code == 502 and urn.call_count == 2
+    assert "non disponibile" in r.json()["errore"]
+    assert "inesistent" not in r.text and "non ha questo articolo" not in r.text
+    assert c.get("/api/stato", headers=H).json()["normattiva"]["norme_in_cache"] == 0
+
+
+def test_norma_pausa_chiesta_da_normattiva_429(client):
+    c, mock = client
+    urn = mock.post(DETTAGLIO_URN_NORMATTIVA).mock(
+        return_value=httpx.Response(429, headers={"Retry-After": "30"})
+    )
+    r = c.get("/api/norma", params={"tipo": "CP", "articolo": "575"}, headers=H)
+    assert r.status_code == 429 and 28 <= r.json()["pausa_residua_s"] <= 30
+    # Durante la pausa nessuna richiesta parte: 429 con i secondi che mancano.
+    r = c.get("/api/norma", params={"tipo": "CP", "articolo": "576"}, headers=H)
+    assert r.status_code == 429 and r.json()["pausa_residua_s"] > 0
+    assert urn.call_count == 1
+    assert c.get("/api/stato", headers=H).json()["normattiva"]["pausa_residua_s"] > 0

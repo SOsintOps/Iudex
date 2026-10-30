@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import math
+import re
 import shutil
 import tempfile
 import time
@@ -35,6 +36,14 @@ from .cache import Archivio
 from .client import ClientSentenzeWeb, ErroreRemoto
 from .config import URL_AGGIORNAMENTI, impostazioni
 from .impronte import CODICI
+from .norme import CODICI as CODICI_NORME
+from .norme import (
+    DENOMINAZIONI,
+    SUFFISSI,
+    ClientNormattiva,
+    NormaNonTrovata,
+    dividi_articolo,
+)
 from .query import (
     CAMPI_FACET,
     ETICHETTE_SEGNALI,
@@ -82,6 +91,10 @@ async def ciclo_vita(app: FastAPI):
     app.state.client = ClientSentenzeWeb(
         impostazioni, scegli_impronta=lambda: _impronta_scelta(app.state.archivio)
     )
+    # Normattiva ha un client suo (lock, intervallo, pausa e statistiche separati da quelli
+    # della Corte). Nessuna richiesta all'avvio: il client apre la connessione alla prima
+    # lettura chiesta dall'utente (/api/norma).
+    app.state.normattiva = ClientNormattiva(intervallo_minimo=impostazioni.intervallo_normattiva)
     # Pagine e API rispondono solo a chi ha il token della cartella dei dati (la finestra).
     app.state.token = accesso.leggi_o_crea(impostazioni.cartella_dati)
     app.state.sigle = None
@@ -94,7 +107,9 @@ async def ciclo_vita(app: FastAPI):
     # Le voci di cache scadute non servono più: si tolgono all'avvio (diario e sentenze
     # consultate restano).
     rimosse = app.state.archivio.pulisci_scadute(
-        impostazioni.ttl_ricerche, impostazioni.ttl_estremi_giorni * SECONDI_GIORNO
+        impostazioni.ttl_ricerche,
+        impostazioni.ttl_estremi_giorni * SECONDI_GIORNO,
+        ttl_norme=impostazioni.ttl_norme_giorni * SECONDI_GIORNO,
     )
     if rimosse:
         log.info("cache: %d voci scadute rimosse", rimosse)
@@ -118,6 +133,7 @@ async def ciclo_vita(app: FastAPI):
     )
     yield
     await app.state.client.chiudi()
+    await app.state.normattiva.chiudi()
     app.state.archivio.chiudi()
     for provvisorio in app.state.pdf_provvisori.values():
         provvisorio.unlink(missing_ok=True)
@@ -732,6 +748,132 @@ async def estremi(request: Request, q: str = Query("", max_length=80)) -> list[d
     return trovate[:20]
 
 
+# --- testo delle norme da Normattiva -------------------------------------------------------
+
+# Articolo come nei riferimenti: numero di 1-4 cifre e suffisso latino facoltativo ("2-bis").
+_ARTICOLO_NORMA = re.compile(r"^\d{1,4}(?:-?(?:" + "|".join(s for s in SUFFISSI if s) + r"))?$")
+_NUMERO_ATTO = re.compile(r"^\d{1,6}$")
+_ANNO_ATTO = re.compile(r"^\d{4}$")
+_TIPO_ATTO = re.compile(r"^[A-Z]{1,10}$")
+
+
+def _errore(stato: int, messaggio: str, **altro) -> JSONResponse:
+    return JSONResponse(status_code=stato, content={"errore": messaggio, **altro})
+
+
+def _parametri_norma(
+    tipo: str, numero: str, anno: str, articolo: str, vigenza: str
+) -> tuple[str, str, str, str, str | None] | str:
+    """Parametri di /api/norma normalizzati, oppure il messaggio dell'errore 400.
+
+    Nessuna deduzione: tipo, numero, anno e articolo arrivano espliciti dal riferimento.
+    """
+    tipo = tipo.strip().upper()
+    numero = numero.strip().lstrip("0")
+    anno = anno.strip()
+    articolo = articolo.strip().lower()
+    vigenza = vigenza.strip()
+    if not _TIPO_ATTO.match(tipo):
+        return "tipo dell'atto mancante o non valido"
+    if tipo in CODICI_NORME:
+        numero, anno = "", ""
+    elif not _NUMERO_ATTO.match(numero) or not _ANNO_ATTO.match(anno):
+        return "numero e anno dell'atto sono obbligatori (salvo per i codici)"
+    if not _ARTICOLO_NORMA.match(articolo):
+        return "articolo non valido: un numero, eventualmente con il suffisso (2-bis)"
+    if vigenza:
+        try:
+            if date.fromisoformat(vigenza).isoformat() != vigenza:
+                raise ValueError(vigenza)
+        except ValueError:
+            return "data di vigenza non valida: serve AAAA-MM-GG"
+    return tipo, numero, anno, articolo, vigenza or None
+
+
+def _chiave_articolo(atto, articolo: str, vigenza: str | None) -> str:
+    """Chiave della cache ``norme``: "<urn atto>~art<n><suffisso>|<vigenza>".
+
+    Un atto senza URN (prefisso del tipo non noto) usa codice redazionale e data della
+    Gazzetta, che lo identificano allo stesso modo.
+    """
+    numero, sotto = dividi_articolo(articolo)
+    base = atto.urn or f"{atto.codice_redazionale}@{atto.data_gu}"
+    return f"{base}~art{numero}{SUFFISSI[sotto - 1]}|{vigenza or ''}"
+
+
+@app.get("/api/norma")
+async def norma(
+    request: Request,
+    tipo: str = Query("", max_length=40),
+    numero: str = Query("", max_length=40),
+    anno: str = Query("", max_length=40),
+    articolo: str = Query("", max_length=40),
+    vigenza: str = Query("", max_length=40),
+) -> Response:
+    """Il testo di un articolo da Normattiva: prima la cache, poi una sola lettura dalla rete.
+
+    Solo su richiesta dell'utente (bottone "Testo", tool MCP): nessun prefetch. Gli errori
+    dicono se Normattiva non ha l'articolo (404) o se non ha risposto (502, 429 con la pausa);
+    mai che la norma non esiste quando la fonte non ha risposto.
+    """
+    letti = _parametri_norma(tipo, numero, anno, articolo, vigenza)
+    if isinstance(letti, str):
+        return _errore(400, letti)
+    tipo, numero, anno, articolo, vigenza_richiesta = letti
+    if tipo not in CODICI_NORME and tipo not in DENOMINAZIONI:
+        return _errore(422, f"tipo non leggibile da Normattiva: {tipo}")
+    archivio: Archivio = request.app.state.archivio
+    client: ClientNormattiva = request.app.state.normattiva
+    try:
+        if tipo in CODICI_NORME:
+            atto = CODICI_NORME[tipo]
+        else:
+            chiave_atto = f"{tipo}|{numero}|{anno}"
+            atto = archivio.leggi_atto(chiave_atto)
+            if atto is None:
+                atto = await client.risolvi_atto(tipo, numero, anno)
+                archivio.scrivi_atto(chiave_atto, atto)
+        chiave = _chiave_articolo(atto, articolo, vigenza_richiesta)
+        letto = archivio.leggi_norma(chiave, impostazioni.ttl_norme_giorni * SECONDI_GIORNO)
+        da_cache = letto is not None
+        if letto is None:
+            letto = await client.leggi_articolo(atto, articolo, vigenza_richiesta)
+            archivio.scrivi_norma(chiave, letto, vigenza_richiesta or "")
+    except ValueError as exc:
+        return _errore(422, str(exc))
+    except NormaNonTrovata as exc:
+        return _errore(404, str(exc))
+    except ErroreRemoto as exc:
+        # 409/429 di Normattiva o pausa ancora in corso: 429 con i secondi che mancano.
+        residua = client.pausa_residua()
+        if exc.stato in (409, 429) or residua:
+            return _errore(429, str(exc), pausa_residua_s=residua, stato_remoto=exc.stato)
+        return _errore(502, str(exc), stato_remoto=exc.stato)
+    return JSONResponse(
+        {
+            "atto": {
+                "titolo": letto.titolo_atto or atto.titolo,
+                "codice_redazionale": atto.codice_redazionale,
+                "data_gu": atto.data_gu,
+            },
+            "articolo": {
+                "numero": letto.numero,
+                "rubrica": letto.rubrica,
+                "testo": letto.testo,
+                "note": letto.note,
+            },
+            "vigenza": {
+                "inizio": letto.inizio_vigenza,
+                "fine": letto.fine_vigenza,
+                "richiesta": letto.vigenza_richiesta,
+            },
+            "url": letto.url,
+            "fonte": letto.fonte,
+            "da_cache": da_cache,
+        }
+    )
+
+
 # --- cronologia, ricerche salvate, preferiti --------------------------------------------------
 
 
@@ -1220,9 +1362,24 @@ def _sposta_pdf(archivio: Archivio, vecchia: Path, nuova: Path) -> None:
             shutil.move(str(origine), str(destinazione))
 
 
+def _registro(stat) -> list[dict]:
+    """Le ultime 20 richieste di un client (Corte o Normattiva) per il pannello Stato."""
+    return [
+        {
+            "quando": time.strftime("%H:%M:%S", time.localtime(v.quando)),
+            "tipo": v.tipo,
+            "stato": v.stato,
+            "durata_ms": v.durata_ms,
+            "dettaglio": v.dettaglio,
+        }
+        for v in list(stat.registro)[-20:]
+    ]
+
+
 @app.get("/api/stato")
 async def stato(request: Request) -> dict:
     client: ClientSentenzeWeb = request.app.state.client
+    normattiva: ClientNormattiva = request.app.state.normattiva
     archivio: Archivio = request.app.state.archivio
     return {
         "versione": __version__,
@@ -1241,14 +1398,13 @@ async def stato(request: Request) -> dict:
         "esecuzioni": archivio.conta_esecuzioni(),
         "percorso_dati": str(impostazioni.percorso_db),
         "aggiornamento": getattr(request.app.state, "aggiornamento", None),
-        "registro": [
-            {
-                "quando": time.strftime("%H:%M:%S", time.localtime(v.quando)),
-                "tipo": v.tipo,
-                "stato": v.stato,
-                "durata_ms": v.durata_ms,
-                "dettaglio": v.dettaglio,
-            }
-            for v in list(client.stat.registro)[-20:]
-        ],
+        "registro": _registro(client.stat),
+        # Statistiche proprie di Normattiva: lette dal client, nessuna richiesta.
+        "normattiva": {
+            "chiamate": normattiva.stat.chiamate,
+            "pausa_residua_s": normattiva.pausa_residua(),
+            "intervallo_minimo_s": normattiva.intervallo_minimo,
+            "norme_in_cache": archivio.conta_norme(),
+            "registro": _registro(normattiva.stat),
+        },
     }
