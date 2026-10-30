@@ -42,7 +42,7 @@ from .client import (
     secondi_retry_after,
 )
 from .config import impostazioni
-from .query import SUFFISSI
+from .query import SUFFISSI, TIPI_ATTO
 
 log = logging.getLogger("iudex.normattiva")
 
@@ -63,6 +63,7 @@ __all__ = [
     "NormaNonTrovata",
     "articolo_da_html",
     "dividi_articolo",
+    "norma_citata",
     "url_eurlex",
     "url_normattiva",
 ]
@@ -248,6 +249,89 @@ def url_eurlex(tipo: str, numero: str, anno: str) -> dict | None:
         "eli": f"{URL_EURLEX}/eli/{sigla}/{anno_atto}/{valore}/oj/ita",
         "celex": celex,
         "url": _URL_CELEX + celex,
+    }
+
+
+# --- norme citate nelle sentenze (lettura stretta, senza rete) -------------------------------
+
+_CODICI_DA_ETICHETTA = {etichetta: codice for codice, etichetta in TIPI_ATTO.items()}
+_ARTICOLO_CITATO = re.compile(r"^\d{1,4}(?:-?(?:" + "|".join(s for s in SUFFISSI if s) + r"))?$")
+_NUMERO_CITATO = re.compile(r"^\d{1,6}$")
+_ANNO_CITATO = re.compile(r"^\d{4}$")
+_TIPI_EURLEX = ("REG", "DIR", "TUE", "TFUE")
+EDITORE_NORMATTIVA = "Normattiva (IPZS)"
+EDITORE_EURLEX = "EUR-Lex"
+
+
+def norma_citata(riferimento: dict) -> dict | None:
+    """La norma di un riferimento normativo di una sentenza, se è leggibile; altrimenti None.
+
+    Lettura stretta, la stessa del bottone "Testo" (decisione dell'utente del 30/10/2026):
+    ``tipo`` è l'etichetta di ``query.TIPI_ATTO`` ("c.c.", "legge", "reg. UE"); numero e anno
+    completi salvo per i codici e i trattati; articolo nella forma dei riferimenti ("2-bis").
+    Nessuna deduzione dei dati mancanti e nessuna richiesta di rete.
+
+    - Atti italiani leggibili da Normattiva (codici e tipi di ``DENOMINAZIONI``): articolo
+      obbligatorio; ``url`` è il link URN solo per i codici (gli altri atti richiederebbero la
+      data completa, cioè una richiesta), altrimenti None.
+    - Regolamenti, direttive e trattati UE: ``url`` da ``url_eurlex``; l'articolo, se c'è, deve
+      essere valido.
+
+    Restituisce ``codice``, ``numero``, ``anno``, ``articolo`` (forma "2-bis" o ""),
+    ``chiave`` (il riferimento normalizzato, uguale in tutte le sentenze), ``titolo``
+    ("art. 2043 c.c."), ``url`` ed ``editore``.
+    """
+    if not isinstance(riferimento, dict):
+        return None
+    etichetta = str(riferimento.get("tipo") or "").strip()
+    codice = _CODICI_DA_ETICHETTA.get(etichetta)
+    if codice is None:
+        return None
+    numero = str(riferimento.get("numero") or "").strip().lstrip("0")
+    anno = str(riferimento.get("anno") or "").strip()
+    articolo = str(riferimento.get("articolo") or "").strip().lower()
+    if articolo:
+        if not _ARTICOLO_CITATO.match(articolo):
+            return None
+        try:
+            articolo = _etichetta(*dividi_articolo(articolo))
+        except ValueError:
+            return None
+    if codice in CODICI or codice in ("TUE", "TFUE"):
+        numero, anno = "", ""
+    elif not _NUMERO_CITATO.match(numero) or not _ANNO_CITATO.match(anno):
+        return None
+    if codice in CODICI or codice in DENOMINAZIONI:
+        if not articolo:
+            return None
+        url = url_normattiva(CODICI[codice], articolo) if codice in CODICI else None
+        editore = EDITORE_NORMATTIVA
+    elif codice in _TIPI_EURLEX:
+        link = url_eurlex(codice, numero, anno)
+        if link is None:
+            return None
+        url = link["url"]
+        editore = EDITORE_EURLEX
+    else:
+        return None
+    titolo = " ".join(
+        p
+        for p in (
+            f"art. {articolo}" if articolo else "",
+            etichetta,
+            f"{numero}/{anno}" if numero else "",
+        )
+        if p
+    )
+    return {
+        "codice": codice,
+        "numero": numero,
+        "anno": anno,
+        "articolo": articolo,
+        "chiave": "|".join((codice, numero, anno, articolo)),
+        "titolo": titolo,
+        "url": url,
+        "editore": editore,
     }
 
 

@@ -62,6 +62,17 @@
   link ELI (`/eli/reg/2016/679/oj/ita`); solo link, Iudex non chiede nulla a EUR-Lex. Il
   link compare solo dove numero e anno dell'atto sono certi (campo `norma_url_eurlex` nei
   riferimenti di `/api/sentenza`).
+- Export **FollowTheMoney** delle sentenze consultate: ogni norma citata leggibile diventa
+  un'entità `Document` (titolo "art. 2043 c.c.", editore Normattiva (IPZS) o EUR-Lex,
+  lingua `ita`, link Normattiva per i codici e link EUR-Lex per regolamenti, direttive e
+  trattati UE; nessun link per leggi e decreti, che richiederebbe una richiesta) collegata
+  al `CourtCase` da un'entità `Documentation` con ruolo "norma citata". La stessa norma
+  ha lo stesso id in tutte le sentenze e compare una volta sola nel file. Lettura stretta,
+  come per il bottone Testo: i riferimenti incompleti restano solo fra le `keywords`, che
+  non cambiano, come tutte le entità già esportate. Funzione `norma_citata` nel modulo
+  `norme`, senza rete.
+- Sviluppo: `followthemoney` (e `tzdata` su Windows) fra le dipendenze `dev`; i test
+  verificano schemi e proprietà dell'export con il modello FtM reale.
 
 ### Correzioni
 - Riferimenti normativi delle sentenze letti correttamente: i codici, che il CED indica come

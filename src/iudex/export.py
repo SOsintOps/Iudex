@@ -10,6 +10,8 @@ import re
 import time
 import zipfile
 
+from .norme import norma_citata
+
 COLONNE = (
     "id",
     "archivio",
@@ -212,6 +214,7 @@ def _testo_grezzo(grezzo: dict) -> str:
 PREFISSO_FTM = "iudex"
 EDITORE = "Corte Suprema di Cassazione, SentenzeWeb"
 ARCHIVI_FTM = {"snciv": "civile", "snpen": "penale"}
+RUOLO_NORMA = "norma citata"
 
 
 def id_ftm(*parti: str) -> str:
@@ -240,7 +243,12 @@ def entita_ftm(id_sentenza: str, doc: dict, grezzo: dict, nota: str | None = Non
       materia e norme citate come parole chiave, dispositivo come sintesi);
     - ``Document``: il testo integrale con le date di decisione e di deposito, collegato al
       ``CourtCase`` con la proprietà ``proof``;
-    - ``Person`` e ``CourtCaseParty`` per presidente e relatore (campi strutturati del CED).
+    - ``Person`` e ``CourtCaseParty`` per presidente e relatore (campi strutturati del CED);
+    - per ogni norma citata leggibile (``norme.norma_citata``, lettura stretta) un
+      ``Document`` con il titolo ("art. 2043 c.c."), il link Normattiva o EUR-Lex quando si
+      calcola senza richieste e l'editore, con lo stesso id in tutte le sentenze, collegato
+      al ``CourtCase`` da un'entità ``Documentation`` (ruolo "norma citata"). Il modello FtM
+      non ha uno schema per gli atti normativi. Le ``keywords`` restano quelle di sempre.
 
     Le parti del giudizio non vengono estratte: stanno solo nel testo, in forma non
     uniforme, e sono dati personali; restano leggibili nel ``bodyText``.
@@ -297,6 +305,42 @@ def entita_ftm(id_sentenza: str, doc: dict, grezzo: dict, nota: str | None = Non
                 id_ftm("parte", id_sentenza, ruolo, id_persona),
                 "CourtCaseParty",
                 {"party": id_persona, "case": id_caso, "role": ruolo},
+            )
+        )
+    entita.extend(_entita_norme(id_sentenza, id_caso, doc.get("riferimenti_normativi")))
+    return entita
+
+
+def _entita_norme(id_sentenza: str, id_caso: str, riferimenti) -> list[dict]:
+    """``Document`` (la norma) e ``Documentation`` (il collegamento al caso) per ogni norma
+    citata leggibile; i riferimenti non leggibili restano solo nelle ``keywords``."""
+    entita: list[dict] = []
+    viste: set[str] = set()
+    for riferimento in riferimenti if isinstance(riferimenti, list) else []:
+        norma = norma_citata(riferimento)
+        if norma is None:
+            continue
+        id_norma = id_ftm("norma", norma["chiave"])
+        if id_norma in viste:
+            continue
+        viste.add(id_norma)
+        entita.append(
+            _entita(
+                id_norma,
+                "Document",
+                {
+                    "title": norma["titolo"],
+                    "sourceUrl": norma["url"],
+                    "publisher": norma["editore"],
+                    "language": "ita",
+                },
+            )
+        )
+        entita.append(
+            _entita(
+                id_ftm("citazione", id_sentenza, id_norma),
+                "Documentation",
+                {"document": id_norma, "entity": id_caso, "role": RUOLO_NORMA},
             )
         )
     return entita

@@ -30,7 +30,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff", "pytest", "pytest-asyncio", "respx"]
+dev = [
+    "ruff",
+    "pytest",
+    "pytest-asyncio",
+    "respx",
+    "followthemoney",
+    "tzdata; sys_platform == 'win32'",
+]
 mcp = ["mcp>=2.3.0"]
 desktop = ["pywebview>=6.2.1", "pystray>=0.19.5", "pillow>=11"]
 
