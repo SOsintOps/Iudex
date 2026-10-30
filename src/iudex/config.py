@@ -55,6 +55,9 @@ class Impostazioni:
     # Cache delle risposte di ricerca (secondi) e della lista degli estremi (giorni).
     ttl_ricerche: int = _env_int("IUDEX_TTL_RICERCHE", 3600)
     ttl_estremi_giorni: int = 30
+    # Cache del testo delle norme vigenti (giorni); il testo chiesto a una data esplicita è
+    # permanente, perché a una data passata non cambia.
+    ttl_norme_giorni: int = 30
     # Per impostazione predefinita Iudex non replica le chiamate di telemetria "xway" del sito.
     replica_telemetria: bool = os.environ.get("IUDEX_TELEMETRIA", "0") == "1"
     # Identità dichiarata: per impostazione predefinita il browser del giorno fra quelli di

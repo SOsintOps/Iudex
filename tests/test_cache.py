@@ -1,7 +1,9 @@
 import sqlite3
+import time
 import zlib
 
-from iudex.cache import SCHEMA, VERSIONE_SCHEMA, Archivio
+from iudex.cache import MIGRAZIONI, SCHEMA, TABELLE_UTENTE, VERSIONE_SCHEMA, Archivio
+from iudex.norme import Articolo, Atto
 
 COLONNE_070_ASSENTI = (
     "    ultimo_controllo REAL,\n    trovati INTEGER,\n    ultimi_id TEXT,\n    nuovi INTEGER\n"
@@ -226,6 +228,168 @@ def test_migrazione_6_indicizza_le_sentenze_gia_salvate(tmp_path):
     a._conn.commit()
     a.chiudi()
     b = Archivio(percorso)
-    assert b.versione_schema == VERSIONE_SCHEMA == 6
+    assert b.versione_schema == VERSIONE_SCHEMA
     assert [r["id_sentenza"] for r in b.cerca_locale('"Carlo Bianchi"')] == ["snpen9"]
     b.chiudi()
+
+
+# --- cache delle norme (schema 7) ------------------------------------------------------
+
+GIORNO = 86400
+CHIAVE_ATTO = "LS|241|1990"
+URN_CC = "urn:nir:stato:regio.decreto:1942-03-16;262:2"
+CHIAVE_VIGENTE = f"{URN_CC}~art2043|"
+CHIAVE_DATATA = f"{URN_CC}~art2043|2001-01-01"
+
+
+def _atto() -> Atto:
+    return Atto(
+        codice_redazionale="090G0294",
+        data_gu="1990-08-18",
+        data_emanazione="1990-08-07",
+        titolo="Nuove norme in materia di procedimento amministrativo",
+        urn="urn:nir:stato:legge:1990-08-07;241",
+    )
+
+
+def _articolo(vigenza: str | None = None) -> Articolo:
+    return Articolo(
+        numero="2043",
+        rubrica="Risarcimento per fatto illecito",
+        testo="Qualunque fatto doloso o colposo, che cagiona ad altri un danno ingiusto…",
+        note=None,
+        inizio_vigenza="1942-04-21",
+        fine_vigenza=None,
+        vigenza_richiesta=vigenza,
+        titolo_atto="Codice civile",
+        url="https://www.normattiva.it/uri-res/N2Ls?" + URN_CC + "~art2043",
+    )
+
+
+def _invecchia(a: Archivio, chiave: str, giorni: int) -> None:
+    with a._conn:
+        a._conn.execute(
+            "UPDATE norme SET quando = ? WHERE chiave = ?", (time.time() - giorni * GIORNO, chiave)
+        )
+
+
+def test_migrazione_6_a_7_con_copia_di_sicurezza_e_idempotente(tmp_path):
+    db = tmp_path / "iudex.sqlite"
+    a = Archivio(db)
+    a.annota_ricerca(
+        testo="usura",
+        riferimenti=None,
+        filtri={},
+        ordinamento="pubblicazione",
+        pagina=1,
+        permalink="testo=usura",
+        trovati=3,
+    )
+    a.scrivi_consultata("snciv1", {"numero": "1"}, _grezzo("testo della sentenza"))
+    # Come un archivio della versione 6: niente tabelle delle norme.
+    a._conn.execute("DROP INDEX norme_quando")
+    a._conn.execute("DROP TABLE norme")
+    a._conn.execute("DROP TABLE atti")
+    a._conn.execute("PRAGMA user_version = 6")
+    a._conn.commit()
+    a.chiudi()
+    assert not (tmp_path / "backup").exists()
+
+    b = Archivio(db)
+    assert b.versione_schema == VERSIONE_SCHEMA == 7
+    tabelle = {
+        r["name"]
+        for r in b._conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table', 'index')")
+    }
+    assert {"atti", "norme", "norme_quando"} <= tabelle
+    assert b.conta_diario() == 1 and b.conta_consultate() == 1
+    assert b.conta_norme() == 0
+    copie = list((tmp_path / "backup").glob("iudex-*.sqlite"))
+    assert len(copie) == 1
+    vecchio = sqlite3.connect(copie[0])
+    assert vecchio.execute("PRAGMA user_version").fetchone()[0] == 6
+    assert vecchio.execute("SELECT COUNT(*) FROM diario").fetchone()[0] == 1
+    vecchio.close()
+    # La migrazione ripetuta non cambia nulla e non perde i dati già in cache.
+    b.scrivi_norma(CHIAVE_VIGENTE, _articolo())
+    with b._conn:
+        MIGRAZIONI[7](b._conn)
+    assert b.conta_norme() == 1
+    b.chiudi()
+    # Riaperto, è già alla versione corrente: nessuna nuova copia.
+    c = Archivio(db)
+    assert c.versione_schema == VERSIONE_SCHEMA and c.conta_norme() == 1
+    c.chiudi()
+    assert len(list((tmp_path / "backup").glob("iudex-*.sqlite"))) == 1
+
+
+def test_tabelle_delle_norme_fuori_dai_dati_dell_utente():
+    assert "atti" not in TABELLE_UTENTE and "norme" not in TABELLE_UTENTE
+
+
+def test_atti_scritti_e_letti():
+    a = Archivio(":memory:")
+    assert a.leggi_atto(CHIAVE_ATTO) is None
+    a.scrivi_atto(CHIAVE_ATTO, _atto())
+    assert a.leggi_atto(CHIAVE_ATTO) == _atto()
+    # Un codice, letto via URN: niente codice redazionale né data della Gazzetta.
+    codice = Atto(None, None, "1942-03-16", "Codice civile", URN_CC)
+    a.scrivi_atto("COD|262|1942", codice)
+    assert a.leggi_atto("COD|262|1942") == codice
+    a.chiudi()
+
+
+def test_norma_vigente_scade_dopo_il_ttl():
+    a = Archivio(":memory:")
+    ttl = 30 * GIORNO
+    assert a.leggi_norma(CHIAVE_VIGENTE, ttl) is None
+    a.scrivi_norma(CHIAVE_VIGENTE, _articolo())
+    assert a.leggi_norma(CHIAVE_VIGENTE, ttl) == _articolo()
+    _invecchia(a, CHIAVE_VIGENTE, 29)
+    assert a.leggi_norma(CHIAVE_VIGENTE, ttl) == _articolo()
+    _invecchia(a, CHIAVE_VIGENTE, 31)
+    assert a.leggi_norma(CHIAVE_VIGENTE, ttl) is None
+    riga = a._conn.execute("SELECT vigenza, permanente FROM norme").fetchone()
+    assert (riga["vigenza"], riga["permanente"]) == ("", 0)
+    a.chiudi()
+
+
+def test_norma_a_una_vigenza_data_e_permanente():
+    a = Archivio(":memory:")
+    a.scrivi_norma(CHIAVE_DATATA, _articolo("2001-01-01"), "2001-01-01")
+    _invecchia(a, CHIAVE_DATATA, 3650)
+    assert a.leggi_norma(CHIAVE_DATATA, 30 * GIORNO) == _articolo("2001-01-01")
+    riga = a._conn.execute("SELECT vigenza, permanente, contenuto FROM norme").fetchone()
+    assert (riga["vigenza"], riga["permanente"]) == ("2001-01-01", 1)
+    # JSON leggibile, senza escape degli accenti.
+    assert "…" in riga["contenuto"]
+    # La permanenza si può anche indicare a mano.
+    a.scrivi_norma("x|", _articolo(), "", permanente=True)
+    _invecchia(a, "x|", 3650)
+    assert a.leggi_norma("x|", 30 * GIORNO) is not None
+    a.chiudi()
+
+
+def test_pulizia_delle_norme_solo_con_il_ttl_e_solo_non_permanenti():
+    a = Archivio(":memory:")
+    a.scrivi_norma(CHIAVE_VIGENTE, _articolo())
+    a.scrivi_norma(CHIAVE_DATATA, _articolo("2001-01-01"), "2001-01-01")
+    a.scrivi_norma(f"{URN_CC}~art2044|", _articolo())
+    a.scrivi_atto(CHIAVE_ATTO, _atto())
+    _invecchia(a, CHIAVE_VIGENTE, 40)
+    _invecchia(a, CHIAVE_DATATA, 40)
+    assert a.conta_norme() == 3
+    # Vecchia firma (due argomenti, come la usa Praeco): le norme non si toccano.
+    assert a.pulisci_scadute(3600, GIORNO) == 0
+    assert a.pulisci_scadute(-1, -1) == 0
+    assert a.conta_norme() == 3
+    # Con il TTL delle norme: via solo la vigente scaduta.
+    assert a.pulisci_scadute(3600, GIORNO, 30 * GIORNO) == 1
+    assert a.conta_norme() == 2
+    assert a.leggi_norma(CHIAVE_VIGENTE, 10**9) is None
+    assert a.leggi_norma(CHIAVE_DATATA, 0) is not None
+    assert a.leggi_norma(f"{URN_CC}~art2044|", 30 * GIORNO) is not None
+    # Gli atti sono permanenti: nessuna pulizia li tocca.
+    assert a.pulisci_scadute(-1, -1, -1) == 1
+    assert a.conta_norme() == 1 and a.leggi_atto(CHIAVE_ATTO) == _atto()
+    a.chiudi()

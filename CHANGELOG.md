@@ -17,6 +17,11 @@
   che Normattiva non è disponibile, mai che la norma non esiste. Codici (c.c., c.p.,
   c.p.c., c.p.p., Costituzione) letti dall'allegato dell'atto d'origine. Il bottone per
   aprire il testo dalla sentenza arriva con i passi successivi.
+- Schema dell'archivio 7: cache delle norme lette da Normattiva, con le tabelle `atti`
+  (estremi dell'atto, permanenti) e `norme` (testo dell'articolo: il testo vigente scade
+  dopo 30 giorni, quello chiesto a una data precisa resta). Sono cache, non dati
+  dell'utente: non entrano nell'esportazione dell'archivio. Prima della migrazione Iudex
+  fa come sempre una copia di sicurezza in `backup/` se l'archivio ha già dati.
 
 ### Correzioni
 - Riferimenti normativi delle sentenze letti correttamente: i codici, che il CED indica come

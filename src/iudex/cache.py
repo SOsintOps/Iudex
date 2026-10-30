@@ -11,7 +11,12 @@ import threading
 import time
 import uuid
 import zlib
+from dataclasses import asdict
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .norme import Articolo, Atto
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS ricerche (
@@ -103,7 +108,7 @@ COLONNE_AGGIUNTE = {
 # Versione dello schema, salvata in ``PRAGMA user_version`` (0 fino alla 0.7.0). Ogni
 # migrazione porta il database dalla versione precedente alla sua ed è idempotente: un
 # archivio della 0.7.0 ha già alcune colonne della migrazione 1.
-VERSIONE_SCHEMA = 6
+VERSIONE_SCHEMA = 7
 
 # Tabelle il cui contenuto è dell'utente: se una ha righe, prima di migrare si fa la copia.
 TABELLE_UTENTE = ("ricerche", "salvate", "preferiti", "diario", "consultate")
@@ -236,6 +241,28 @@ def _migra_6(conn: sqlite3.Connection) -> None:
         _indicizza(conn, riga["id_sentenza"], riga["testo"])
 
 
+def _migra_7(conn: sqlite3.Connection) -> None:
+    # Cache del testo delle norme letto da Normattiva (non sono dati dell'utente: restano
+    # fuori da TABELLE_UTENTE e dall'export dell'archivio).
+    # ``atti``: chiave "LS|241|1990" -> estremi dell'atto; permanente (codice redazionale e
+    # data della Gazzetta non cambiano), date YYYY-MM-DD.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS atti ("
+        " chiave TEXT PRIMARY KEY, codice_redazionale TEXT, data_gu TEXT,"
+        " data_emanazione TEXT NOT NULL, titolo TEXT NOT NULL, urn TEXT NOT NULL,"
+        " quando REAL NOT NULL)"
+    )
+    # ``norme``: chiave "<urn atto>~art2bis|<vigenza>" -> Articolo in JSON. Con vigenza ''
+    # (vigente al momento) scade dopo il TTL; con una vigenza esplicita è permanente.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS norme ("
+        " chiave TEXT PRIMARY KEY, vigenza TEXT NOT NULL DEFAULT '',"
+        " permanente INTEGER NOT NULL DEFAULT 0, quando REAL NOT NULL,"
+        " contenuto TEXT NOT NULL)"
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS norme_quando ON norme (quando)")
+
+
 def query_locale(testo: str) -> str:
     """Dalla frase dell'utente alla sintassi FTS5: frasi fra virgolette, parole sciolte e OR.
 
@@ -258,7 +285,15 @@ def query_locale(testo: str) -> str:
     return " ".join(termini)
 
 
-MIGRAZIONI = {1: _migra_1, 2: _migra_2, 3: _migra_3, 4: _migra_4, 5: _migra_5, 6: _migra_6}
+MIGRAZIONI = {
+    1: _migra_1,
+    2: _migra_2,
+    3: _migra_3,
+    4: _migra_4,
+    5: _migra_5,
+    6: _migra_6,
+    7: _migra_7,
+}
 
 # Estremi di una sentenza conservati con ogni risultato: bastano a riconoscerla e a
 # esportarla anche se il testo non è mai stato aperto.
@@ -367,11 +402,15 @@ class Archivio:
                 (chiave, time.time(), json.dumps(contenuto, ensure_ascii=False)),
             )
 
-    def pulisci_scadute(self, ttl_risposte: int, ttl_estremi: int) -> int:
+    def pulisci_scadute(
+        self, ttl_risposte: int, ttl_estremi: int, ttl_norme: int | None = None
+    ) -> int:
         """Toglie le risposte e le normalizzazioni scadute (la lettura le ignorava già).
 
         SQLite non ha una scadenza automatica: le righe si cancellano con un DELETE sulla
         colonna ``quando``, indicizzata. Diario, consultate e testi non sono toccati.
+        Con ``ttl_norme`` toglie anche le norme scadute, solo quelle non permanenti; senza
+        (chiamata con due argomenti) le norme restano come sono.
         """
         adesso = time.time()
         with self._lock, self._conn:
@@ -381,6 +420,11 @@ class Archivio:
             n += self._conn.execute(
                 "DELETE FROM estremi WHERE quando < ?", (adesso - ttl_estremi,)
             ).rowcount
+            if ttl_norme is not None:
+                n += self._conn.execute(
+                    "DELETE FROM norme WHERE permanente = 0 AND quando < ?",
+                    (adesso - ttl_norme,),
+                ).rowcount
         if n:
             # Come requests-cache dopo la pulizia: senza VACUUM le pagine liberate restano
             # nel file e il contenuto cancellato resta recuperabile (documentazione SQLite,
@@ -414,6 +458,80 @@ class Archivio:
                 "INSERT OR REPLACE INTO estremi (chiave, quando, contenuto) VALUES (?, ?, ?)",
                 (chiave, time.time(), contenuto),
             )
+
+    # --- norme da Normattiva (atti permanenti, articoli con TTL o permanenti) ------------
+
+    def leggi_atto(self, chiave: str) -> Atto | None:
+        """L'atto salvato con la chiave "LS|241|1990", o None."""
+        from .norme import Atto
+
+        with self._lock:
+            riga = self._conn.execute(
+                "SELECT codice_redazionale, data_gu, data_emanazione, titolo, urn"
+                " FROM atti WHERE chiave = ?",
+                (chiave,),
+            ).fetchone()
+        return Atto(**dict(riga)) if riga else None
+
+    def scrivi_atto(self, chiave: str, atto: Atto) -> None:
+        with self._lock, self._conn:
+            self._conn.execute(
+                "INSERT OR REPLACE INTO atti (chiave, codice_redazionale, data_gu,"
+                " data_emanazione, titolo, urn, quando) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    chiave,
+                    atto.codice_redazionale,
+                    atto.data_gu,
+                    atto.data_emanazione,
+                    atto.titolo,
+                    atto.urn,
+                    time.time(),
+                ),
+            )
+
+    def leggi_norma(self, chiave: str, ttl: int) -> Articolo | None:
+        """L'articolo salvato con la chiave "<urn atto>~art2bis|<vigenza>": None se manca o se
+        è scaduto (``ttl`` in secondi), salvo che sia permanente."""
+        from .norme import Articolo
+
+        with self._lock:
+            riga = self._conn.execute(
+                "SELECT permanente, quando, contenuto FROM norme WHERE chiave = ?", (chiave,)
+            ).fetchone()
+        if riga and (riga["permanente"] or time.time() - riga["quando"] <= ttl):
+            return Articolo(**json.loads(riga["contenuto"]))
+        return None
+
+    def scrivi_norma(
+        self,
+        chiave: str,
+        articolo: Articolo,
+        vigenza: str = "",
+        permanente: bool | None = None,
+    ) -> None:
+        """Salva l'articolo; ``vigenza`` '' vuol dire vigente al momento della lettura.
+
+        Senza ``permanente`` esplicito, il testo a una vigenza data è permanente (a una data
+        passata non cambia) e quello vigente scade dopo il TTL.
+        """
+        if permanente is None:
+            permanente = bool(vigenza)
+        with self._lock, self._conn:
+            self._conn.execute(
+                "INSERT OR REPLACE INTO norme (chiave, vigenza, permanente, quando, contenuto)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (
+                    chiave,
+                    vigenza or "",
+                    1 if permanente else 0,
+                    time.time(),
+                    json.dumps(asdict(articolo), ensure_ascii=False),
+                ),
+            )
+
+    def conta_norme(self) -> int:
+        with self._lock:
+            return self._conn.execute("SELECT COUNT(*) FROM norme").fetchone()[0]
 
     # --- sentenze lette (permanenti) -----------------------------------------------------
 
