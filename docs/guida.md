@@ -133,8 +133,8 @@ di Normattiva e racchiudono il testo inserito o modificato da leggi successive.
 
 - Il bottone compare solo quando il riferimento ha tutti i dati certi: per i codici (c.c.,
   c.p., c.p.c., c.p.p., Costituzione) basta l'articolo, per leggi e decreti servono anche
-  numero e anno. Leggi regionali e CEDU non hanno il bottone; regolamenti e direttive UE
-  avranno il link **EUR-Lex**.
+  numero e anno. Leggi regionali e CEDU non hanno il bottone; regolamenti e direttive UE, il
+  TUE e il TFUE hanno il link **EUR-Lex** al posto del bottone.
 - Una sola richiesta a Normattiva per clic, mai prima: aprire una sentenza non chiede nulla.
   Un secondo clic su **Testo** richiude il pannello senza nuove richieste.
 - Il testo letto resta nella cache locale per 30 giorni: riaprirlo non chiede nulla a

@@ -33,6 +33,10 @@ altro computer.
   dispositivo, i **riferimenti normativi** indicizzati dal CED (cliccabili: cercano le sentenze
   che citano la stessa norma) e il **PDF ufficiale**, salvato in locale alla prima apertura e
   mostrato nella finestra o con il programma PDF del computer.
+- **Testo delle norme**: accanto ai riferimenti normativi della sentenza il bottone **Testo**
+  apre l'articolo letto da **Normattiva** (fonte ufficiale, dati IPZS in licenza CC BY 4.0),
+  con la vigenza e il link al sito; regolamenti e direttive UE, il TUE e il TFUE hanno il link
+  **EUR-Lex**. Vedi [Normattiva](#normattiva).
 - **Memoria permanente**: ogni ricerca e ogni pagina di risultati vista, con le sentenze
   mostrate, la macchina e l'ora; un badge **"già vista"** nei risultati dice, al passaggio del
   mouse, quando hai consultato la sentenza e da quali ricerche è uscita. Si può spegnere
@@ -132,6 +136,45 @@ I dettagli degli endpoint, dei parametri e dei campi sono in
 le risposte alle domande più comuni in [docs/faq.md](docs/faq.md); i progetti affini in
 [docs/software-simili.md](docs/software-simili.md).
 
+## Normattiva
+
+Dalla 0.9 Iudex legge anche il testo delle norme citate nelle sentenze, da **Normattiva**,
+il portale ufficiale della normativa italiana. La fonte è l'**API Open Data** di Normattiva
+(`api.normattiva.it`), non il sito `www.normattiva.it`, che resta un link da aprire nel
+browser.
+
+- **Bottone Testo**: accanto a un riferimento normativo della sentenza apre, sotto i
+  riferimenti, l'articolo con titolo dell'atto, numero e rubrica, testo a commi, note
+  richiudibili, vigenza e il link **Apri su Normattiva**. Compare solo quando il riferimento
+  ha tutti i dati certi: per i codici (c.c., c.p., c.p.c., c.p.p., Costituzione) basta
+  l'articolo, per leggi e decreti servono anche numero e anno. Leggi regionali e CEDU non
+  hanno il bottone.
+- **Strumento MCP `leggi_norma`**: lo stesso testo per un assistente, da un riferimento
+  scritto come in una citazione (`"art. 2043 c.c."`) o dai campi espliciti, con la data di
+  vigenza facoltativa (vedi [la sezione MCP](#con-un-assistente-o-un-llm-locale-mcp)).
+- **API locale** `GET /api/norma?tipo=&numero=&anno=&articolo=&vigenza=`, usata da entrambi.
+- **EUR-Lex**: regolamenti e direttive UE, il TUE e il TFUE hanno al posto del bottone un link
+  che apre l'atto in italiano su EUR-Lex nel browser (numero CELEX); Iudex non chiede nulla a
+  EUR-Lex.
+
+**Fonte e licenza.** I testi sono dati dell'Istituto Poligrafico e Zecca dello Stato (IPZS),
+pubblicati da Normattiva in licenza **CC BY 4.0**. Iudex li mostra con l'attribuzione
+"Fonte: Normattiva (IPZS), CC BY 4.0" e il link all'atto; chi riusa un testo letto con Iudex
+deve riportare la stessa attribuzione.
+
+| Regola | Valore |
+|--------|--------|
+| Richieste | una per clic su **Testo** (o per chiamata di `leggi_norma`), mai all'apertura di una sentenza, nessuna lettura anticipata; al primo uso di un atto due (ricerca dell'atto e articolo), poi una |
+| Intervallo minimo fra due richieste | 2 secondi (`IUDEX_INTERVALLO_NORMATTIVA`), con un limite proprio, separato da quello della Corte |
+| Nuovi tentativi | 1 solo quando la fonte non risponde; pausa quando Normattiva la chiede (409/429); dopo un errore il pannello non ritenta da solo |
+| Cache | il testo vigente resta in locale 30 giorni, quello chiesto a una data precisa resta; riaprire un articolo non chiede nulla |
+| Fonte non raggiungibile | il messaggio dice che Normattiva non è disponibile, mai che la norma non esiste |
+
+**Limiti.** Iudex legge un articolo alla volta: allegati e tabelle degli atti non sono
+mostrati (per quelli c'è **Apri su Normattiva**). Normattiva non ha leggi regionali,
+regolamenti UE e CEDU: per quelli `/api/norma` risponde 422. Il testo entra nella pagina solo
+come testo, mai come HTML.
+
 ## Installazione
 
 ### Con l'installer (consigliato)
@@ -185,7 +228,8 @@ premendo "Scarica e installa", dopo il controllo dello sha256. `IUDEX_AGGIORNAME
 il controllo.
 
 Variabili d'ambiente: `IUDEX_PORTA` (8765), `IUDEX_HOST` (127.0.0.1), `IUDEX_DATI`
-(cartella dei dati), `IUDEX_INTERVALLO` (secondi fra le richieste), `IUDEX_TTL_RICERCHE`
+(cartella dei dati), `IUDEX_INTERVALLO` (secondi fra le richieste alla Corte),
+`IUDEX_INTERVALLO_NORMATTIVA` (secondi fra le richieste a Normattiva), `IUDEX_TTL_RICERCHE`
 (secondi di validità della cache delle ricerche), `IUDEX_TELEMETRIA`, `IUDEX_AGGIORNAMENTI` (`0`
 spegne il controllo degli aggiornamenti, `1` lo accende anche dai sorgenti), `IUDEX_IMPRONTA`
 (`chrome`, `edge` o `firefox` per dichiarare sempre lo stesso browser, qualunque cosa dicano
@@ -222,12 +266,21 @@ propria istanza; le altre chiamate vogliono l'header `X-Iudex-Token` con il cont
 .venv\Scripts\python.exe -m pip install -e .[mcp]
 ```
 
-Con Iudex aperto, `python -m iudex.mcp_server` espone cinque strumenti MCP
-(`cerca_sentenze`, `cerca_per_norma`, `leggi_sentenza`, `leggi_norma`, `verifica_citazioni`),
-tutti in sola lettura, che passano dall'API locale, quindi
-dalla cache e dalla limitazione della frequenza delle richieste. Il server MCP legge il token
-dal file `token` della cartella dei dati (la stessa di Iudex: `IUDEX_DATI` se l'hai cambiata)
-oppure da `IUDEX_TOKEN`. Esempio per LM Studio (`mcp.json`) o Claude Desktop:
+Con Iudex aperto, `python -m iudex.mcp_server` espone cinque strumenti MCP, tutti in sola
+lettura, che passano dall'API locale, quindi dalla cache e dalla limitazione della frequenza
+delle richieste:
+
+| Strumento | Che cosa fa |
+|-----------|-------------|
+| `cerca_sentenze` | cerca sentenze della Cassazione per parole, frase, troncamento o estremi, con i filtri per archivio, anno, sezione, tipo e segnale |
+| `cerca_per_norma` | cerca le sentenze che citano un riferimento normativo (`"art. 18 legge 300/1970"`) |
+| `leggi_sentenza` | estremi, dispositivo, riferimenti normativi e testo integrale di una sentenza |
+| `leggi_norma` | testo di un articolo da Normattiva, con vigenza, link e fonte |
+| `verifica_citazioni` | controlla fino a 10 citazioni di sentenze della Cassazione per chiamata |
+
+Il server MCP legge il token dal file `token` della cartella dei dati (la stessa di Iudex:
+`IUDEX_DATI` se l'hai cambiata) oppure da `IUDEX_TOKEN`. Esempio per LM Studio (`mcp.json`)
+o Claude Desktop:
 
 ```json
 {
@@ -313,6 +366,7 @@ Struttura:
 |--------|---------|
 | `src/iudex/query.py` | costruzione delle query Solr secondo la sintassi del sito (implementazione propria); riferimenti normativi |
 | `src/iudex/client.py` | client HTTP con la limitazione delle richieste e il contesto TLS |
+| `src/iudex/norme.py` | testo delle norme dall'API Open Data di Normattiva (client, parser degli articoli), link EUR-Lex, norme citate per l'export FtM |
 | `src/iudex/cache.py` | SQLite con schema versionato e migrazioni: cronologia, esecuzioni e risultati, ricerche salvate, preferiti, testi, cache, diario, sentenze consultate, PDF, impostazioni, macchine; unione di un altro archivio |
 | `src/iudex/export.py` | CSV, JSON, Markdown, JSONL, zip (anche dello storico); ricostruzione dei paragrafi |
 | `src/iudex/importazione.py` | lettura di un pacchetto ZIP, di un JSONL o di una copia del database di un altro Iudex |
@@ -335,4 +389,6 @@ Struttura:
 ## Licenza
 
 MIT. I testi delle sentenze sono della Corte Suprema di Cassazione e restano soggetti
-alle condizioni con cui la Corte li pubblica.
+alle condizioni con cui la Corte li pubblica. I testi delle norme sono dati dell'Istituto
+Poligrafico e Zecca dello Stato, pubblicati da Normattiva in licenza CC BY 4.0 (fonte:
+Normattiva, IPZS).

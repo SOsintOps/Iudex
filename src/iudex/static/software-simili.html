@@ -45,7 +45,7 @@
   </nav>
   <article class="documento">
     <h1>Software simili</h1>
-    <p>Progetti che accedono alla stessa banca dati o a dati vicini, come osservati il 21 ottobre 2026 leggendo codice e documentazione. Nessuno di essi offre un'interfaccia grafica locale: sono server MCP (strumenti per assistenti) o raccolte di dati.</p>
+    <p>Progetti che accedono alla stessa banca dati o a dati vicini, come osservati il 21 ottobre 2026 leggendo codice e documentazione; mcp-legal-it è stato anche provato in uso il 30 ottobre 2026. Nessuno di essi offre un'interfaccia grafica locale: sono server MCP (strumenti per assistenti) o raccolte di dati.</p>
 
     <h2 id="ufficiale">SentenzeWeb e ItalgiureWeb (Corte di Cassazione)</h2>
     <p><a href="https://www.italgiure.giustizia.it/sncass/" target="_blank" rel="noopener">SentenzeWeb</a> è la fonte di Iudex: ricerca libera e gratuita sulle sentenze civili e penali degli ultimi anni, pagina jQuery su un motore Apache Solr. La sua interfaccia manda una richiesta al server per ogni lettera digitata e quattro richieste separate per i conteggi dei filtri; non ha cronologia, export, permalink né filtro per materia. <b>ItalgiureWeb</b> è il sistema completo del CED (massime, archivi storici, altre corti), riservato agli operatori della giustizia e, a pagamento, ad altre categorie; dal 1° ottobre 2026 è disponibile solo nel nuovo front end. Iudex non lo usa.</p>
@@ -58,6 +58,8 @@
 
     <h2 id="mcp-legal-it">mcp-legal-it (capazme)</h2>
     <p>Server MCP in Python, licenza Apache 2.0, con oltre duecento strumenti per il diritto italiano: norme, giurisprudenza di Cassazione, tributaria, amministrativa e dell'Unione, Gazzetta Ufficiale, calcoli. Per la Cassazione usa lo stesso Solr con il parser <em>edismax</em>, pesi sui campi (il dispositivo pesa cinque volte il testo), filtri come <code>fq</code> separati e facet su materia, sezione, anno e tipo; i risultati quindi non coincidono con quelli del sito. Restringe o allarga da solo la query se i risultati sono troppi o troppo pochi, e stima gli orientamenti contando frasi segnale nei testi. Verifica TLS disattivata, nessun intervallo fra richieste, fonti interrogate in parallelo. Utile per un assistente, non per una persona. Iudex ne riprende l'idea dei <b>segnali di orientamento</b> (stesse frasi, una sola OR per gruppo, «discostarsi» escluso) come conteggi nella stessa richiesta della ricerca, senza cambiarne i risultati.</p>
+    <p><b>Prova del 30 ottobre 2026 (versione 2.17.1).</b> 228 strumenti. La normativa arriva dal sito di Normattiva letto come pagina web (Iudex usa l'API Open Data): il testo del corpo degli atti è completo, ma allegati e tabelle si perdono senza avviso. Alla Cassazione nessuna pausa fra le richieste (Iudex: 2 s); la ricerca viene ridotta da sola a un risultato; le citazioni scritte con le virgole («Cass. civ., Sez. Un., 11 novembre 2008, n. 26972») non sono riconosciute. Esito: utile per i calcoli e, con riserve, per la normativa; non adatto come fonte per la Cassazione, per il ritmo delle richieste. La versione 3.0, in sviluppo, corregge installazione, verifica TLS e allowlist.</p>
+    <p><b>Differenze con Iudex.</b> Iudex fa meno cose e le fa una alla volta: una richiesta per ricerca, 2 secondi fra due richieste alla Corte e altrettanti, con un limite proprio, fra due richieste a Normattiva. Di Normattiva legge solo l'API Open Data, solo su richiesta dell'utente e un articolo per volta, e dice che allegati e tabelle non sono mostrati. Le citazioni con le virgole e la data sono riconosciute da <code>verifica_citazioni</code>, che prima guarda le sentenze già consultate e non tratta mai come inesistente una sentenza quando la Corte non risponde.</p>
 
     <h2 id="giurisprudenza-db">giurisprudenza-db (Synthos-Logic)</h2>
     <p>Non interroga SentenzeWeb: raccoglie dal sito istituzionale della Corte i provvedimenti segnalati dall'Ufficio del Massimario e le rassegne mensili, e li converte in schede Markdown con massima ed estremi (licenza CC BY 4.0 per i dati, MIT per gli script). Copre solo le decisioni segnalate, poche centinaia l'anno, più la Corte costituzionale.</p>
@@ -69,7 +71,7 @@
         <tr><td>Iudex</td><td>interfaccia locale + MCP</td><td>Solr di SentenzeWeb, 1 richiesta per ricerca</td><td>sì</td><td>1 alla volta, 2 s, cache</td><td>verificato, intermedio incluso</td></tr>
         <tr><td>it-eli-mcp</td><td>MCP</td><td>Solr, GET</td><td>no (query propria)</td><td>nessuno</td><td>verificato, intermedio incluso</td></tr>
         <tr><td>BetterCallClaudeMCP_Italy</td><td>MCP</td><td>Solr, POST, cookie richiesto</td><td>no</td><td>1 alla volta, 2 s</td><td>verifica disattivata</td></tr>
-        <tr><td>mcp-legal-it</td><td>MCP</td><td>Solr, edismax</td><td>no (pesi e rilassamenti)</td><td>nessuno</td><td>verifica disattivata</td></tr>
+        <tr><td>mcp-legal-it (2.17.1)</td><td>MCP</td><td>Solr, edismax; Normattiva dal sito</td><td>no (pesi e rilassamenti)</td><td>nessuno</td><td>verifica disattivata (corretta nella 3.0 in sviluppo)</td></tr>
         <tr><td>giurisprudenza-db</td><td>dataset</td><td>sito istituzionale, PDF</td><td>—</td><td>aggiornamento periodico</td><td>—</td></tr>
       </tbody>
     </table>

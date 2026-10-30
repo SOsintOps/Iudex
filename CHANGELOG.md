@@ -2,33 +2,19 @@
 
 ## Da rilasciare
 
-### Novità
-- Server MCP: due strumenti nuovi, in sola lettura. `leggi_norma` legge il testo di un
-  articolo da Normattiva passando da `GET /api/norma` (riferimento come in una citazione,
-  "art. 2043 c.c." o "art. 13 d.lgs. 196/2003", oppure i campi espliciti e la data di
-  vigenza) e restituisce testo, vigenza, link e fonte. `verifica_citazioni` controlla fino a
-  10 citazioni di sentenze della Cassazione per chiamata, anche nella forma con le virgole e
-  la data ("Cass. civ., Sez. Un., 11 novembre 2008, n. 26972"): prima le sentenze già
-  consultate su questo computer, poi una sola richiesta alla Corte per citazione; esiti
-  esiste, non trovata, fonte non raggiungibile, fuori archivio (anno futuro o anteriore al
-  2000, senza richieste) e non interpretabile. Quando la fonte non risponde la verifica
-  risulta non fatta, mai negativa. Istruzioni del server e README aggiornati.
-- Funzione `analizza_citazione` in `query.py`: estremi (archivio, numero, anno, sezione) di
-  una citazione di Cassazione scritta a mano.
-- Indice locale del testo delle sentenze già salvate e ricerca `GET /api/locale/cerca`:
-  trova un nome o una frase senza nessuna richiesta alla Corte, non scrive nel diario e
-  serve anche ad altre app che usano Iudex. L'indice si costruisce da solo all'apertura
-  (schema dell'archivio 6) e resta nel database locale.
-- Ricerca per nome di persona o di società: ammessa, come ogni altra ricerca; FAQ e
-  istruzioni del server MCP aggiornate.
+## 0.9.0 — 2026-10-30
+
+Testo delle norme da Normattiva, link EUR-Lex, verifica delle citazioni dal server MCP,
+riferimenti normativi letti correttamente.
+
+### Normattiva
 - Modulo `norme`: lettura del testo di un articolo dall'API Open Data di Normattiva
   (`api.normattiva.it`; dati dell'Istituto Poligrafico e Zecca dello Stato in licenza
   CC BY 4.0, "Fonte: Normattiva (IPZS)"). Un articolo per richiesta, con un limite di
   cortesia proprio (2 s fra due richieste, `IUDEX_INTERVALLO_NORMATTIVA`), pausa su 409/429
   e un solo nuovo tentativo quando la fonte non risponde: in quel caso il messaggio dice
   che Normattiva non è disponibile, mai che la norma non esiste. Codici (c.c., c.p.,
-  c.p.c., c.p.p., Costituzione) letti dall'allegato dell'atto d'origine. Il bottone per
-  aprire il testo dalla sentenza arriva con i passi successivi.
+  c.p.c., c.p.p., Costituzione) letti dall'allegato dell'atto d'origine.
 - Schema dell'archivio 7: cache delle norme lette da Normattiva, con le tabelle `atti`
   (estremi dell'atto, permanenti) e `norme` (testo dell'articolo: il testo vigente scade
   dopo 30 giorni, quello chiesto a una data precisa resta). Sono cache, non dati
@@ -44,9 +30,6 @@
   chiesti dalla fonte, 502 quando la fonte non risponde (mai "norma non trovata" in quel
   caso). Nessuna lettura anticipata: Iudex non chiede nulla a Normattiva se l'utente non
   apre un testo.
-- Pannello Stato: statistiche proprie di Normattiva in `/api/stato` (`normattiva`:
-  richieste fatte, pausa residua, intervallo minimo, norme in cache, ultime richieste).
-  All'avvio Iudex toglie anche il testo vigente delle norme scaduto (oltre 30 giorni).
 - Bottone **Testo** accanto ai riferimenti normativi della sentenza: apre sotto i
   riferimenti l'articolo letto da Normattiva (titolo dell'atto, numero e rubrica, testo a
   commi, note richiudibili, vigenza, legenda di `(( ))`, "Fonte: Normattiva (IPZS), CC BY
@@ -55,6 +38,11 @@
   richiesta per clic, nessuna all'apertura della sentenza, nessun nuovo tentativo automatico
   dopo un errore. Il testo entra nella pagina solo come testo, mai come HTML. Nella scheda
   Stato le richieste a Normattiva e gli articoli in cache. Guida e FAQ aggiornate.
+- Pannello Stato: statistiche proprie di Normattiva in `/api/stato` (`normattiva`:
+  richieste fatte, pausa residua, intervallo minimo, norme in cache, ultime richieste).
+  All'avvio Iudex toglie anche il testo vigente delle norme scaduto (oltre 30 giorni).
+
+### EUR-Lex
 - Link **EUR-Lex** accanto ai riferimenti a regolamenti e direttive UE e ai trattati (TUE,
   TFUE): apre l'atto in italiano su EUR-Lex nel browser, con il numero CELEX (per esempio
   `32016R0679` per il regolamento 2016/679); per i trattati il testo consolidato
@@ -62,6 +50,30 @@
   link ELI (`/eli/reg/2016/679/oj/ita`); solo link, Iudex non chiede nulla a EUR-Lex. Il
   link compare solo dove numero e anno dell'atto sono certi (campo `norma_url_eurlex` nei
   riferimenti di `/api/sentenza`).
+
+### Server MCP
+- Due strumenti nuovi, in sola lettura. `leggi_norma` legge il testo di un
+  articolo da Normattiva passando da `GET /api/norma` (riferimento come in una citazione,
+  "art. 2043 c.c." o "art. 13 d.lgs. 196/2003", oppure i campi espliciti e la data di
+  vigenza) e restituisce testo, vigenza, link e fonte. `verifica_citazioni` controlla fino a
+  10 citazioni di sentenze della Cassazione per chiamata, anche nella forma con le virgole e
+  la data ("Cass. civ., Sez. Un., 11 novembre 2008, n. 26972"): prima le sentenze già
+  consultate su questo computer, poi una sola richiesta alla Corte per citazione; esiti
+  esiste, non trovata, fonte non raggiungibile, fuori archivio (anno futuro o anteriore al
+  2000, senza richieste) e non interpretabile. Quando la fonte non risponde la verifica
+  risulta non fatta, mai negativa. Istruzioni del server e README aggiornati.
+- Funzione `analizza_citazione` in `query.py`: estremi (archivio, numero, anno, sezione) di
+  una citazione di Cassazione scritta a mano.
+
+### Ricerca
+- Indice locale del testo delle sentenze già salvate e ricerca `GET /api/locale/cerca`:
+  trova un nome o una frase senza nessuna richiesta alla Corte, non scrive nel diario e
+  serve anche ad altre app che usano Iudex. L'indice si costruisce da solo all'apertura
+  (schema dell'archivio 6) e resta nel database locale.
+- Ricerca per nome di persona o di società: ammessa, come ogni altra ricerca; FAQ e
+  istruzioni del server MCP aggiornate.
+
+### Esportazione
 - Export **FollowTheMoney** delle sentenze consultate: ogni norma citata leggibile diventa
   un'entità `Document` (titolo "art. 2043 c.c.", editore Normattiva (IPZS) o EUR-Lex,
   lingua `ita`, link Normattiva per i codici e link EUR-Lex per regolamenti, direttive e
@@ -71,8 +83,6 @@
   come per il bottone Testo: i riferimenti incompleti restano solo fra le `keywords`, che
   non cambiano, come tutte le entità già esportate. Funzione `norma_citata` nel modulo
   `norme`, senza rete.
-- Sviluppo: `followthemoney` (e `tzdata` su Windows) fra le dipendenze `dev`; i test
-  verificano schemi e proprietà dell'export con il modello FtM reale.
 
 ### Correzioni
 - Riferimenti normativi delle sentenze letti correttamente: i codici, che il CED indica come
@@ -90,6 +100,15 @@
 ### Documentazione
 - FAQ nel formato comune ai progetti SOsintOps (indice delle domande, una domanda per
   titolo), in `docs/faq.md` e nella pagina Domande frequenti dell'app.
+- README: sezione Normattiva (bottone Testo, strumento `leggi_norma`, fonte e licenza
+  CC BY 4.0, limiti) e sezione MCP con i cinque strumenti. CONTRIBUTING: ritmo delle
+  richieste anche per Normattiva e nota sull'installazione di PyICU su Windows. Software
+  simili: mcp-legal-it aggiornato dopo la prova del 30 ottobre 2026. Guida: il link EUR-Lex
+  c'è già, anche per TUE e TFUE.
+
+### Sviluppo
+- `followthemoney` (e `tzdata` su Windows) fra le dipendenze `dev`; i test
+  verificano schemi e proprietà dell'export con il modello FtM reale.
 
 ## 0.8.1 — 2026-10-28
 

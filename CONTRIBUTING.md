@@ -10,6 +10,15 @@ Grazie dell'interesse. Poche regole, per tenere il progetto coerente.
 - Iudex interroga un server pubblico della Corte di Cassazione: ogni modifica che
   aggiunge richieste al server va discussa prima. Non sono accettate funzioni di
   scaricamento massivo o di scansione dell'archivio.
+- Le stesse regole valgono per **Normattiva**, da cui Iudex legge il testo delle norme: solo
+  l'**API Open Data** (`api.normattiva.it`), mai il sito `www.normattiva.it`, che resta un
+  link da aprire nel browser; intervallo minimo di **2 secondi** fra due richieste
+  (`IUDEX_INTERVALLO_NORMATTIVA`), una richiesta alla volta, pausa quando la fonte la chiede;
+  **mai richieste senza un'azione dell'utente** (nessuna lettura anticipata, nessun nuovo
+  tentativo automatico dall'interfaccia, nessuno scaricamento di atti interi). I testi sono
+  dati IPZS in licenza CC BY 4.0: ovunque compaiano va lasciata l'attribuzione
+  "Fonte: Normattiva (IPZS), CC BY 4.0". Verso EUR-Lex Iudex produce solo link, senza
+  richieste.
 
 ## Ambiente
 
@@ -20,6 +29,14 @@ python -m venv .venv
 .venv\Scripts\python.exe -m pip install -e .[dev,desktop,mcp]
 .venv\Scripts\python.exe -m iudex.desktop
 ```
+
+Su Windows l'extra `dev` installa `followthemoney`, che richiede PyICU: PyPI non ha wheel di
+PyICU per Windows, quindi dopo aver creato il venv e prima di `pip install -e .[dev,desktop,mcp]`
+va installato il wheel per la propria versione di Python da
+<https://github.com/cgohlke/pyicu-build/releases> (la fonte indicata dal README di PyICU), con
+`.venv\Scripts\python.exe -m pip install <file .whl scaricato>`.
+Su Linux e macOS basta il pacchetto `libicu` del sistema (per esempio `libicu-dev` su Debian
+e Ubuntu, `icu4c` con Homebrew).
 
 Su Linux e macOS: `.venv/bin/python`. Serve Python 3.11 o successivo. Iudex si usa dalla sua
 finestra (`iudex.desktop`); `python -m iudex` avvia il solo server, che risponde solo con il

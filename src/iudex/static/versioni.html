@@ -36,6 +36,7 @@
 
 <main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v090">0.9.0 — 30 ottobre 2026</a>
     <a href="#v081">0.8.1 — 28 ottobre 2026</a>
     <a href="#v080">0.8.0 — 28 ottobre 2026</a>
     <a href="#v070">0.7.0 — 26 ottobre 2026</a>
@@ -51,6 +52,50 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v090">0.9.0 <span class="data">— 30 ottobre 2026</span></h2>
+    <p>Testo delle norme da Normattiva, link EUR-Lex, verifica delle citazioni dal server MCP, riferimenti normativi letti correttamente.</p>
+    <h3>Normattiva</h3>
+    <ul>
+      <li>Lettura del testo di un articolo dall'API Open Data di Normattiva (dati dell'Istituto Poligrafico e Zecca dello Stato in licenza CC BY 4.0, «Fonte: Normattiva (IPZS)»): un articolo per richiesta, almeno 2 secondi fra due richieste (<code>IUDEX_INTERVALLO_NORMATTIVA</code>), pausa quando la fonte la chiede e un solo nuovo tentativo quando non risponde; in quel caso Iudex dice che Normattiva non è disponibile, mai che la norma non esiste. I codici (c.c., c.p., c.p.c., c.p.p., Costituzione) sono letti dall'allegato dell'atto d'origine.</li>
+      <li>Archivio (schema 7): cache delle norme lette. Il testo vigente scade dopo 30 giorni, quello chiesto a una data precisa resta; è una cache, non entra nell'esportazione dell'archivio. Prima della migrazione la solita copia di sicurezza in <code>backup/</code>.</li>
+      <li>API <code>GET /api/norma</code>: il testo di un articolo, prima dalla cache e solo se manca da Normattiva, con parametri espliciti e senza deduzioni; errori distinti per parametri non validi, articolo che Normattiva non ha, atti che Normattiva non copre (leggi regionali, regolamenti UE, CEDU), pausa chiesta dalla fonte e fonte che non risponde. Nessuna lettura anticipata.</li>
+      <li>Bottone <b>Testo</b> accanto ai riferimenti normativi della sentenza: apre l'articolo con titolo dell'atto, rubrica, commi, note richiudibili, vigenza, legenda di <code>(( ))</code>, fonte e link «Apri su Normattiva». Compare solo dove il riferimento ha tutti i dati certi; una richiesta per clic, nessuna all'apertura della sentenza, nessun nuovo tentativo automatico dopo un errore. Guida e FAQ aggiornate.</li>
+      <li>Scheda Stato: richieste fatte a Normattiva, pausa residua, intervallo minimo, norme in cache e ultime richieste. All'avvio Iudex toglie il testo vigente scaduto (oltre 30 giorni).</li>
+    </ul>
+    <h3>EUR-Lex</h3>
+    <ul>
+      <li>Link <b>EUR-Lex</b> accanto ai riferimenti a regolamenti e direttive UE e ai trattati (TUE, TFUE): apre l'atto in italiano nel browser, con il numero CELEX (per esempio <code>32016R0679</code> per il regolamento 2016/679) e, per i trattati, il testo consolidato. Solo un link: Iudex non chiede nulla a EUR-Lex. Compare solo dove numero e anno dell'atto sono certi.</li>
+    </ul>
+    <h3>Server MCP</h3>
+    <ul>
+      <li>Due strumenti nuovi, in sola lettura: <code>leggi_norma</code> legge il testo di un articolo da Normattiva («art. 2043 c.c.», «art. 13 d.lgs. 196/2003» o i campi espliciti, con la data di vigenza facoltativa); <code>verifica_citazioni</code> controlla fino a 10 citazioni di sentenze della Cassazione per chiamata, anche nella forma con le virgole e la data, prima fra le sentenze già consultate e poi con una sola richiesta alla Corte per citazione. Esiti: esiste, non trovata, fonte non raggiungibile, fuori archivio, non interpretabile; quando la fonte non risponde la verifica risulta non fatta, mai negativa.</li>
+      <li>Lettura degli estremi (archivio, numero, anno, sezione) di una citazione di Cassazione scritta a mano.</li>
+    </ul>
+    <h3>Ricerca</h3>
+    <ul>
+      <li>Indice locale del testo delle sentenze già salvate e ricerca <code>GET /api/locale/cerca</code>: trova un nome o una frase senza nessuna richiesta alla Corte e senza scrivere nel diario. L'indice si costruisce da solo all'apertura (schema 6).</li>
+      <li>Ricerca per nome di persona o di società: ammessa, come ogni altra ricerca; FAQ e istruzioni del server MCP aggiornate.</li>
+    </ul>
+    <h3>Esportazione</h3>
+    <ul>
+      <li>Export <b>FollowTheMoney</b>: ogni norma citata leggibile diventa un'entità <code>Document</code> (editore Normattiva o EUR-Lex, con il link dove non serve una richiesta) collegata alla sentenza da un'entità <code>Documentation</code> con ruolo «norma citata»; la stessa norma ha lo stesso id in tutte le sentenze. Le entità già esportate non cambiano.</li>
+    </ul>
+    <h3>Correzioni</h3>
+    <ul>
+      <li>Riferimenti normativi letti correttamente: i codici compaiono come «art. 2043 c.c.» o «art. 380-bis c.p.c.» (prima per esempio «art. 238 cod 309/1990»), numeri e anni vanno all'atto giusto, i suffissi bis, ter... non si perdono. Quando l'abbinamento non è certo Iudex mostra l'atto senza numero o articolo invece di un riferimento sbagliato; il testo dei riferimenti cambia anche nelle esportazioni.</li>
+      <li>La cronologia mette prima la ricerca più recente anche quando due ricerche cadono nello stesso istante.</li>
+      <li>Windows: avviato dai sorgenti, Iudex ha sulla barra un'identità separata, così non si confonde con l'app installata.</li>
+    </ul>
+    <h3>Documentazione</h3>
+    <ul>
+      <li>Domande frequenti nel formato comune ai progetti SOsintOps (indice delle domande, una domanda per titolo).</li>
+      <li>README con le sezioni Normattiva e MCP; regole per contribuire con il ritmo delle richieste a Normattiva e la nota su PyICU per Windows; Software simili: mcp-legal-it aggiornato dopo la prova del 30 ottobre 2026; Guida: il link EUR-Lex c'è già, anche per TUE e TFUE.</li>
+    </ul>
+    <h3>Sviluppo</h3>
+    <ul>
+      <li><code>followthemoney</code> (e <code>tzdata</code> su Windows) fra le dipendenze di sviluppo: i test verificano l'export con il modello FtM reale.</li>
+    </ul>
 
     <h2 id="v081">0.8.1 <span class="data">— 28 ottobre 2026</span></h2>
     <ul>
