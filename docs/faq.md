@@ -17,6 +17,10 @@ La stessa pagina è nell'app, nel menu **Help → Domande frequenti**.
 * [Che cos'è il filtro "materia"?](#che-cosè-il-filtro-materia)
 * [Che cosa vuol dire "dalla cache locale"?](#che-cosa-vuol-dire-dalla-cache-locale)
 * [Perché il testo ha i paragrafi e il sito no?](#perché-il-testo-ha-i-paragrafi-e-il-sito-no)
+* [Che cosa fa il bottone "Testo"?](#che-cosa-fa-il-bottone-testo)
+* [Da dove viene il testo delle norme e con quale licenza?](#da-dove-viene-il-testo-delle-norme-e-con-quale-licenza)
+* [Perché mancano allegati e tabelle?](#perché-mancano-allegati-e-tabelle)
+* [Quante richieste fa Iudex a Normattiva?](#quante-richieste-fa-iudex-a-normattiva)
 * [Quante richieste fa Iudex?](#quante-richieste-fa-iudex)
 * [Quali limiti rispetta?](#quali-limiti-rispetta)
 * [Il controllo delle novità è automatico?](#il-controllo-delle-novità-è-automatico)
@@ -110,6 +114,36 @@ La stessa ricerca era stata fatta da meno di un'ora.
 
 Il testo OCR arriva senza a capo; Iudex ricostruisce intestazioni e punti numerati, ma non
 separa le parole che l'OCR ha unito.
+
+## Il testo delle norme
+
+### Che cosa fa il bottone "Testo"?
+
+Nella sentenza aperta, accanto a un riferimento normativo, apre l'articolo citato: titolo
+dell'atto, numero e rubrica, testo a commi, note richiudibili, vigenza e il link **Apri su
+Normattiva**. Compare solo quando il riferimento ha tutti i dati certi (per leggi e decreti
+numero e anno, per i codici basta l'articolo): meglio nessun bottone che l'articolo sbagliato.
+I segni `(( ))` racchiudono il testo inserito o modificato da leggi successive.
+
+### Da dove viene il testo delle norme e con quale licenza?
+
+Dall'API Open Data di Normattiva, la banca dati ufficiale delle leggi dello Stato curata
+dall'Istituto Poligrafico e Zecca dello Stato. I dati sono in licenza CC BY 4.0: Iudex mostra
+accanto a ogni testo "Fonte: Normattiva (IPZS), CC BY 4.0" e il link all'atto sul sito. Fa fede
+la Gazzetta Ufficiale. Leggi regionali, CEDU e atti dell'Unione europea non sono in Normattiva.
+
+### Perché mancano allegati e tabelle?
+
+Iudex mostra il testo dell'articolo; allegati e tabelle degli atti non sono mostrati. Si
+aprono dal link **Apri su Normattiva**.
+
+### Quante richieste fa Iudex a Normattiva?
+
+Una per clic su **Testo**, mai prima: aprire una sentenza non chiede nulla a Normattiva, e
+fra due richieste passano almeno 2 secondi. Il testo letto resta nella cache locale per 30
+giorni, quindi riaprirlo non fa richieste; un secondo clic richiude il pannello. Se Normattiva
+chiede una pausa il pannello mostra quanti secondi attendere e Iudex non ritenta da solo. Le
+richieste fatte sono nella scheda Stato.
 
 ## Le richieste al server
 

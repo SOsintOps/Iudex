@@ -401,8 +401,8 @@
       if (doc.massima) corpo += `<div class="massima">${evidenziaLocale(escapa(doc.massima)).replace(/\n/g, "<br>")}</div>`;
       const rnc = doc.riferimenti_normativi || [];
       if (rnc.length) {
-        corpo += '<div class="rnc"><span>Riferimenti normativi:</span>' + rnc.map((r) =>
-          `<span class="chip" role="button" tabindex="0" data-ricerca="${escapa(r.ricerca)}" title="Cerca le sentenze che citano questa norma">${escapa(r.testo)}</span>`).join("") + "</div>";
+        corpo += '<div class="rnc"><span>Riferimenti normativi:</span>' + rnc.map((r, i) =>
+          `<span class="rif-norma"><span class="chip" role="button" tabindex="0" data-ricerca="${escapa(r.ricerca)}" title="Cerca le sentenze che citano questa norma">${escapa(r.testo)}</span>${bottoneNorma(r, i)}</span>`).join("") + '</div><div class="norme-aperte"></div>';
       }
       corpo += '<div class="intestazione-testo">Testo del provvedimento</div>';
       const html = d.testo_evidenziato ? conMarcature(d.testo_evidenziato) : evidenziaLocale(escapa(d.testo || ""));
@@ -415,6 +415,121 @@
       $("#fascicolo-estremi").textContent = "Testo non caricato";
       $("#fascicolo-corpo").innerHTML = `<div class="messaggio">${escapa(e.message)}</div>`;
     }
+  }
+
+  // ---------- testo della norma (Normattiva) ----------
+
+  // Bottone "Testo" solo per i riferimenti che il server ha letto con certezza (campo norma);
+  // per regolamenti e direttive UE il link a EUR-Lex, solo se il server lo fornisce.
+  function bottoneNorma(r, indice) {
+    if (r.norma) {
+      const n = r.norma;
+      return `<button type="button" class="btn-testo" data-indice="${indice}" data-tipo="${escapa(n.tipo)}" data-numero="${escapa(n.numero)}" data-anno="${escapa(n.anno)}" data-articolo="${escapa(n.articolo)}" aria-expanded="false" title="Leggi il testo dell'articolo da Normattiva (una richiesta)">Testo</button>`;
+    }
+    if (r.norma_url_eurlex && /^https:\/\/eur-lex\.europa\.eu\//.test(r.norma_url_eurlex)) {
+      return `<a class="link-eurlex" href="${escapa(r.norma_url_eurlex)}" target="_blank" rel="noopener" title="Apri l'atto su EUR-Lex">EUR-Lex</a>`;
+    }
+    return "";
+  }
+
+  // Il testo della fonte entra nella pagina solo come testo (textContent), mai come HTML.
+  function elemento(tag, classe, testo) {
+    const el = document.createElement(tag);
+    if (classe) el.className = classe;
+    if (testo !== undefined && testo !== null) el.textContent = testo;
+    return el;
+  }
+
+  function righeNorma(testo) {
+    return String(testo || "").split("\n").map((r) => r.trim()).filter(Boolean);
+  }
+
+  const FONTE_NORMATTIVA = "Normattiva (IPZS), CC BY 4.0";
+
+  function riempiNorma(pannello, d) {
+    const atto = d.atto || {};
+    const art = d.articolo || {};
+    const vig = d.vigenza || {};
+    if (atto.titolo) pannello.appendChild(elemento("div", "norma-atto", atto.titolo));
+    const intestazione = elemento("div", "norma-articolo", "Art. " + (art.numero || ""));
+    if (art.rubrica) intestazione.appendChild(elemento("span", "rubrica", " – " + art.rubrica));
+    pannello.appendChild(intestazione);
+    const testo = elemento("div", "norma-testo");
+    // Un paragrafo per comma; i segni (( )) di Normattiva restano come sono.
+    righeNorma(art.testo).forEach((riga) => testo.appendChild(elemento("p", "comma", riga)));
+    if (!testo.childNodes.length) testo.appendChild(elemento("p", "comma", "Testo non disponibile."));
+    pannello.appendChild(testo);
+    if (art.note) {
+      const note = elemento("details", "norma-note");
+      note.appendChild(elemento("summary", "", "Note e aggiornamenti"));
+      righeNorma(art.note).forEach((riga) => note.appendChild(elemento("p", "", riga)));
+      pannello.appendChild(note);
+    }
+    const vigenza = [];
+    if (vig.inizio) vigenza.push("In vigore dal " + dataIt(vig.inizio));
+    if (vig.fine) vigenza.push("fino al " + dataIt(vig.fine));
+    if (vig.richiesta) vigenza.push("versione vigente al " + dataIt(vig.richiesta));
+    if (vigenza.length) pannello.appendChild(elemento("div", "norma-vigenza", vigenza.join(", ")));
+    pannello.appendChild(elemento("div", "norma-legenda", "(( )) = testo inserito o modificato · allegati e tabelle non sono mostrati"));
+    const fonte = elemento("div", "fonte", "Fonte: " + (d.fonte || FONTE_NORMATTIVA));
+    if (d.da_cache) fonte.appendChild(document.createTextNode(" · dalla cache locale"));
+    if (d.url && /^https:\/\//.test(d.url)) {
+      fonte.appendChild(document.createTextNode(" · "));
+      const link = elemento("a", "", "Apri su Normattiva");
+      link.href = d.url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      fonte.appendChild(link);
+    }
+    pannello.appendChild(fonte);
+  }
+
+  function erroreNorma(pannello, codice, dati) {
+    const dalServer = dati && typeof dati.errore === "string" ? dati.errore : "";
+    let testo;
+    if (codice === 404) testo = dalServer || "Normattiva non ha questo articolo.";
+    else if (codice === 429) {
+      const secondi = Math.ceil((dati && dati.pausa_residua_s) || 0);
+      testo = secondi > 0 ? `Normattiva: attendere ${secondi} s prima di una nuova richiesta.` : "Normattiva: attendere prima di una nuova richiesta.";
+    } else if (codice === 0) testo = "Iudex non ha risposto: riprovare più tardi.";
+    else testo = dalServer || `Errore ${codice}`;
+    pannello.classList.add("errore");
+    pannello.appendChild(elemento("div", "norma-errore", testo));
+    pannello.appendChild(elemento("div", "norma-legenda", "Nessun nuovo tentativo automatico: per riprovare, chiudere e riaprire con il bottone Testo."));
+  }
+
+  // Una richiesta a /api/norma per clic, mai prima; il secondo clic richiude senza richieste.
+  async function apriNorma(bottone) {
+    const contenitore = $("#fascicolo-corpo .norme-aperte");
+    if (!contenitore || bottone.disabled) return;
+    const indice = bottone.dataset.indice;
+    const aperto = contenitore.querySelector(`.norma[data-indice="${indice}"]`);
+    if (aperto) {
+      aperto.remove();
+      bottone.setAttribute("aria-expanded", "false");
+      bottone.classList.remove("attivo");
+      return;
+    }
+    const pannello = elemento("div", "norma", "Caricamento…");
+    pannello.dataset.indice = indice;
+    contenitore.appendChild(pannello);
+    bottone.setAttribute("aria-expanded", "true");
+    bottone.classList.add("attivo");
+    bottone.disabled = true;
+    const p = new URLSearchParams();
+    ["tipo", "numero", "anno", "articolo"].forEach((campo) => { if (bottone.dataset[campo]) p.set(campo, bottone.dataset[campo]); });
+    let codice = 0;
+    let dati = null;
+    try {
+      const r = await fetch("/api/norma?" + p.toString(), { headers: { "X-Iudex": "1" } });
+      codice = r.status;
+      try { dati = await r.json(); } catch (e) { dati = null; }
+    } catch (e) { codice = 0; }
+    bottone.disabled = false;
+    if (!pannello.isConnected) return;
+    pannello.textContent = "";
+    if (codice === 200 && dati) riempiNorma(pannello, dati);
+    else erroreNorma(pannello, codice, dati);
   }
 
   function descriviPermalink(permalink) {
@@ -709,6 +824,7 @@
       ${s.aggiornamento && s.aggiornamento.disponibile ? `<p class="aggiornamento">È disponibile Iudex <b>${escapa(s.aggiornamento.versione)}</b> (in uso ${escapa(s.aggiornamento.attuale)})${s.aggiornamento.note ? ": " + escapa(s.aggiornamento.note) : ""}. <button type="button" id="installa-aggiornamento">Scarica e installa</button> <span class="dettaglio">l'installer si avvia dopo il controllo dello sha256 e chiude Iudex</span></p>` : ""}
       <p>Diario: <b>${numero(s.voci_diario)}</b> voci, <b>${numero(s.sentenze_consultate)}</b> sentenze consultate con il testo conservato (non vengono toccate dai pulsanti della cache) · <b>${numero(s.esecuzioni)}</b> pagine di risultati ricordate.</p>
       <p>PDF salvati: <b>${numero(s.pdf_salvati)}</b> in <code>${escapa(s.cartella_pdf)}</code></p>
+      ${s.normattiva ? `<p>Normattiva: richieste in questa sessione: <b>${numero(s.normattiva.chiamate)}</b> · intervallo minimo: ${s.normattiva.intervallo_minimo_s} s${s.normattiva.pausa_residua_s ? ` · <b>pausa chiesta: ancora ${Math.ceil(s.normattiva.pausa_residua_s)} s</b>` : ""} · articoli in cache: <b>${numero(s.normattiva.norme_in_cache)}</b></p>` : ""}
       <table><thead><tr><th>Ora</th><th>Tipo</th><th>Stato</th><th>Durata</th><th>Note</th></tr></thead><tbody>${righe || '<tr><td colspan="5">Nessuna richiesta ancora.</td></tr>'}</tbody></table>`;
     const pulsante = $("#installa-aggiornamento");
     if (pulsante) pulsante.addEventListener("click", async () => {
@@ -1106,6 +1222,8 @@
   $("#fascicolo-corpo").addEventListener("click", (e) => {
     const torna = e.target.closest(".torna-al-testo");
     if (torna) { apriFascicolo(torna.dataset.id); return; }
+    const testoNorma = e.target.closest(".btn-testo");
+    if (testoNorma) { apriNorma(testoNorma); return; }
     const chip = e.target.closest(".rnc .chip");
     if (!chip) return;
     $("#rif").value = chip.dataset.ricerca;

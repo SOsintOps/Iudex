@@ -28,6 +28,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import __version__, accesso, export, importazione, impronte, preferenze
+from . import norme as modulo_norme
 from . import pdf as pdf_locali
 from .autonoma import aggiornamenti, backup
 from .autonoma.cartelle import congelata
@@ -49,6 +50,7 @@ from .query import (
     ETICHETTE_SEGNALI,
     ORDINAMENTI,
     SEGNALI,
+    TIPI_ATTO,
     costruisci_query,
     formatta_riferimenti,
     normalizza_documento,
@@ -607,6 +609,7 @@ async def sentenza(
         documento["riferimenti_normativi"] = formatta_riferimenti(
             documento["riferimenti_normativi"]
         )
+    documento["riferimenti_normativi"] = _con_norma(documento.get("riferimenti_normativi"))
     testo_paragrafato, posizione = export.paragrafa(testo)
     marcato_paragrafato = export.paragrafa(marcato)[0] if marcato else None
     consultata = archivio.consultata(id_sentenza) or {}
@@ -872,6 +875,85 @@ async def norma(
             "da_cache": da_cache,
         }
     )
+
+
+# Il "tipo" dei riferimenti serviti al client è l'etichetta ("legge", "c.c."): si torna al
+# codice di Iudex per sapere se Normattiva lo legge.
+_CODICI_DA_ETICHETTA = {etichetta: codice for codice, etichetta in TIPI_ATTO.items()}
+_PREFISSO_EURLEX = "https://eur-lex.europa.eu/"
+
+
+def _norma_del_riferimento(riferimento: dict) -> dict | None:
+    """I parametri di /api/norma per un riferimento leggibile da Normattiva, altrimenti None.
+
+    Lettura stretta (decisione dell'utente del 30/10/2026): tipo fra i codici o fra i tipi
+    con numero e anno, numero e anno completi salvo per i codici, articolo nella forma dei
+    riferimenti ("2-bis"). Nessuna deduzione dei dati mancanti.
+    """
+    codice = _CODICI_DA_ETICHETTA.get(str(riferimento.get("tipo") or ""))
+    if codice is None or (codice not in CODICI_NORME and codice not in DENOMINAZIONI):
+        return None
+    letti = _parametri_norma(
+        codice,
+        str(riferimento.get("numero") or ""),
+        str(riferimento.get("anno") or ""),
+        str(riferimento.get("articolo") or ""),
+        "",
+    )
+    if isinstance(letti, str):
+        return None
+    tipo, numero, anno, articolo, _vigenza = letti
+    return {"tipo": tipo, "numero": numero, "anno": anno, "articolo": articolo}
+
+
+def _url_eurlex_del_riferimento(riferimento: dict) -> str | None:
+    """Il link a EUR-Lex di un regolamento o di una direttiva, solo se ``norme`` lo calcola.
+
+    Nessun link costruito qui: senza ``norme.url_eurlex`` (o con un risultato che non punta a
+    eur-lex.europa.eu) il riferimento resta senza link.
+    """
+    codice = _CODICI_DA_ETICHETTA.get(str(riferimento.get("tipo") or ""))
+    if codice not in ("REG", "DIR") or not hasattr(modulo_norme, "url_eurlex"):
+        return None
+    numero = str(riferimento.get("numero") or "")
+    anno = str(riferimento.get("anno") or "")
+    if not _NUMERO_ATTO.match(numero) or not _ANNO_ATTO.match(anno):
+        return None
+    try:
+        risultato = modulo_norme.url_eurlex(codice, numero, anno)
+    except (TypeError, ValueError):
+        return None
+    if isinstance(risultato, dict):
+        candidati = [risultato.get(chiave) for chiave in ("url", "eli", "celex")]
+    else:
+        candidati = [risultato]
+    for candidato in candidati:
+        if isinstance(candidato, str) and candidato.startswith(_PREFISSO_EURLEX):
+            return candidato
+    return None
+
+
+def _con_norma(riferimenti) -> list | None:
+    """I riferimenti con ``norma`` (e ``norma_url_eurlex``) dove ci sono; gli altri campi restano.
+
+    Copie nuove: il documento in cache non cambia.
+    """
+    if not isinstance(riferimenti, list):
+        return riferimenti
+    risultato = []
+    for riferimento in riferimenti:
+        if not isinstance(riferimento, dict):
+            risultato.append(riferimento)
+            continue
+        voce = dict(riferimento)
+        letta = _norma_del_riferimento(voce)
+        if letta is not None:
+            voce["norma"] = letta
+        link = _url_eurlex_del_riferimento(voce)
+        if link is not None:
+            voce["norma_url_eurlex"] = link
+        risultato.append(voce)
+    return risultato
 
 
 # --- cronologia, ricerche salvate, preferiti --------------------------------------------------

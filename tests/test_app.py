@@ -941,3 +941,67 @@ def test_norma_pausa_chiesta_da_normattiva_429(client):
     assert r.status_code == 429 and r.json()["pausa_residua_s"] > 0
     assert urn.call_count == 1
     assert c.get("/api/stato", headers=H).json()["normattiva"]["pausa_residua_s"] > 0
+
+
+# --- campo "norma" dei riferimenti (bottone "Testo") ----------------------------------------
+
+
+def test_norma_nei_riferimenti_solo_se_leggibili(monkeypatch):
+    # Senza url_eurlex in norme (arriva più avanti) nessun link EUR-Lex: niente URL inventati.
+    monkeypatch.delattr(modulo_app.modulo_norme, "url_eurlex", raising=False)
+    riferimenti = [
+        {"tipo": "legge", "numero": "241", "anno": "1990", "articolo": "2-bis"},
+        {"tipo": "c.c.", "numero": "", "anno": "", "articolo": "2043"},
+        {"tipo": "legge", "numero": "241", "anno": "", "articolo": "2"},
+        {"tipo": "d.lgs.", "numero": "165", "anno": "2001", "articolo": ""},
+        {"tipo": "legge reg.", "numero": "12", "anno": "2005", "articolo": "3"},
+        {"tipo": "reg. UE", "numero": "679", "anno": "2016", "articolo": "6"},
+        {"tipo": "xyz", "numero": "1", "anno": "2000", "articolo": "1"},
+    ]
+    originali = [dict(r) for r in riferimenti]
+    con_norma = modulo_app._con_norma(riferimenti)
+    assert con_norma[0]["norma"] == {
+        "tipo": "LS",
+        "numero": "241",
+        "anno": "1990",
+        "articolo": "2-bis",
+    }
+    assert con_norma[1]["norma"] == {"tipo": "CC", "numero": "", "anno": "", "articolo": "2043"}
+    # Dati incompleti, tipi non letti da Normattiva o sconosciuti: nessun campo.
+    for voce in con_norma[2:]:
+        assert "norma" not in voce and "norma_url_eurlex" not in voce
+    # I campi esistenti restano identici e l'elenco ricevuto non cambia.
+    for voce, originale in zip(con_norma, originali, strict=True):
+        assert {k: voce[k] for k in originale} == originale
+    assert riferimenti == originali
+
+
+def test_link_eurlex_solo_dalla_funzione_di_norme(monkeypatch):
+    chiamate = []
+
+    def url_eurlex(tipo, numero, anno):
+        chiamate.append((tipo, numero, anno))
+        return {"eli": f"https://eur-lex.europa.eu/eli/reg/{anno}/{numero}/oj/ita"}
+
+    monkeypatch.setattr(modulo_app.modulo_norme, "url_eurlex", url_eurlex, raising=False)
+    regolamento = {"tipo": "reg. UE", "numero": "679", "anno": "2016", "articolo": "6"}
+    voce = modulo_app._con_norma([regolamento, {"tipo": "c.c.", "articolo": "1"}])
+    assert voce[0]["norma_url_eurlex"] == "https://eur-lex.europa.eu/eli/reg/2016/679/oj/ita"
+    assert "norma" not in voce[0] and "norma_url_eurlex" not in voce[1]
+    assert chiamate == [("REG", "679", "2016")]
+    # Un risultato che non porta a EUR-Lex non diventa un link.
+    monkeypatch.setattr(modulo_app.modulo_norme, "url_eurlex", lambda *_: "https://esempio.it/x")
+    assert "norma_url_eurlex" not in modulo_app._con_norma([regolamento])[0]
+
+
+def test_sentenza_con_norma_nei_riferimenti(client):
+    c, mock = client
+    doc = _doc(5)
+    mock.post(URL_SOLR).mock(return_value=httpx.Response(200, json=_risposta([doc])))
+    for _volta in range(2):  # dalla rete e poi dalla cache: stesso campo
+        rif = c.get(f"/api/sentenza/{doc['id']}", headers=H).json()["documento"]
+        primo = rif["riferimenti_normativi"][0]
+        assert primo["testo"] == "art. 18 legge 300/1970"
+        assert primo["norma"] == {"tipo": "LS", "numero": "300", "anno": "1970", "articolo": "18"}
+    # Nessuna richiesta a Normattiva: il campo si calcola senza leggere la norma.
+    assert _richieste_normattiva(mock) == 0

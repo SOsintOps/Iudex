@@ -636,6 +636,45 @@ em.hit, mark { font-style: normal; background: var(--evidenziatore); color: inhe
 .fascicolo-corpo .rnc { font-size: 0.8rem; color: var(--neutral-color); margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .fascicolo-corpo .rnc .chip { cursor: pointer; border: 1px solid transparent; }
 .fascicolo-corpo .rnc .chip:hover { background: var(--primary-color); color: #fff; }
+/* Testo della norma da Normattiva: bottone accanto al chip e pannello sotto i riferimenti. */
+.fascicolo-corpo .rif-norma { display: inline-flex; align-items: center; gap: 3px; }
+.btn-testo, .link-eurlex {
+  font-size: 0.72rem;
+  padding: 1px 7px;
+  border: 1px solid var(--bordo-input);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--primary-color);
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.5;
+}
+.btn-testo:hover, .link-eurlex:hover, .btn-testo.attivo { background: var(--accento-chiaro); border-color: var(--primary-color); }
+.btn-testo:disabled { cursor: progress; opacity: 0.7; }
+.fascicolo-corpo .norme-aperte:empty { display: none; }
+.fascicolo-corpo .norme-aperte { margin: -6px 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.norma {
+  border: 1px solid var(--bordo);
+  border-left: 3px solid var(--primary-color);
+  border-radius: 4px;
+  background: var(--superficie);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.norma.errore { border-left-color: var(--errore); }
+.norma .norma-atto { color: var(--neutral-color); font-size: 0.8rem; }
+.norma .norma-articolo { font-weight: 600; margin: 2px 0 6px; }
+.norma .norma-articolo .rubrica { font-weight: 400; font-style: italic; }
+.norma .comma { margin: 0 0 0.5em; word-wrap: break-word; }
+.norma details { margin: 6px 0; font-size: 0.8rem; color: var(--neutral-color); }
+.norma details summary { cursor: pointer; }
+.norma details p { margin: 4px 0; }
+.norma .norma-vigenza { font-size: 0.8rem; margin-top: 4px; }
+.norma .norma-legenda { font-size: 0.75rem; color: var(--neutral-color); margin-top: 2px; }
+.norma .norma-errore { color: var(--errore); }
+.norma .fonte { font-size: 0.75rem; color: var(--neutral-color); margin-top: 6px; }
+.norma .fonte a { color: var(--primary-color); }
 .fascicolo-corpo .intestazione-testo { color: var(--neutral-color); font-size: 0.8rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
 .fascicolo-corpo .testo p { margin: 0 0 0.9em; word-wrap: break-word; }
 .fascicolo-corpo .testo p.intestazione { text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary-color); margin-top: 1.4em; font-weight: 600; font-size: 0.95em; }

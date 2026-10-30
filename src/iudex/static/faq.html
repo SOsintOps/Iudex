@@ -62,6 +62,10 @@
       <li><a href="#che-cosè-il-filtro-materia">Che cos'è il filtro "materia"?</a></li>
       <li><a href="#che-cosa-vuol-dire-dalla-cache-locale">Che cosa vuol dire "dalla cache locale"?</a></li>
       <li><a href="#perché-il-testo-ha-i-paragrafi-e-il-sito-no">Perché il testo ha i paragrafi e il sito no?</a></li>
+      <li><a href="#che-cosa-fa-il-bottone-testo">Che cosa fa il bottone "Testo"?</a></li>
+      <li><a href="#da-dove-viene-il-testo-delle-norme-e-con-quale-licenza">Da dove viene il testo delle norme e con quale licenza?</a></li>
+      <li><a href="#perché-mancano-allegati-e-tabelle">Perché mancano allegati e tabelle?</a></li>
+      <li><a href="#quante-richieste-fa-iudex-a-normattiva">Quante richieste fa Iudex a Normattiva?</a></li>
       <li><a href="#quante-richieste-fa-iudex">Quante richieste fa Iudex?</a></li>
       <li><a href="#quali-limiti-rispetta">Quali limiti rispetta?</a></li>
       <li><a href="#il-controllo-delle-novità-è-automatico">Il controllo delle novità è automatico?</a></li>
@@ -111,6 +115,16 @@
     <p>Che la stessa ricerca era già stata fatta da meno di un'ora e la risposta è stata riletta dal disco, senza interrogare il server. Per forzare una nuova richiesta svuota la cache dalla scheda Stato.</p>
     <h3 id="perché-il-testo-ha-i-paragrafi-e-il-sito-no">Perché il testo ha i paragrafi e il sito no?</h3>
     <p>Il testo arriva dall'OCR del PDF senza a capo. Iudex li ricostruisce riconoscendo le intestazioni ("FATTI DI CAUSA", "P.Q.M.") e i punti numerati; dove l'OCR ha unito due parole, Iudex non le separa.</p>
+
+    <h2 id="norme">Il testo delle norme</h2>
+    <h3 id="che-cosa-fa-il-bottone-testo">Che cosa fa il bottone "Testo"?</h3>
+    <p>Nella sentenza aperta, accanto a un riferimento normativo, apre l'articolo citato: titolo dell'atto, numero e rubrica, testo a commi, note richiudibili, vigenza e il link <b>Apri su Normattiva</b>. Compare solo quando il riferimento ha tutti i dati certi (per leggi e decreti numero e anno, per i codici basta l'articolo): meglio nessun bottone che l'articolo sbagliato. I segni <code>(( ))</code> racchiudono il testo inserito o modificato da leggi successive.</p>
+    <h3 id="da-dove-viene-il-testo-delle-norme-e-con-quale-licenza">Da dove viene il testo delle norme e con quale licenza?</h3>
+    <p>Dall'API Open Data di Normattiva, la banca dati ufficiale delle leggi dello Stato curata dall'Istituto Poligrafico e Zecca dello Stato. I dati sono in licenza CC BY 4.0: Iudex mostra accanto a ogni testo "Fonte: Normattiva (IPZS), CC BY 4.0" e il link all'atto sul sito. Fa fede la Gazzetta Ufficiale. Leggi regionali, CEDU e atti dell'Unione europea non sono in Normattiva.</p>
+    <h3 id="perché-mancano-allegati-e-tabelle">Perché mancano allegati e tabelle?</h3>
+    <p>Iudex mostra il testo dell'articolo; allegati e tabelle degli atti non sono mostrati. Si aprono dal link <b>Apri su Normattiva</b>.</p>
+    <h3 id="quante-richieste-fa-iudex-a-normattiva">Quante richieste fa Iudex a Normattiva?</h3>
+    <p>Una per clic su <b>Testo</b>, mai prima: aprire una sentenza non chiede nulla a Normattiva, e fra due richieste passano almeno 2 secondi. Il testo letto resta nella cache locale per 30 giorni, quindi riaprirlo non fa richieste; un secondo clic richiude il pannello. Se Normattiva chiede una pausa il pannello mostra quanti secondi attendere e Iudex non ritenta da solo. Le richieste fatte sono nella scheda Stato.</p>
 
     <h2 id="server">Le richieste al server</h2>
     <h3 id="quante-richieste-fa-iudex">Quante richieste fa Iudex?</h3>

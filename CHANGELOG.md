@@ -35,6 +35,15 @@
 - Pannello Stato: statistiche proprie di Normattiva in `/api/stato` (`normattiva`:
   richieste fatte, pausa residua, intervallo minimo, norme in cache, ultime richieste).
   All'avvio Iudex toglie anche il testo vigente delle norme scaduto (oltre 30 giorni).
+- Bottone **Testo** accanto ai riferimenti normativi della sentenza: apre sotto i
+  riferimenti l'articolo letto da Normattiva (titolo dell'atto, numero e rubrica, testo a
+  commi, note richiudibili, vigenza, legenda di `(( ))`, "Fonte: Normattiva (IPZS), CC BY
+  4.0" e il link "Apri su Normattiva"). Compare solo dove il riferimento ha tutti i dati certi
+  (campo nuovo `norma` nei riferimenti di `/api/sentenza`, gli altri campi non cambiano); una
+  richiesta per clic, nessuna all'apertura della sentenza, nessun nuovo tentativo automatico
+  dopo un errore. Il testo entra nella pagina solo come testo, mai come HTML. Regolamenti e
+  direttive UE avranno il link EUR-Lex quando Iudex saprà costruirlo. Nella scheda Stato le
+  richieste a Normattiva e gli articoli in cache. Guida e FAQ aggiornate.
 
 ### Correzioni
 - Riferimenti normativi delle sentenze letti correttamente: i codici, che il CED indica come

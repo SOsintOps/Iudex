@@ -42,6 +42,7 @@
     <a href="#filtri">I filtri</a>
     <a href="#risultati">I risultati</a>
     <a href="#lettura">Il pannello di lettura</a>
+    <a href="#norma">Testo della norma</a>
     <a href="#cronologia">Cronologia</a>
     <a href="#diario">Diario</a>
     <a href="#salvate">Ricerche salvate</a>
@@ -167,10 +168,20 @@
       <dt>‹ 1 / 4 ›</dt>
       <dd>Scorre le occorrenze delle parole cercate, evidenziate nel testo (anche con i tasti <code>n</code> e <code>p</code>). Per i riferimenti normativi e le frasi l'evidenziazione è calcolata dal server, quindi coincide con quella del sito.</dd>
       <dt>Riferimenti normativi</dt>
-      <dd>In fondo al testo, l'elenco delle norme indicizzate dal CED per quel provvedimento. Ogni voce è cliccabile e cerca le sentenze che citano la stessa norma.</dd>
+      <dd>In fondo al testo, l'elenco delle norme indicizzate dal CED per quel provvedimento. Ogni voce è cliccabile e cerca le sentenze che citano la stessa norma. Accanto a quelle che Iudex legge con certezza c'è il bottone <b>Testo</b> (vedi <a href="#norma">Testo della norma</a>).</dd>
       <dt>Chiudi</dt>
       <dd>Chiude il pannello (anche con <code>Esc</code>). <code>Alt+→</code> e <code>Alt+←</code> passano al provvedimento successivo o precedente dell'elenco senza chiuderlo.</dd>
     </dl>
+
+    <h2 id="norma">Testo della norma</h2>
+    <p>Accanto a un riferimento normativo il bottone <b>Testo</b> apre, sotto i riferimenti, l'articolo letto da Normattiva: titolo dell'atto, numero e rubrica dell'articolo, testo diviso in commi, note e aggiornamenti in un blocco richiudibile, vigenza ("In vigore dal ..."), il link <b>Apri su Normattiva</b> e la fonte "Normattiva (IPZS), CC BY 4.0". I segni <code>(( ))</code> sono quelli di Normattiva e racchiudono il testo inserito o modificato da leggi successive.</p>
+    <ul>
+      <li>Il bottone compare solo quando il riferimento ha tutti i dati certi: per i codici (c.c., c.p., c.p.c., c.p.p., Costituzione) basta l'articolo, per leggi e decreti servono anche numero e anno. Leggi regionali e CEDU non hanno il bottone; regolamenti e direttive UE avranno il link <b>EUR-Lex</b>.</li>
+      <li>Una sola richiesta a Normattiva per clic, mai prima: aprire una sentenza non chiede nulla. Un secondo clic su <b>Testo</b> richiude il pannello senza nuove richieste.</li>
+      <li>Il testo letto resta nella cache locale per 30 giorni: riaprirlo non chiede nulla a Normattiva (il pannello lo dice con "dalla cache locale").</li>
+      <li>Allegati e tabelle degli atti non sono mostrati: per quelli c'è <b>Apri su Normattiva</b>.</li>
+      <li>Se Normattiva non ha l'articolo, chiede una pausa ("Normattiva: attendere N s") o non risponde, il pannello lo dice; Iudex non ritenta da solo.</li>
+    </ul>
 
     <h2 id="cronologia">Cronologia</h2>
     <p>Ogni ricerca finisce qui con data e ora, testo e filtri, numero di risultati, ordinamento e risultati per pagina. <b>Apri</b> la rifà (dalla cache se è recente); <b>Elimina</b> toglie la singola voce, con il ricordo delle sentenze uscite da quella ricerca; <b>Svuota</b> cancella tutta la cronologia. La cronologia è solo tua: resta nella cartella dei dati di Iudex.</p>
@@ -224,6 +235,8 @@
       <dd>Scrive una copia pulita dell'intero archivio (diario e sentenze consultate compresi) nella cartella dei dati; si apre con qualunque programma per SQLite. Iudex ne fa una da solo ogni settimana e prima di ogni migrazione o importazione.</dd>
       <dt>Registro</dt>
       <dd>Le ultime chiamate al server con ora, tipo, esito e durata: mostra le richieste effettivamente inviate al server della Corte.</dd>
+      <dt>Normattiva</dt>
+      <dd>Quante richieste Iudex ha fatto a Normattiva per il testo delle norme, l'intervallo minimo fra due richieste, l'eventuale pausa chiesta dalla fonte e quanti articoli sono nella cache locale.</dd>
     </dl>
 
     <h2 id="impostazioni">Impostazioni</h2>

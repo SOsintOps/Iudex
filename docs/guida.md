@@ -119,9 +119,29 @@ aperta, da quali ricerche e in quali ricerche è uscita.
 - **A−**, **A+**: carattere del testo (memorizzato).
 - **‹ 1 / 4 ›**: occorrenze delle parole cercate (anche `n` e `p`).
 - **Riferimenti normativi**: in fondo al testo, cliccabili (cercano le sentenze che citano
-  la stessa norma).
+  la stessa norma). Accanto a quelli che Iudex legge con certezza c'è **Testo** (vedi sotto).
 - **Chiudi** (anche `Esc`); `Alt+→` / `Alt+←` passano al provvedimento successivo o
   precedente senza chiudere.
+
+## Testo della norma
+
+Accanto a un riferimento normativo il bottone **Testo** apre, sotto i riferimenti, l'articolo
+letto da Normattiva: titolo dell'atto, numero e rubrica dell'articolo, testo diviso in commi,
+note e aggiornamenti in un blocco richiudibile, vigenza ("In vigore dal ..."), il link
+**Apri su Normattiva** e la fonte "Normattiva (IPZS), CC BY 4.0". I segni `(( ))` sono quelli
+di Normattiva e racchiudono il testo inserito o modificato da leggi successive.
+
+- Il bottone compare solo quando il riferimento ha tutti i dati certi: per i codici (c.c.,
+  c.p., c.p.c., c.p.p., Costituzione) basta l'articolo, per leggi e decreti servono anche
+  numero e anno. Leggi regionali e CEDU non hanno il bottone; regolamenti e direttive UE
+  avranno il link **EUR-Lex**.
+- Una sola richiesta a Normattiva per clic, mai prima: aprire una sentenza non chiede nulla.
+  Un secondo clic su **Testo** richiude il pannello senza nuove richieste.
+- Il testo letto resta nella cache locale per 30 giorni: riaprirlo non chiede nulla a
+  Normattiva (il pannello lo dice con "dalla cache locale").
+- Allegati e tabelle degli atti non sono mostrati: per quelli c'è **Apri su Normattiva**.
+- Se Normattiva non ha l'articolo, chiede una pausa ("Normattiva: attendere N s") o non
+  risponde, il pannello lo dice; Iudex non ritenta da solo.
 
 ## Diario
 
@@ -187,6 +207,7 @@ in cache, voci del diario, sentenze consultate, pagine di risultati ricordate, P
 la loro cartella, percorso dell'archivio, con *Svuota cache ricerche* e *Svuota testi in
 cache* (preferiti, diario e storico restano) e *Copia di sicurezza* (copia pulita del
 database nella cartella dei dati); registro delle ultime chiamate con esito e durata.
+Per Normattiva: richieste fatte, intervallo minimo, eventuale pausa e articoli in cache.
 
 ## Tastiera
 
