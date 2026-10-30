@@ -2,6 +2,7 @@
 sintassi del sito tradisce l'intenzione: NOT, caratteri speciali con gli operatori)."""
 
 from iudex.query import (
+    analizza_citazione,
     clausola_segnale,
     controlla_estremi,
     costruisci_query,
@@ -315,3 +316,70 @@ def test_formatta_riferimenti_articoli_compattati_solo_dove_certi():
         "art": ["2043 00"],
     }
     assert [v["testo"] for v in formatta_riferimenti(rnc)] == ["d.P.R. 115/2002", "art. 2043 c.c."]
+
+
+def test_citazione_con_numero_e_anno():
+    assert analizza_citazione("Cass. civ. sez. III n. 1234/2020", 2026) == {
+        "kind": "snciv",
+        "numdec": "1234",
+        "anno": "2020",
+        "sezione": "3",
+    }
+    assert analizza_citazione("Cass. pen. n. 1234/2020", 2026) == {
+        "kind": "snpen",
+        "numdec": "1234",
+        "anno": "2020",
+        "sezione": None,
+    }
+    assert analizza_citazione("Cass. pen. sez. VI n. 1234/2020", 2026)["sezione"] == "6"
+    assert analizza_citazione("Cass. 5821/2021", 2026) == {
+        "kind": None,
+        "numdec": "5821",
+        "anno": "2021",
+        "sezione": None,
+    }
+    assert analizza_citazione("CASS. CIV. N. 99 DEL 2025", 2026)["numdec"] == "99"
+
+
+def test_citazione_con_le_virgole_e_la_data():
+    assert analizza_citazione("Cass. civ., Sez. Un., 11 novembre 2008, n. 26972", 2026) == {
+        "kind": "snciv",
+        "numdec": "26972",
+        "anno": "2008",
+        "sezione": "U",
+    }
+    # La data in cifre non si confonde con numero/anno.
+    assert analizza_citazione("Cass. pen., Sez. III, 12/01/2022, n. 1234", 2026) == {
+        "kind": "snpen",
+        "numdec": "1234",
+        "anno": "2022",
+        "sezione": "3",
+    }
+    # Lavoro e tributaria sono sezioni civili.
+    lavoro = analizza_citazione("Cass., sez. lav., 3 marzo 2021, n. 5821", 2026)
+    assert lavoro["kind"] == "snciv" and lavoro["sezione"] == "L" and lavoro["anno"] == "2021"
+    assert analizza_citazione("Cass. sez. trib. n. 123/2019", 2026)["kind"] == "snciv"
+    assert analizza_citazione("Cass. sez. V n. 123/2019", 2026)["kind"] is None
+
+
+def test_citazione_per_esteso_e_anno_a_due_cifre():
+    assert analizza_citazione("Cassazione civile sezione lavoro 16924/2025", 2026) == {
+        "kind": "snciv",
+        "numdec": "16924",
+        "anno": "2025",
+        "sezione": "L",
+    }
+    assert analizza_citazione("Cass. S.U. n. 500/1999", 2026)["sezione"] == "U"
+    assert analizza_citazione("Cass. civ. ord. n. 1234/24", 2026)["anno"] == "2024"
+    assert analizza_citazione("Cass. civ. n. 1234/99", 2026)["anno"] == "1999"
+    # Nessun controllo sull'anno: lo scarto degli anni futuri spetta a chi chiama.
+    assert analizza_citazione("Cass. 1234/2031", 2026)["anno"] == "2031"
+
+
+def test_citazione_non_interpretabile():
+    assert analizza_citazione("testo qualsiasi", 2026) is None
+    assert analizza_citazione("Cass. civ. sez. III", 2026) is None  # senza numero
+    assert analizza_citazione("cassa integrazione 12/2020", 2026) is None
+    assert analizza_citazione("Trib. Milano n. 1234/2020", 2026) is None
+    assert analizza_citazione("Cass. civ. n. 1234", 2026) is None  # senza anno né data
+    assert analizza_citazione("", 2026) is None

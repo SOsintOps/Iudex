@@ -3,6 +3,18 @@
 ## Da rilasciare
 
 ### Novità
+- Server MCP: due strumenti nuovi, in sola lettura. `leggi_norma` legge il testo di un
+  articolo da Normattiva passando da `GET /api/norma` (riferimento come in una citazione,
+  "art. 2043 c.c." o "art. 13 d.lgs. 196/2003", oppure i campi espliciti e la data di
+  vigenza) e restituisce testo, vigenza, link e fonte. `verifica_citazioni` controlla fino a
+  10 citazioni di sentenze della Cassazione per chiamata, anche nella forma con le virgole e
+  la data ("Cass. civ., Sez. Un., 11 novembre 2008, n. 26972"): prima le sentenze già
+  consultate su questo computer, poi una sola richiesta alla Corte per citazione; esiti
+  esiste, non trovata, fonte non raggiungibile, fuori archivio (anno futuro o anteriore al
+  2000, senza richieste) e non interpretabile. Quando la fonte non risponde la verifica
+  risulta non fatta, mai negativa. Istruzioni del server e README aggiornati.
+- Funzione `analizza_citazione` in `query.py`: estremi (archivio, numero, anno, sezione) di
+  una citazione di Cassazione scritta a mano.
 - Indice locale del testo delle sentenze già salvate e ricerca `GET /api/locale/cerca`:
   trova un nome o una frase senza nessuna richiesta alla Corte, non scrive nel diario e
   serve anche ad altre app che usano Iudex. L'indice si costruisce da solo all'apertura

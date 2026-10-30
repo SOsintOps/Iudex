@@ -657,3 +657,109 @@ def normalizza_facet(facet_fields: dict) -> dict[str, list[dict]]:
             voci.sort(key=lambda v: v["codice"], reverse=True)
         risultato[campo] = voci
     return risultato
+
+
+# ---------- citazioni di sentenze della Cassazione ----------
+
+_MESI = (
+    "gennaio",
+    "febbraio",
+    "marzo",
+    "aprile",
+    "maggio",
+    "giugno",
+    "luglio",
+    "agosto",
+    "settembre",
+    "ottobre",
+    "novembre",
+    "dicembre",
+)
+_CITAZIONE_INIZIO = re.compile(
+    r"^\s*(?:(?:la\s+)?corte\s+(?:suprema\s+)?di\s+)?cass(?:azione)?(?![a-z])\.?", re.IGNORECASE
+)
+_CITAZIONE_ARCHIVIO = re.compile(r"\b(?P<archivio>civ|pen)(?:ile|ale)?\b\.?", re.IGNORECASE)
+_CITAZIONE_SEZIONE = re.compile(
+    r"""\bsez(?:ione|\.)?\s*
+    (?P<sezione>un(?:ite)?\b|lav(?:oro)?\b|trib(?:utaria)?\b|fer(?:iale)?\b|[ivx]+\b|[1-7]\b)
+    |\b(?P<unite>ss\.?\s*uu|s\.\s*u)\b\.?""",
+    re.IGNORECASE | re.VERBOSE,
+)
+_CITAZIONE_DATA = re.compile(
+    r"""\b\d{1,2}\s*(?:[/.-]\s*\d{1,2}\s*[/.-]|°?\s+(?:"""
+    + "|".join(_MESI)
+    + r""")\s+)\s*(?P<anno>\d{4})\b""",
+    re.IGNORECASE | re.VERBOSE,
+)
+# "n. 26972/2008", "n. 99 del 2025", "n. 26972" (anno dalla data); senza "n.": "16924/2025".
+_CITAZIONE_NUMERO = re.compile(
+    r"""\bn(?:um(?:ero)?)?\.?\s*(?P<numero>\d{1,5})
+        (?:\s*(?:/|-|del(?:l'anno)?\s)\s*(?P<anno>\d{4}|\d{2})\b)?
+    |\b(?P<numero2>\d{1,5})\s*(?:/|del\s)\s*(?P<anno2>\d{4}|\d{2})\b""",
+    re.IGNORECASE | re.VERBOSE,
+)
+_ROMANI = {"i": "1", "ii": "2", "iii": "3", "iv": "4", "v": "5", "vi": "6", "vii": "7"}
+_SEZIONI_CITATE = {"un": "U", "lav": "L", "trib": "5", "fer": "F"}
+
+
+def _sezione_citata(m: re.Match | None) -> str | None:
+    """Codice della sezione come nei documenti di SentenzeWeb (``szdec``): 1-7, U, L, F."""
+    if m is None:
+        return None
+    if m.group("unite"):
+        return "U"
+    valore = m.group("sezione").lower()
+    for prefisso, codice in _SEZIONI_CITATE.items():
+        if valore.startswith(prefisso):
+            return codice
+    return _ROMANI.get(valore) or (valore if valore.isdigit() else None)
+
+
+def _anno_citato(cifre: str, anno_corrente: int) -> str:
+    if len(cifre) == 4:
+        return cifre
+    anno = 2000 + int(cifre)
+    return str(anno if anno <= anno_corrente else anno - 100)
+
+
+def analizza_citazione(testo: str, anno_corrente: int | None = None) -> dict | None:
+    """Estremi di una citazione di una sentenza della Cassazione, oppure ``None``.
+
+    Restituisce ``{"kind", "numdec", "anno", "sezione"}``: ``kind`` è "snciv", "snpen" o
+    ``None`` (archivio non indicato; le sezioni lavoro e tributaria sono solo civili),
+    ``numdec`` il numero senza zeri iniziali, ``anno`` l'anno a quattro cifre, ``sezione`` il
+    codice di SentenzeWeb (1-7, U, L, F) o ``None``. Forme riconosciute, senza distinzione di
+    maiuscole e con spazi e punti liberi: "Cass. civ. sez. III n. 1234/2020", "Cass. pen. n.
+    1234/2020", "Cass. 5821/2021", "Cassazione civile sezione lavoro 16924/2025" e la forma
+    con le virgole e la data "Cass. civ., Sez. Un., 11 novembre 2008, n. 26972" o "Cass. pen.,
+    Sez. III, 12/01/2022, n. 1234", dove l'anno viene dalla data se il numero non lo porta.
+    Nessun controllo sull'anno: se sia plausibile o nell'archivio lo decide chi chiama.
+    """
+    inizio = _CITAZIONE_INIZIO.match(testo or "")
+    if not inizio:
+        return None
+    resto = testo[inizio.end() :]
+    anno_corrente = anno_corrente or date.today().year
+    anno_data = None
+    data = _CITAZIONE_DATA.search(resto)
+    if data:
+        anno_data = data.group("anno")
+        resto = resto[: data.start()] + " " + resto[data.end() :]
+    numero = _CITAZIONE_NUMERO.search(resto)
+    if not numero:
+        return None
+    cifre = numero.group("numero") or numero.group("numero2")
+    anno = numero.group("anno") or numero.group("anno2")
+    anno = _anno_citato(anno, anno_corrente) if anno else anno_data
+    if not anno or int(cifre) == 0:
+        return None
+    trovata = _CITAZIONE_SEZIONE.search(resto)
+    sezione = _sezione_citata(trovata)
+    # Lavoro e tributaria sono sezioni civili: l'archivio si ricava anche senza "civ.".
+    solo_civile = bool(trovata and (trovata.group("sezione") or "")[:3].lower() in ("lav", "tri"))
+    archivio = _CITAZIONE_ARCHIVIO.search(resto)
+    if archivio:
+        kind = "snciv" if archivio.group("archivio").lower() == "civ" else "snpen"
+    else:
+        kind = "snciv" if solo_civile else None
+    return {"kind": kind, "numdec": str(int(cifre)), "anno": anno, "sezione": sezione}

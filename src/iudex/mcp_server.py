@@ -12,6 +12,8 @@ Avvio: ``python -m iudex.mcp_server``.
 from __future__ import annotations
 
 import os
+import re
+from datetime import date
 from typing import Annotated, Literal
 
 import httpx
@@ -19,6 +21,7 @@ from pydantic import Field
 
 from . import __version__, accesso
 from .config import impostazioni
+from .query import SEZIONI, SUFFISSI, analizza_citazione
 
 try:  # mcp 2.x (MCPServer, ToolError, ToolAnnotations con nomi snake_case)
     from mcp.server import MCPServer as FastMCP
@@ -53,23 +56,41 @@ mcp = FastMCP(
         "mostra inizio e fine, dove sta il dispositivo). Ogni ricerca costa una richiesta al "
         "server della Corte: non ripetere ricerche identiche e non scorrere molte pagine. "
         "Per un nome di persona o di società usa la frase esatta fra virgolette; molti nomi "
-        "nelle sentenze sono oscurati e lo stesso nome può essere di persone diverse."
+        "nelle sentenze sono oscurati e lo stesso nome può essere di persone diverse. "
+        "leggi_norma restituisce il testo di un articolo da Normattiva (vigente o a una "
+        "data), con la vigenza e il link: costa al più una richiesta a Normattiva, nessuna "
+        "se l'articolo è già nella cache. verifica_citazioni controlla fino a 10 citazioni "
+        "di sentenze della Cassazione per chiamata: prima le sentenze già consultate su "
+        "questo computer, poi una sola richiesta alla Corte per citazione, in sequenza, con "
+        "almeno 2 secondi fra una richiesta e l'altra. «non trovata» vuol dire che gli "
+        "estremi non sono nell'archivio online di SentenzeWeb, non che la sentenza sia "
+        "inesistente: può mancare dall'archivio pubblico o la citazione può avere un "
+        "numero, un anno o un archivio sbagliati. «fonte non raggiungibile» vuol dire che "
+        "la verifica non è stata fatta: riprova più tardi, senza trarne conclusioni."
     ),
 )
 
 
-def _chiama(percorso: str, parametri: dict) -> dict:
+def _richiesta(percorso: str, parametri: dict) -> httpx.Response:
+    """Una chiamata all'API locale; ``ToolError`` solo se Iudex non risponde."""
     try:
-        r = httpx.get(BASE + percorso, params=parametri, headers=_header(), timeout=90)
+        return httpx.get(BASE + percorso, params=parametri, headers=_header(), timeout=90)
     except httpx.TransportError as exc:
         raise ToolError(f"Iudex non risponde su {BASE}: va aperto Iudex ({exc})") from exc
+
+
+def _dettaglio(r: httpx.Response) -> str:
+    try:
+        corpo = r.json()
+        return str(corpo.get("errore") or corpo.get("detail"))
+    except (ValueError, AttributeError):
+        return r.text[:200]
+
+
+def _chiama(percorso: str, parametri: dict) -> dict:
+    r = _richiesta(percorso, parametri)
     if r.status_code >= 400:
-        try:
-            corpo = r.json()
-            dettaglio = corpo.get("errore") or corpo.get("detail")
-        except ValueError:
-            dettaglio = r.text[:200]
-        raise ToolError(f"Iudex ha risposto {r.status_code}: {dettaglio}")
+        raise ToolError(f"Iudex ha risposto {r.status_code}: {_dettaglio(r)}")
     return r.json()
 
 
@@ -206,6 +227,273 @@ def leggi_sentenza(
         f"Testo ({len(testo)} caratteri, da {da_carattere}):\n"
     )
     return intestazione + finestra(testo, da_carattere, quanti, d.get("posizione_pqm"))
+
+
+# --- norme -----------------------------------------------------------------------------------
+
+# Sigle degli atti come si scrivono nelle citazioni, senza punti e spazi -> codice di Iudex.
+_SIGLE_ATTI = {
+    "cc": "CC",
+    "codicecivile": "CC",
+    "cp": "CP",
+    "codicepenale": "CP",
+    "cpc": "CPC",
+    "codicediproceduracivile": "CPC",
+    "cpp": "CPP",
+    "codicediprocedurapenale": "CPP",
+    "cost": "COST",
+    "costituzione": "COST",
+    "l": "LS",
+    "legge": "LS",
+    "dlgs": "DLG",
+    "decretolegislativo": "DLG",
+    "dl": "DL",
+    "decretolegge": "DL",
+    "dpr": "DPR",
+    "dpcm": "DPCM",
+    "dm": "DM",
+    "rd": "RD",
+    "regiodecreto": "RD",
+    "rdl": "RDL",
+}
+_CODICI = {"CC", "CP", "CPC", "CPP", "COST"}
+_SUFFISSO = "|".join(sorted((s for s in SUFFISSI if s), key=len, reverse=True))
+_RIFERIMENTO = re.compile(
+    rf"""^\s*art(?:icolo|t?\.)?\s*(?P<numero>\d{{1,4}})\s*(?:-?\s*(?P<suffisso>{_SUFFISSO})\b)?
+    \s*,?\s*(?:del(?:la|l')?\s*)?(?P<atto>.+?)\s*$""",
+    re.IGNORECASE | re.VERBOSE,
+)
+_ESTREMI_ATTO = re.compile(
+    r"""^(?P<sigla>[a-z.\s'-]+?)\s*(?:n\.?\s*)?(?P<numero>\d{1,6})\s*(?:/|,|del\s)\s*
+    (?P<anno>\d{4})$""",
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
+def _sigla(testo: str) -> str:
+    return re.sub(r"[\s.'-]", "", testo.lower())
+
+
+def leggi_riferimento(testo: str) -> dict | None:
+    """Campi di /api/norma da un riferimento scritto come in una citazione, oppure ``None``.
+
+    "art. 2043 c.c." -> CC, articolo 2043; "art. 13 d.lgs. 196/2003" -> DLG 196/2003, articolo
+    13; "art. 2-bis l. 241/1990" -> LS 241/1990, articolo 2-bis. Nessuna deduzione: un atto
+    che non si riconosce dà ``None``.
+    """
+    m = _RIFERIMENTO.match(testo or "")
+    if not m:
+        return None
+    articolo = m.group("numero").lstrip("0") or "0"
+    if m.group("suffisso"):
+        articolo += "-" + m.group("suffisso").lower()
+    atto = m.group("atto").strip()
+    if _SIGLE_ATTI.get(_sigla(atto)) in _CODICI:
+        return {"tipo": _SIGLE_ATTI[_sigla(atto)], "numero": "", "anno": "", "articolo": articolo}
+    estremi = _ESTREMI_ATTO.match(atto)
+    if not estremi:
+        return None
+    tipo = _SIGLE_ATTI.get(_sigla(estremi.group("sigla")))
+    if not tipo or tipo in _CODICI:
+        return None
+    return {
+        "tipo": tipo,
+        "numero": estremi.group("numero"),
+        "anno": estremi.group("anno"),
+        "articolo": articolo,
+    }
+
+
+def _testo_norma(d: dict, da_carattere: int) -> str:
+    atto, art, vig = d.get("atto") or {}, d.get("articolo") or {}, d.get("vigenza") or {}
+    testo = art.get("testo") or ""
+    rubrica = f" - {art['rubrica']}" if art.get("rubrica") else ""
+    fine = f" al {vig['fine']}" if vig.get("fine") else ""
+    alla_data = (
+        f" (testo alla data {vig['richiesta']})" if vig.get("richiesta") else " (testo vigente)"
+    )
+    cache = " (dalla cache di Iudex)" if d.get("da_cache") else ""
+    corpo = testo[da_carattere : da_carattere + CARATTERI_MASSIMI]
+    if art.get("note") and da_carattere + CARATTERI_MASSIMI >= len(testo):
+        corpo += f"\n\nNote: {art['note']}"
+    return (
+        f"{atto.get('titolo') or '-'}\n"
+        f"Art. {art.get('numero')}{rubrica}\n"
+        f"Vigenza: dal {vig.get('inizio') or '?'}{fine}{alla_data}\n"
+        f"Link: {d.get('url') or '-'}\n"
+        f"Fonte: {d.get('fonte') or 'Normattiva'}{cache}\n"
+        f"Testo ({len(testo)} caratteri, da {da_carattere}):\n{corpo}"
+    )
+
+
+@mcp.tool(title="Leggi il testo di una norma", annotations=LETTURA)
+def leggi_norma(
+    riferimento: Annotated[
+        str, Field(description='es. "art. 2043 c.c.", "art. 13 d.lgs. 196/2003"')
+    ] = "",
+    tipo: Annotated[
+        str, Field(description="CC, CP, CPC, CPP, COST, LS, DLG, DL, DPR, DPCM, DM, RD, RDL")
+    ] = "",
+    numero: Annotated[str, Field(description="numero dell'atto (vuoto per i codici)")] = "",
+    anno: Annotated[str, Field(description="anno dell'atto (vuoto per i codici)")] = "",
+    articolo: Annotated[str, Field(description='es. "2043" oppure "2-bis"')] = "",
+    vigenza: Annotated[str, Field(description="AAAA-MM-GG; vuoto = testo vigente")] = "",
+    da_carattere: Annotated[int, Field(ge=0)] = 0,
+) -> str:
+    """Testo di un articolo da Normattiva (fonte ufficiale), vigente o alla data di vigenza,
+    con le date di vigenza e il link. Dai il riferimento come in una citazione oppure i campi
+    tipo, numero, anno e articolo; i campi espliciti prevalgono su quelli del riferimento."""
+    campi = {"tipo": "", "numero": "", "anno": "", "articolo": ""}
+    if riferimento:
+        letti = leggi_riferimento(riferimento)
+        if letti is None and not (tipo and articolo):
+            raise ToolError(
+                f"riferimento non interpretabile: «{riferimento}». Scrivilo come "
+                '"art. 2043 c.c." o "art. 13 d.lgs. 196/2003", oppure usa tipo, numero, '
+                "anno e articolo"
+            )
+        campi.update(letti or {})
+    espliciti = {"tipo": tipo, "numero": numero, "anno": anno, "articolo": articolo}
+    campi.update({chiave: valore for chiave, valore in espliciti.items() if valore})
+    if vigenza:
+        campi["vigenza"] = vigenza
+    return _testo_norma(_chiama("/api/norma", campi), da_carattere)
+
+
+# --- citazioni -------------------------------------------------------------------------------
+
+CITAZIONI_MASSIME = 10
+ANNO_MINIMO_ARCHIVIO = 2000  # SentenzeWeb pubblica i provvedimenti dal 2000
+
+
+def _corrisponde(doc: dict, estremi: dict) -> bool:
+    numero = str(doc.get("numero") or "").lstrip("0")
+    return (
+        numero == estremi["numdec"]
+        and str(doc.get("anno")) == estremi["anno"]
+        and (estremi["kind"] is None or doc.get("kind") == estremi["kind"])
+    )
+
+
+def _descrivi(doc: dict) -> str:
+    ecli = f" · {doc['ecli']}" if doc.get("ecli") else ""
+    return (
+        f"id {doc.get('id')} · {doc.get('archivio') or doc.get('kind')}, Sez. "
+        f"{doc.get('sezione')}, {doc.get('tipo')} n. {doc.get('numero')}/{doc.get('anno')}{ecli}"
+    )
+
+
+def _trovata(documenti: list[dict], estremi: dict, dove: str) -> str:
+    esito = f"esiste ({dove}): " + "; ".join(_descrivi(doc) for doc in documenti[:3])
+    sezione = estremi["sezione"]
+    if sezione in SEZIONI and all(doc.get("sezione_codice") != sezione for doc in documenti):
+        esito += (
+            f" — attenzione: la citazione indica la sezione {SEZIONI[sezione]}, l'archivio un'altra"
+        )
+    return esito
+
+
+def _fuori_archivio(anno: int, anno_corrente: int) -> str | None:
+    if anno > anno_corrente:
+        return f"fuori archivio: anno {anno} non plausibile (futuro), nessuna richiesta"
+    if anno < ANNO_MINIMO_ARCHIVIO:
+        return (
+            f"fuori archivio: SentenzeWeb pubblica i provvedimenti dal {ANNO_MINIMO_ARCHIVIO}, "
+            f"l'anno {anno} non si può verificare qui, nessuna richiesta"
+        )
+    return None
+
+
+class _Verifica:
+    """Stato di una chiamata a verifica_citazioni: cache locale letta una volta, richieste
+    contate, sospese dopo la prima risposta di fonte non raggiungibile."""
+
+    def __init__(self) -> None:
+        self.locali: list[dict] | None = None
+        self.sospesa: str | None = None
+        self.richieste = 0
+
+    def _consultate(self) -> list[dict]:
+        if self.locali is None:
+            r = _richiesta("/api/consultate", {})
+            elenco = r.json() if r.status_code == 200 else []
+            self.locali = [c.get("documento") or {} for c in elenco]
+        return self.locali
+
+    def esito(self, estremi: dict) -> str:
+        locali = [doc for doc in self._consultate() if _corrisponde(doc, estremi)]
+        if locali:
+            return _trovata(locali, estremi, "fra le sentenze consultate su questo computer")
+        if self.sospesa:
+            return f"fonte non raggiungibile: richiesta non fatta ({self.sospesa})"
+        parametri = {
+            "testo": f"{estremi['numdec']}/{estremi['anno']}",
+            "anno": estremi["anno"],
+            "righe": 5,
+        }
+        if estremi["kind"]:
+            parametri["kind"] = estremi["kind"]
+        r = _richiesta("/api/cerca", parametri)
+        self.richieste += 1
+        if r.status_code in (401, 403):
+            raise ToolError(f"Iudex ha risposto {r.status_code}: {_dettaglio(r)}")
+        if r.status_code == 429 or r.status_code >= 500:
+            self.sospesa = f"Iudex ha risposto {r.status_code}: {_dettaglio(r)}"
+            return f"fonte non raggiungibile, verifica non fatta ({self.sospesa})"
+        if r.status_code >= 400:
+            return f"non verificata: Iudex ha risposto {r.status_code}: {_dettaglio(r)}"
+        documenti = [d for d in r.json().get("documenti", []) if _corrisponde(d, estremi)]
+        if documenti:
+            return _trovata(documenti, estremi, "SentenzeWeb")
+        return "non trovata nell'archivio online di SentenzeWeb"
+
+
+@mcp.tool(title="Verifica citazioni di sentenze della Cassazione", annotations=LETTURA)
+def verifica_citazioni(
+    citazioni: Annotated[
+        list[str],
+        Field(
+            description=(
+                'al massimo 10, es. "Cass. civ., Sez. Un., 11 novembre 2008, n. 26972" o '
+                '"Cass. pen. sez. VI n. 1234/2020"'
+            )
+        ),
+    ],
+) -> str:
+    """Verifica se le sentenze della Cassazione citate sono nell'archivio di SentenzeWeb.
+
+    Per ogni citazione: esiste (con id ed ECLI), non trovata (assente dall'archivio online,
+    il che non prova che la sentenza non sia mai stata pronunciata), fonte non raggiungibile
+    (verifica non fatta), fuori archivio (anno futuro o anteriore al 2000, nessuna richiesta)
+    o non interpretabile. Prima le sentenze già consultate su questo computer, poi una sola
+    richiesta alla Corte per citazione."""
+    if len(citazioni) > CITAZIONI_MASSIME:
+        raise ToolError(
+            f"al massimo {CITAZIONI_MASSIME} citazioni per chiamata (ne sono arrivate "
+            f"{len(citazioni)}): dividile in più chiamate"
+        )
+    if not citazioni:
+        return "Nessuna citazione da verificare."
+    anno_corrente = date.today().year
+    verifica = _Verifica()
+    gia_viste: dict[tuple, str] = {}
+    righe = []
+    for indice, citazione in enumerate(citazioni, start=1):
+        estremi = analizza_citazione(citazione, anno_corrente)
+        if estremi is None:
+            esito = "non interpretabile: servono numero e anno, es. «Cass. civ. n. 26972/2008»"
+        else:
+            chiave = (estremi["kind"], estremi["numdec"], estremi["anno"])
+            esito = _fuori_archivio(int(estremi["anno"]), anno_corrente) or gia_viste.get(chiave)
+            if esito is None:
+                esito = gia_viste[chiave] = verifica.esito(estremi)
+        righe.append(f"{indice}. «{citazione}» -> {esito}")
+    intestazione = (
+        f"Verifica di {len(citazioni)} citazioni ({verifica.richieste} richieste alla Corte). "
+        "«non trovata» = assente dall'archivio online, non prova che la sentenza non esista; "
+        "«fonte non raggiungibile» = verifica non fatta."
+    )
+    return intestazione + "\n" + "\n".join(righe)
 
 
 def main() -> None:

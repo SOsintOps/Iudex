@@ -222,8 +222,9 @@ propria istanza; le altre chiamate vogliono l'header `X-Iudex-Token` con il cont
 .venv\Scripts\python.exe -m pip install -e .[mcp]
 ```
 
-Con Iudex aperto, `python -m iudex.mcp_server` espone tre strumenti MCP
-(`cerca_sentenze`, `cerca_per_norma`, `leggi_sentenza`) che passano dall'API locale, quindi
+Con Iudex aperto, `python -m iudex.mcp_server` espone cinque strumenti MCP
+(`cerca_sentenze`, `cerca_per_norma`, `leggi_sentenza`, `leggi_norma`, `verifica_citazioni`),
+tutti in sola lettura, che passano dall'API locale, quindi
 dalla cache e dalla limitazione della frequenza delle richieste. Il server MCP legge il token
 dal file `token` della cartella dei dati (la stessa di Iudex: `IUDEX_DATI` se l'hai cambiata)
 oppure da `IUDEX_TOKEN`. Esempio per LM Studio (`mcp.json`) o Claude Desktop:
@@ -239,13 +240,37 @@ oppure da `IUDEX_TOKEN`. Esempio per LM Studio (`mcp.json`) o Claude Desktop:
 }
 ```
 
-Serve un modello che sappia chiamare strumenti; gli strumenti sono tre, quindi anche un
+Serve un modello che sappia chiamare strumenti; gli strumenti sono pochi, quindi anche un
 modello piccolo li gestisce. Le istruzioni del server chiedono all'assistente di non
 ripetere ricerche identiche e di non scorrere molte pagine. `cerca_sentenze` accetta il
 filtro `segnale` (contrasto o conformità) e riporta i conteggi dei segnali; `leggi_sentenza`
 alla prima lettura di un testo lungo restituisce l'inizio e la parte dal P.Q.M., indicando
 i caratteri omessi. Gli errori (Iudex spento, pausa chiesta dal server) arrivano al modello
 come errori dello strumento, con il messaggio leggibile. Richiede `mcp` 2.x.
+
+`leggi_norma` restituisce il testo di un articolo da Normattiva (fonte ufficiale, dati IPZS in
+licenza CC BY 4.0) con le date di vigenza e il link: accetta un riferimento scritto come in
+una citazione (`"art. 2043 c.c."`, `"art. 13 d.lgs. 196/2003"`, `"art. 2-bis l. 241/1990"`)
+oppure i campi `tipo`, `numero`, `anno`, `articolo` e la data di `vigenza` facoltativa, e
+passa da `GET /api/norma`: al più una richiesta a Normattiva, nessuna se l'articolo è già
+nella cache.
+
+`verifica_citazioni` controlla fino a 10 citazioni di sentenze della Cassazione per chiamata,
+anche nella forma con le virgole e la data:
+
+```json
+{"citazioni": ["Cass. civ., Sez. Un., 11 novembre 2008, n. 26972",
+               "Cass. pen. sez. VI n. 1234/2020", "Cass. civ. n. 1234/2031"]}
+```
+
+Per ciascuna guarda prima le sentenze già consultate su questo computer e solo se manca fa
+una richiesta alla Corte (con `/api/cerca`, quindi con il ritmo di 2 secondi e le pause di
+Iudex), una per citazione e in sequenza. Gli esiti: **esiste** (con id ed ECLI, e un avviso
+se la sezione citata non coincide), **non trovata** (gli estremi non sono nell'archivio
+online di SentenzeWeb: non prova che la sentenza non esista), **fonte non raggiungibile**
+(la Corte non ha risposto o ha chiesto una pausa: verifica non fatta, e per le citazioni
+successive della stessa chiamata non si insiste), **fuori archivio** (anno futuro o anteriore
+al 2000, scartato senza richieste) e **non interpretabile**.
 
 ### Certificato TLS
 
