@@ -30,6 +30,7 @@ esportabili e trasferibili su un altro computer).
 - [Che cosa fa](#che-cosa-fa)
 - [Schermate](#schermate)
 - [Approfondimenti](#approfondimenti)
+- [Progetti collegati](#progetti-collegati)
 - [Licenza](#licenza)
 
 ## Che cosa fa
@@ -173,6 +174,19 @@ fonti ufficiali sono raccolte nelle seguenti pagine dedicate:
   Apache Solr/ISAPI, dei parametri di interrogazione e della struttura dei campi del CED.
 - [**Software simili**](docs/software-simili.md) — Confronto con altri strumenti e progetti che
   interagiscono con le banche dati giurisprudenziali e normative italiane.
+
+## Progetti collegati
+
+Iudex, Praeco e [Acta Diurna](https://github.com/SOsintOps/acta-diurna) sono tre applicazioni
+**autonome** dello stesso autore: ognuna si installa e si usa da sola, nessuna richiede che le
+altre siano installate o accese. Collaborano perché parlano la stessa lingua: persone e società
+nello stesso formato, con gli stessi identificativi, scambiabili in FollowTheMoney e in pacchetti
+JSONL. Praeco acquisisce ogni settimana i provvedimenti penali della Cassazione e ne estrae
+persone e società; Acta Diurna legge la stampa italiana sulle operazioni delle forze dell'ordine
+e, se Iudex è acceso sullo stesso computer, può cercare i nomi dei suoi casi nelle sentenze
+(prima nell'archivio locale di Iudex, poi sulla Corte su richiesta, con gli stessi limiti di
+ritmo). Praeco riusa come libreria il client e l'export di Iudex, che si installano con Praeco
+senza bisogno dell'app.
 
 ## Licenza
 

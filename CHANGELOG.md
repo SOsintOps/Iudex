@@ -2,6 +2,20 @@
 
 ## Da rilasciare
 
+### Documentazione
+- README più corto, con indice e sezione Approfondimenti; le sezioni lunghe sono in pagine
+  dedicate: `docs/installazione.md`, `docs/normattiva.md`, `docs/consultazione-sito.md`,
+  `docs/sviluppo.md`.
+- Da dietro una VPN: esclusione dal tunnel (*split tunneling*) per indirizzo IP, con tutti e
+  tre gli indirizzi (`81.126.56.168` Corte di Cassazione, `147.78.212.26` API Open Data di
+  Normattiva, `147.78.212.12` sito di Normattiva), in installazione e FAQ.
+- Prima FAQ: Iudex non è uno strumento ufficiale della Corte.
+- README, sezione «Progetti collegati»: Iudex, Praeco e Acta Diurna sono applicazioni autonome
+  che collaborano tramite il formato comune delle entità; nessuna richiede le altre.
+- Linguaggio tecnico-giuridico rivisto (tipi di provvedimento, motivazione e P.Q.M., date di
+  deliberazione e deposito, valore legale della Gazzetta Ufficiale, art. 52 d.lgs. 196/2003);
+  guida e FAQ allineate ai cinque strumenti MCP; `licenza.html` aggiornata.
+
 ## 0.9.0 — 2026-10-30
 
 Testo delle norme da Normattiva, link EUR-Lex, verifica delle citazioni dal server MCP,
