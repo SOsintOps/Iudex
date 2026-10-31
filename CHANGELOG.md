@@ -10,8 +10,8 @@
   tre gli indirizzi (`81.126.56.168` Corte di Cassazione, `147.78.212.26` API Open Data di
   Normattiva, `147.78.212.12` sito di Normattiva), in installazione e FAQ.
 - Prima FAQ: Iudex non è uno strumento ufficiale della Corte.
-- README, sezione «Progetti collegati»: Iudex, Praeco e Acta Diurna sono applicazioni autonome
-  che collaborano tramite il formato comune delle entità; nessuna richiede le altre.
+- README, sezione «Progetti collegati»: Iudex e Acta Diurna sono applicazioni autonome che
+  collaborano tramite il formato comune delle entità; nessuna richiede l'altra.
 - Linguaggio tecnico-giuridico rivisto (tipi di provvedimento, motivazione e P.Q.M., date di
   deliberazione e deposito, valore legale della Gazzetta Ufficiale, art. 52 d.lgs. 196/2003);
   guida e FAQ allineate ai cinque strumenti MCP; `licenza.html` aggiornata.
