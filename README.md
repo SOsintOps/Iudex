@@ -106,7 +106,7 @@ Le schermate mostrano ricerche reali, fatte dalla finestra di Iudex 0.8 con un a
 prova; per rispetto delle persone citate nei provvedimenti sono state scelte viste senza nomi
 delle parti.
 
-## Come interroga il sito (e perché è più leggero del sito stesso)
+## Come viene consultato il sito
 
 Il sito ufficiale, per una sola ricerca, invia al server circa venti richieste: una per
 ogni lettera digitata (suggerimenti), la ricerca, quattro chiamate per i conteggi dei
