@@ -86,6 +86,7 @@
       <li>Riferimenti normativi letti correttamente: i codici compaiono come «art. 2043 c.c.» o «art. 380-bis c.p.c.» (prima per esempio «art. 238 cod 309/1990»), numeri e anni vanno all'atto giusto, i suffissi bis, ter... non si perdono. Quando l'abbinamento non è certo Iudex mostra l'atto senza numero o articolo invece di un riferimento sbagliato; il testo dei riferimenti cambia anche nelle esportazioni.</li>
       <li>La cronologia mette prima la ricerca più recente anche quando due ricerche cadono nello stesso istante.</li>
       <li>Windows: avviato dai sorgenti, Iudex ha sulla barra un'identità separata, così non si confonde con l'app installata.</li>
+      <li>Server MCP: la riga di avvio <code>Iudex MCP &lt;versione&gt;</code> va su stderr e non più su stdout, che in trasporto stdio è il canale JSON-RPC (i client la segnalavano come messaggio non valido).</li>
     </ul>
     <h3>Documentazione</h3>
     <ul>

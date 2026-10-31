@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from datetime import date
 from typing import Annotated, Literal
 
@@ -501,5 +502,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    print(f"Iudex MCP {__version__}")  # noqa: T201
+    print(f"Iudex MCP {__version__}", file=sys.stderr)  # noqa: T201
     main()

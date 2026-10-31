@@ -96,6 +96,8 @@ riferimenti normativi letti correttamente.
   stesso istante.
 - Windows: avviato dai sorgenti, Iudex ha sulla barra un'identità separata
   (``SOsintOps.Iudex.Sviluppo``), così non si confonde con l'app installata.
+- Server MCP: la riga di avvio `Iudex MCP <versione>` va su stderr e non più su stdout, che in
+  trasporto stdio è il canale JSON-RPC (i client la segnalavano come messaggio non valido).
 
 ### Documentazione
 - FAQ nel formato comune ai progetti SOsintOps (indice delle domande, una domanda per
