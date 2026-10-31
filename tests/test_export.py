@@ -108,7 +108,7 @@ GREZZO_NORME = {"kind": "snciv", "ocr": ["Fatto inventato.P.Q.M.La Corte rigetta
 ID_NORME = "snciv2026301234O"
 
 # Le entità della stessa sentenza prodotte da export.py prima di questo passo (commit 5a81797):
-# devono restare identiche, keywords comprese (Praeco).
+# devono restare identiche, keywords comprese (compatibilità con le altre app).
 ENTITA_PRIMA = [
     {
         "id": "cfc81109f31ef05377d571b3cd2f9ac1ca4c0788",

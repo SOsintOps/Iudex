@@ -114,7 +114,7 @@ class ClientSentenzeWeb:
     ):
         self.imp = impostazioni
         # Chi sceglie l'impronta (la scheda Impostazioni di Iudex); senza, quella del giorno o
-        # IUDEX_IMPRONTA, come prima (Praeco usa il client così).
+        # IUDEX_IMPRONTA, come prima (le altre app usano il client così).
         self._scegli_impronta = scegli_impronta
         self._lock = asyncio.Lock()
         self._client: httpx.AsyncClient | None = None

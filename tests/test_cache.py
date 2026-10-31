@@ -379,7 +379,7 @@ def test_pulizia_delle_norme_solo_con_il_ttl_e_solo_non_permanenti():
     _invecchia(a, CHIAVE_VIGENTE, 40)
     _invecchia(a, CHIAVE_DATATA, 40)
     assert a.conta_norme() == 3
-    # Vecchia firma (due argomenti, come la usa Praeco): le norme non si toccano.
+    # Vecchia firma (due argomenti, come la usano le altre app): le norme non si toccano.
     assert a.pulisci_scadute(3600, GIORNO) == 0
     assert a.pulisci_scadute(-1, -1) == 0
     assert a.conta_norme() == 3

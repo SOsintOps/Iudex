@@ -169,7 +169,7 @@ def _migra_3(conn: sqlite3.Connection) -> None:
 
 def _migra_4(conn: sqlite3.Connection) -> None:
     # PDF salvati: il file è ``<id_sentenza>.pdf`` nella cartella dei PDF (stesso nome usato
-    # da Praeco); ``percorso`` è relativo a quella cartella quando ci sta dentro.
+    # dalle altre app); ``percorso`` è relativo a quella cartella quando ci sta dentro.
     conn.execute(
         "CREATE TABLE IF NOT EXISTS pdf ("
         " id_sentenza TEXT PRIMARY KEY, quando REAL NOT NULL, percorso TEXT NOT NULL,"

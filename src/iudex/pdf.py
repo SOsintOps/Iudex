@@ -1,7 +1,7 @@
 """PDF delle sentenze salvati in locale: la cartella, il nome del file, l'apertura.
 
 Il file di una sentenza è ``<id_sentenza>.pdf`` nella cartella dei PDF, lo stesso nome usato
-da Praeco (``dati/pdf/<id>.pdf``), così i due programmi possono un giorno condividerla. La
+dalle altre app (``dati/pdf/<id>.pdf``), così i programmi possono un giorno condividerla. La
 cartella si sceglie nell'installer (``installazione.ini`` nella cartella dei dati) o nella
 scheda Impostazioni; altrimenti è ``pdf/`` nella cartella dei dati.
 """

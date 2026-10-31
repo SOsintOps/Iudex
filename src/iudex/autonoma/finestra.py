@@ -3,7 +3,7 @@
 Su Windows la finestra usa WebView2 (presente in Windows 11), su Linux WebKitGTK, su macOS
 WebKit. L'icona offre "Apri", "Mantieni in esecuzione" ed "Esci": con "Mantieni in
 esecuzione" la chiusura della finestra la nasconde soltanto e il server resta acceso (serve
-a Praeco, il cui pianificatore lavora in sottofondo). Richiede l'extra ``desktop``.
+alle app che lavorano in sottofondo). Richiede l'extra ``desktop``.
 """
 
 from __future__ import annotations

@@ -21,7 +21,7 @@ def congelata() -> bool:
 
 
 def cartella_utente(app: str, piattaforma: str | None = None) -> Path:
-    """La cartella dei dati dell'app ``app`` (``"iudex"``, ``"praeco"``) per il sistema."""
+    """La cartella dei dati dell'app ``app`` (per esempio ``"iudex"``) per il sistema."""
     piattaforma = piattaforma or sys.platform
     nome = app.capitalize()
     if piattaforma == "win32":

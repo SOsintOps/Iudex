@@ -18,7 +18,7 @@ from iudex.autonoma import cartelle, finestra, server
 
 def test_identita_windows_dal_titolo():
     assert finestra.identita_windows("Iudex 0.8.1", installata=True) == "SOsintOps.Iudex"
-    assert finestra.identita_windows("praeco", installata=True) == "SOsintOps.Praeco"
+    assert finestra.identita_windows("esempio", installata=True) == "SOsintOps.Esempio"
     # Dai sorgenti (i test girano così) l'identità è distinta da quella dell'app installata.
     assert finestra.identita_windows("Iudex 0.8.1") == "SOsintOps.Iudex.Sviluppo"
 
@@ -27,7 +27,7 @@ def test_cartelle_per_sistema(monkeypatch, tmp_path):
     monkeypatch.setenv("APPDATA", str(tmp_path / "Roaming"))
     assert cartelle.cartella_utente("iudex", "win32") == tmp_path / "Roaming" / "Iudex"
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "share"))
-    assert cartelle.cartella_utente("praeco", "linux") == tmp_path / "share" / "praeco"
+    assert cartelle.cartella_utente("esempio", "linux") == tmp_path / "share" / "esempio"
     assert cartelle.cartella_utente("iudex", "darwin") == (
         Path.home() / "Library" / "Application Support" / "Iudex"
     )
@@ -59,7 +59,7 @@ def test_scelta_della_porta(monkeypatch):
         monkeypatch.setattr(server, "leggi_health", lambda h, p, timeout=1.5: {"app": "iudex"})
         assert server.scegli_porta("127.0.0.1", porta, "iudex") == (porta, True)
         # Occupata da un'altra app nostra: non si riusa.
-        monkeypatch.setattr(server, "leggi_health", lambda h, p, timeout=1.5: {"app": "praeco"})
+        monkeypatch.setattr(server, "leggi_health", lambda h, p, timeout=1.5: {"app": "esempio"})
         assert server.scegli_porta("127.0.0.1", porta, "iudex")[0] != porta
 
 

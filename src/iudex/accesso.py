@@ -2,7 +2,7 @@
 
 Come il backend di Voicebox, il server di Iudex serve la propria finestra e nessun altro. Il
 token sta nel file ``token`` della cartella dei dati: la finestra lo usa per aprire
-``/accesso?codice=...``, che lascia un cookie di sessione; il server MCP (e un domani Praeco)
+``/accesso?codice=...``, che lascia un cookie di sessione; il server MCP (e un domani altre app)
 lo legge dal file e lo manda nell'header ``X-Iudex-Token``. Un browser qualsiasi che apre
 http://127.0.0.1:8765/ senza il token vede solo l'invito ad aprire Iudex dalla sua finestra.
 """

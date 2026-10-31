@@ -1,4 +1,4 @@
-"""Iudex (e Praeco) come app autonoma: cartelle dei dati per sistema, server locale con
+"""Iudex (e altre app) come app autonoma: cartelle dei dati per sistema, server locale con
 ``/health`` e sorveglianza del processo che lo ha avviato, finestra nativa con icona
 nell'area di notifica, backup del database.
 

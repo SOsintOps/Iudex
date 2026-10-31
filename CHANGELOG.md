@@ -134,7 +134,7 @@ Riordino del repository e una correzione.
 - Windows: sulla barra delle applicazioni la finestra aveva l'icona di Python quando Iudex
   partiva dai sorgenti (`pythonw.exe`). Ora Iudex dichiara la sua identità
   (AppUserModelID `SOsintOps.Iudex`), la stessa dei collegamenti dell'installer: icona di
-  Iudex e collegamento fissato che riapre Iudex. Vale anche per Praeco, che usa la stessa finestra.
+  Iudex e collegamento fissato che riapre Iudex. Vale anche per le altre app che usano la stessa finestra.
 
 ### Repository
 - Codice nella cartella `src/` (layout `src`, consigliato per i pacchetti Python): i test
@@ -168,7 +168,7 @@ Riordino del repository e una correzione.
   User-Agent (ricavato se manca), per Firefox nessun client hint. "Prova" mostra gli header
   senza contattare la Corte (`POST /api/impronta/prova`); quando l'impronta cambia, la
   richiesta successiva riapre la sessione. `ClientSentenzeWeb` accetta `scegli_impronta`
-  (senza, il comportamento di prima, usato da Praeco).
+  (senza, il comportamento di prima).
 - Nome di questo computer modificabile nelle Impostazioni (compare negli export).
 - Gli orari del tema scuro automatico passano dalla scheda Stato alla scheda Impostazioni
   (gruppo Aspetto).
@@ -255,12 +255,12 @@ Riordino del repository e una correzione.
   per la build Linux (con PyGObject recente l'hook di PyInstaller non trova GIRepository 2.0).
 - La finestra usa l'icona di Iudex (la stessa dei collegamenti) anche avviata dai sorgenti:
   prima mostrava l'icona di serie di Windows (quella di `pythonw.exe`). Su Windows pywebview
-  riceve il `.ico`, su Linux il PNG. Vale anche per Praeco, che usa la stessa finestra.
+  riceve il `.ico`, su Linux il PNG. Vale anche per le altre app che usano la stessa finestra.
 - Lista delle prove degli installer su macchina virtuale: `docs/prova-installazione.md`.
 
 ### App autonoma
 - `Guscio(nascosto=True)`: la finestra parte nascosta, solo come icona nell'area di notifica
-  (avvio con il sistema, usato da Praeco).
+  (avvio con il sistema, per le altre app).
 
 ### Correzioni
 - L'eseguibile senza console si fermava all'avvio del server ("Unable to configure formatter
@@ -274,7 +274,7 @@ Riordino del repository e una correzione.
   amministratore, collegamenti, disinstallazione che lascia i dati) e AppImage per Linux
   (server e browser predefinito); workflow `Rilascio` sui soli tag `v*` che costruisce i
   pacchetti, calcola gli sha256 e pubblica `latest.json` nella release.
-- Pacchetto `iudex/autonoma/`, usato anche da Praeco: cartella dei dati per sistema quando
+- Pacchetto `iudex/autonoma/`, riusabile anche da altre app: cartella dei dati per sistema quando
   Iudex gira da un eseguibile (`%APPDATA%\Iudex`, `~/Library/Application Support/Iudex`,
   `~/.local/share/iudex`; dai sorgenti resta `dati/`), con le sottocartelle `backup/` e
   `log/`; `GET /health` riconoscibile (`{"app": "iudex", "versione", "pid"}`); scelta della
