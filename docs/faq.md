@@ -1,11 +1,12 @@
 # Domande frequenti (FAQ)
 
-Domande frequenti su Iudex: i dati, la ricerca, le richieste al server, i dati locali, i problemi, la finestra e gli assistenti, lo sviluppo.
+Domande frequenti su Iudex: i dati, la ricerca, il testo delle disposizioni normative, le richieste al server, i dati locali, i problemi, la finestra e gli assistenti, lo sviluppo.
 
 La stessa pagina è nell'app, nel menu **Help → Domande frequenti**.
 
 ## Indice
 
+* [Iudex è uno strumento ufficiale?](#iudex-è-uno-strumento-ufficiale)
 * [Che cosa contiene SentenzeWeb?](#che-cosa-contiene-sentenzeweb)
 * [Iudex copia la banca dati?](#iudex-copia-la-banca-dati)
 * [Di chi sono i testi?](#di-chi-sono-i-testi)
@@ -46,12 +47,21 @@ La stessa pagina è nell'app, nel menu **Help → Domande frequenti**.
 
 ## I dati
 
+### Iudex è uno strumento ufficiale?
+
+No. Iudex è un progetto software indipendente e open source (licenza MIT): **non è uno
+strumento ufficiale** e non è affiliato, patrocinato né approvato dalla Corte Suprema di
+Cassazione, dal Centro Elettronico di Documentazione (CED), dal Ministero della Giustizia,
+dall'Istituto Poligrafico e Zecca dello Stato (IPZS) o da Normattiva. Si limita a fornire
+un'interfaccia locale di consultazione per banche dati pubbliche liberamente accessibili.
+
 ### Che cosa contiene SentenzeWeb?
 
 Le sentenze, le ordinanze e i decreti civili e penali della Corte di Cassazione pubblicati
 negli ultimi anni: al 21 ottobre 2026 circa 422.000 provvedimenti dal 2021. È una finestra
-scorrevole di circa cinque anni. Non contiene le massime ufficiali né i provvedimenti
-anteriori: quelli sono in ItalgiureWeb, riservato agli operatori.
+scorrevole di circa cinque anni. Non contiene le massime ufficiali redatte dall'Ufficio del
+Massimario e del Ruolo né i provvedimenti anteriori: tali archivi sono in ItalgiureWeb,
+riservato agli utenti abilitati.
 
 ### Iudex copia la banca dati?
 
@@ -127,10 +137,12 @@ I segni `(( ))` racchiudono il testo inserito o modificato da leggi successive.
 
 ### Da dove viene il testo delle norme e con quale licenza?
 
-Dall'API Open Data di Normattiva, la banca dati ufficiale delle leggi dello Stato curata
-dall'Istituto Poligrafico e Zecca dello Stato. I dati sono in licenza CC BY 4.0: Iudex mostra
-accanto a ogni testo "Fonte: Normattiva (IPZS), CC BY 4.0" e il link all'atto sul sito. Fa fede
-la Gazzetta Ufficiale. Leggi regionali, CEDU e atti dell'Unione europea non sono in Normattiva.
+Dall'API Open Data di Normattiva, il portale istituzionale degli atti normativi statali
+curato dall'Istituto Poligrafico e Zecca dello Stato (IPZS). I dati sono distribuiti con
+licenza CC BY 4.0: Iudex mostra accanto a ogni disposizione "Fonte: Normattiva (IPZS),
+CC BY 4.0" e il link all'atto sul portale. A fini legali fa fede esclusivamente il testo
+pubblicato nella Gazzetta Ufficiale della Repubblica Italiana. Leggi regionali, CEDU e atti
+dell'Unione europea non sono presenti in Normattiva.
 
 ### Perché mancano allegati e tabelle?
 
@@ -229,10 +241,15 @@ messaggio compare, reinstalla o apri una segnalazione.
 
 ### "Errore di rete" con la VPN attiva
 
-Il server della Corte non risponde agli indirizzi di uscita delle VPN (il collegamento resta
-senza risposta). Escludi dal tunnel l'indirizzo di `www.italgiure.giustizia.it` con
-l'esclusione per IP della VPN (*split tunneling*); i dettagli nel README, sezione «Da dietro
-una VPN».
+I server della Corte e di Normattiva non rispondono agli indirizzi di uscita delle VPN
+commerciali (il collegamento resta senza risposta). Configura l'esclusione per IP della VPN
+(*split tunneling*) per:
+- `81.126.56.168` (`www.italgiure.giustizia.it`, Corte di Cassazione: ricerche e PDF);
+- `147.78.212.26` (`api.normattiva.it`, API Open Data di Normattiva per il testo delle norme);
+- `147.78.212.12` (`www.normattiva.it`, sito di Normattiva per i link aperti nel browser);
+
+oppure escludi direttamente dal tunnel l'eseguibile di Iudex. I dettagli sono in
+[installazione.md](installazione.md#da-dietro-una-vpn), sezione «Da dietro una VPN».
 
 ### Nel browser compare "Iudex si usa dalla sua finestra"
 
@@ -267,9 +284,11 @@ come Voicebox; dai sorgenti `scripts\avvia-finestra.cmd` (extra `desktop`).
 
 ### Si può usare da un assistente o da un LLM locale?
 
-Sì: `python -m iudex.mcp_server` (extra `mcp`) espone tre strumenti che passano dall'API
-locale; serve un client MCP e Iudex aperto. Il token si legge dal file `token` della cartella
-dei dati (o da `IUDEX_TOKEN`).
+Sì: `python -m iudex.mcp_server` (extra `mcp`) espone cinque strumenti in sola lettura
+(`cerca_sentenze`, `cerca_per_norma`, `leggi_sentenza`, `leggi_norma`, `verifica_citazioni`)
+che passano dall'API locale; serve un client MCP e Iudex aperto. Il token si legge dal file
+`token` della cartella dei dati (o da `IUDEX_TOKEN`). I dettagli sono in
+[installazione.md](installazione.md#con-un-assistente-o-un-llm-locale-mcp).
 
 ## Lo sviluppo
 

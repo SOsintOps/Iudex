@@ -54,7 +54,7 @@ sul Desktop; su Linux l'AppImage).
 - **Riferimento normativo**: `art. 2043 c.c.`, `art. 18 legge 300/1970`, `art. 640 c.p.`.
   Il server della Corte lo normalizza nelle forme con cui le sentenze lo citano; Iudex
   conserva le normalizzazioni per 30 giorni. Si combina con le parole.
-- **Ordina per**: data di pubblicazione, data di udienza, rilevanza.
+- **Ordina per**: data di pubblicazione (deposito in cancelleria), data di decisione (udienza o camera di consiglio), rilevanza.
 - **Per pagina**: 10, 25 o 50. Ogni pagina nuova è una richiesta; quelle viste restano in
   cache per un'ora.
 - **Sintassi**: promemoria della sintassi e delle scorciatoie sotto il riquadro.
@@ -85,8 +85,9 @@ ripristinare; frecce da tastiera con il focus sulla maniglia.
 
 ## I risultati
 
-Ogni risultato mostra archivio e sezione, tipo e numero, date di udienza e deposito,
-presidente, relatore, ECLI e (vista normale) i frammenti con le parole evidenziate.
+Ogni risultato mostra archivio e sezione, tipo e numero, date di decisione (udienza o camera
+di consiglio) e di pubblicazione (deposito in cancelleria), presidente del collegio,
+consigliere relatore, ECLI e (vista normale) i frammenti con le parole evidenziate.
 
 - **Già vista**: compare accanto agli estremi delle sentenze già consultate (testo o PDF).
   Il passaggio del mouse mostra quante volte e l'ultima volta, da quali ricerche l'hai
@@ -223,7 +224,9 @@ Per Normattiva: richieste fatte, intervallo minimo, eventuale pausa e articoli i
 
 ## Con un assistente
 
-Il server MCP incluso espone tre strumenti a un assistente o LLM locale, con il token della
-cartella dei dati. Dettagli nelle [domande frequenti](faq.md). In ogni caso Iudex fa una
-richiesta alla volta al server della Corte, con almeno due secondi di distanza, e non ha
-funzioni di scaricamento massivo.
+Il server MCP incluso espone cinque strumenti in sola lettura (`cerca_sentenze`,
+`cerca_per_norma`, `leggi_sentenza`, `leggi_norma`, `verifica_citazioni`) a un assistente o
+LLM locale, con il token della cartella dei dati. Dettagli in
+[installazione.md](installazione.md#con-un-assistente-o-un-llm-locale-mcp) e nelle
+[domande frequenti](faq.md). In ogni caso Iudex fa una richiesta alla volta al server della
+Corte, con almeno due secondi di distanza, e non ha funzioni di scaricamento massivo.
