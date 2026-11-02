@@ -16,6 +16,11 @@
   deliberazione e deposito, valore legale della Gazzetta Ufficiale, art. 52 d.lgs. 196/2003);
   guida e FAQ allineate ai cinque strumenti MCP; `licenza.html` aggiornata.
 
+### Sviluppo
+- L'extra `dev` si installa anche su Windows: `followthemoney` (che richiede `pyicu`, senza
+  pacchetti già compilati per Windows) solo fuori da Windows; il test sul modello FtM viene
+  saltato su Windows e gira nella CI su Linux.
+
 ## 0.9.0 — 2026-10-30
 
 Testo delle norme da Normattiva, link EUR-Lex, verifica delle citazioni dal server MCP,

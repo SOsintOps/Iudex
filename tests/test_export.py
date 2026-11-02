@@ -1,3 +1,5 @@
+import pytest
+
 from iudex.export import paragrafa, risultati_csv
 
 
@@ -292,7 +294,7 @@ def test_norma_citata_lettura_stretta():
 def test_ftm_schema_e_proprieta_validi_nel_modello():
     import json
 
-    from followthemoney import model
+    model = pytest.importorskip("followthemoney").model
 
     from iudex.export import consultate_ftm
 

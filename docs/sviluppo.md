@@ -16,6 +16,10 @@ sicurezza in [SECURITY.md](../SECURITY.md) e il codice di condotta in
 La suite di test automatici opera interamente offline (le risposte dei server della Corte di
 Cassazione e di Normattiva sono simulate).
 
+Su Windows l'extra `dev` non installa `followthemoney`: richiede `pyicu`, che non ha pacchetti
+già compilati e andrebbe compilato con la libreria ICU. Il test che confronta l'esportazione
+FtM con il modello reale viene quindi saltato su Windows e gira nella CI su Linux.
+
 ## Struttura del progetto
 
 | Modulo / Percorso | Compito |

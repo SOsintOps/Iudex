@@ -35,7 +35,9 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "respx",
-    "followthemoney",
+    # followthemoney richiede pyicu, che su Windows va compilato con ICU (nessun wheel):
+    # il test sul modello FtM gira in CI (Linux) e su Windows viene saltato.
+    "followthemoney; sys_platform != 'win32'",
     "tzdata; sys_platform == 'win32'",
 ]
 mcp = ["mcp>=2.3.0"]
