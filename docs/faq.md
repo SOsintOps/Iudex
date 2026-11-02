@@ -33,6 +33,7 @@ La stessa pagina è nell'app, nel menu **Help → Domande frequenti**.
 * [Dove sono i PDF?](#dove-sono-i-pdf)
 * [Come cancello tutto?](#come-cancello-tutto)
 * [Posso cambiare la larghezza delle colonne?](#posso-cambiare-la-larghezza-delle-colonne)
+* [Windows blocca l'installer o Iudex (Smart App Control)](#windows-blocca-linstaller-o-iudex-smart-app-control)
 * ["Il server ha rifiutato la richiesta (HTTP 403 o 429)"](#il-server-ha-rifiutato-la-richiesta-http-403-o-429)
 * ["Errore di rete" o "certificate verify failed"](#errore-di-rete-o-certificate-verify-failed)
 * ["Errore di rete" con la VPN attiva](#errore-di-rete-con-la-vpn-attiva)
@@ -227,6 +228,21 @@ Sì: trascina le linee fra i pannelli o fra le intestazioni delle tabelle; doppi
 ripristina; da tastiera, focus sulla maniglia e frecce.
 
 ## Problemi
+
+### Windows blocca l'installer o Iudex (Smart App Control)
+
+In Windows 11 **Smart App Control** blocca i programmi privi di firma digitale e di una
+reputazione già acquisita. L'installer e `Iudex.exe` non sono ancora firmati con un certificato
+di firma del codice, quindi con Smart App Control attivo vengono bloccati: a differenza di
+SmartScreen non compare «Esegui comunque» e non si può autorizzare il singolo file. Si vede
+in Sicurezza di Windows → Controllo app e browser → Smart App Control.
+
+Rimedio senza disattivare la protezione: installa Iudex dai sorgenti con il Python di
+[python.org](https://www.python.org/downloads/windows/), che è firmato (per esempio
+`winget install Python.Python.3.12`). Un ambiente virtuale creato da un Python senza firma,
+come quello scaricato automaticamente da `uv`, viene bloccato allo stesso modo. Disattivare
+Smart App Control riduce la protezione del computer e non è necessario. I passi sono in
+[installazione.md](installazione.md#dai-sorgenti), sezione «Dai sorgenti».
 
 ### "Il server ha rifiutato la richiesta (HTTP 403 o 429)"
 

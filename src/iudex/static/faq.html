@@ -79,6 +79,7 @@
       <li><a href="#dove-sono-i-pdf">Dove sono i PDF?</a></li>
       <li><a href="#come-cancello-tutto">Come cancello tutto?</a></li>
       <li><a href="#posso-cambiare-la-larghezza-delle-colonne">Posso cambiare la larghezza delle colonne?</a></li>
+      <li><a href="#windows-blocca-linstaller-o-iudex-smart-app-control">Windows blocca l'installer o Iudex (Smart App Control)</a></li>
       <li><a href="#il-server-ha-rifiutato-la-richiesta-http-403-o-429">"Il server ha rifiutato la richiesta (HTTP 403 o 429)"</a></li>
       <li><a href="#errore-di-rete-o-certificate-verify-failed">"Errore di rete" o "certificate verify failed"</a></li>
       <li><a href="#errore-di-rete-con-la-vpn-attiva">"Errore di rete" con la VPN attiva</a></li>
@@ -157,6 +158,9 @@
     <p>Sì: trascina la linea fra i filtri e i risultati, quella fra i risultati e il testo, o le linee fra le intestazioni delle tabelle di cronologia, ricerche salvate e preferiti. Un doppio clic ripristina la larghezza predefinita; con la tastiera, porta il focus sulla maniglia e usa le frecce.</p>
 
     <h2 id="problemi">Problemi</h2>
+    <h3 id="windows-blocca-linstaller-o-iudex-smart-app-control">Windows blocca l'installer o Iudex (Smart App Control)</h3>
+    <p>In Windows 11 <strong>Smart App Control</strong> blocca i programmi privi di firma digitale e di una reputazione già acquisita. L'installer e <code>Iudex.exe</code> non sono ancora firmati con un certificato di firma del codice, quindi con Smart App Control attivo vengono bloccati: a differenza di SmartScreen non compare «Esegui comunque» e non si può autorizzare il singolo file. Si vede in Sicurezza di Windows → Controllo app e browser → Smart App Control.</p>
+    <p>Rimedio senza disattivare la protezione: installa Iudex dai sorgenti con il Python di <a href="https://www.python.org/downloads/windows/" target="_blank" rel="noopener">python.org</a>, che è firmato (per esempio <code>winget install Python.Python.3.12</code>). Un ambiente virtuale creato da un Python senza firma, come quello scaricato automaticamente da <code>uv</code>, viene bloccato allo stesso modo. Disattivare Smart App Control riduce la protezione del computer e non è necessario. I passi sono in <code>docs/installazione.md</code>, sezione «Dai sorgenti».</p>
     <h3 id="il-server-ha-rifiutato-la-richiesta-http-403-o-429">"Il server ha rifiutato la richiesta (HTTP 403 o 429)"</h3>
     <p>Il server della Corte sta limitando le richieste. Iudex non insiste: per il tempo indicato dal server (intestazione <code>Retry-After</code>; un minuto se manca) non manda altre richieste e risponde subito «riprova fra N s»; la scheda Stato mostra quanto manca. Dopo un 403 riapre anche la sessione con il sito. Se succede spesso, alza l'intervallo con la variabile <code>IUDEX_INTERVALLO</code> (secondi).</p>
     <h3 id="errore-di-rete-o-certificate-verify-failed">"Errore di rete" o "certificate verify failed"</h3>

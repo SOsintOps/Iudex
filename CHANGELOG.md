@@ -15,6 +15,10 @@
 - Linguaggio tecnico-giuridico rivisto (tipi di provvedimento, motivazione e P.Q.M., date di
   deliberazione e deposito, valore legale della Gazzetta Ufficiale, art. 52 d.lgs. 196/2003);
   guida e FAQ allineate ai cinque strumenti MCP; `licenza.html` aggiornata.
+- Smart App Control di Windows 11 blocca l'installer, il programma di disinstallazione e
+  `Iudex.exe`, che non sono ancora firmati: nuova FAQ e nota in `docs/installazione.md`, con il
+  rimedio (installazione dai sorgenti con il Python firmato di python.org; un ambiente virtuale
+  creato dal Python scaricato da `uv` viene bloccato allo stesso modo).
 
 ### Sviluppo
 - L'extra `dev` si installa anche su Windows: `followthemoney` (che richiede `pyicu`, senza

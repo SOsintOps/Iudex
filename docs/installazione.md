@@ -23,6 +23,11 @@ Dalla pagina delle [release](https://github.com/SOsintOps/Iudex/releases/latest)
   commerciale di firma del codice (*code signing*): Windows SmartScreen può pertanto richiedere
   conferma all'avvio («Ulteriori informazioni» → «Esegui comunque»); l'impronta crittografica
   `sha256` di ciascun file è pubblicata nel manifesto `latest.json` allegato alla release.
+  Se in Windows 11 è attivo **Smart App Control** (Sicurezza di Windows → Controllo app e
+  browser), l'installer, il programma di disinstallazione e `Iudex.exe` vengono bloccati senza
+  possibilità di conferma, perché Smart App Control non ammette eccezioni per singoli file: in
+  tal caso si usi l'installazione dai sorgenti con il Python di python.org (vedi sotto e la
+  [FAQ](faq.md#windows-blocca-linstaller-o-iudex-smart-app-control)).
 - **Linux**: `Iudex-X.Y.Z-x86_64.AppImage` (da rendere eseguibile con `chmod +x`): apre la
   finestra avvalendosi di WebKitGTK di sistema (`sudo apt install gir1.2-webkit2-4.1 python3-gi`
   su distribuzioni Debian e Ubuntu; in caso di assenza Iudex mostra le istruzioni necessarie) e
@@ -31,7 +36,12 @@ Dalla pagina delle [release](https://github.com/SOsintOps/Iudex/releases/latest)
 
 ## Dai sorgenti
 
-Richiede Python 3.11 o versione successiva.
+Richiede Python 3.11 o versione successiva. Su Windows si consiglia il Python di
+[python.org](https://www.python.org/downloads/windows/) (oppure
+`winget install Python.Python.3.12`), i cui eseguibili sono firmati digitalmente: con Smart App
+Control attivo, un ambiente virtuale creato da un Python senza firma (per esempio quello
+scaricato automaticamente da `uv`) viene bloccato all'avvio. Chi usa `uv` può indicare il
+Python di python.org con `uv venv --python <percorso di python.exe>`.
 
 ```bat
 git clone https://github.com/SOsintOps/Iudex.git
