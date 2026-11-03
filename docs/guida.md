@@ -51,6 +51,14 @@ sul Desktop; su Linux l'AppImage).
   `"giusta causa"` cerca la frase esatta; `licenz*` tronca; `AND`, `OR` combinano;
   `NOT mobbing` o `-mobbing` esclude la parola. Estremi: `12345/2024`, `n. 123 del 2025`, `sent. 99/24`, `ord. 5/2023`.
   La sintassi è quella del sito ufficiale, quindi i risultati coincidono.
+- **Forma esatta**: casella sotto il campo delle parole. Il server della Corte confronta le
+  parole per radice, quindi `"ferrari"` trova anche Ferrara e Ferraro, anche fra virgolette.
+  Con la casella spuntata Iudex scarica tutti i risultati (50 per richiesta, con la consueta
+  pausa, al più 500), legge il brano evidenziato di ciascuno e tiene solo quelli in cui le
+  parole fra virgolette sono scritte esattamente così; una frase di due parole è cercata anche
+  nell'ordine inverso (`"ferrari alessandro"`), come negli elenchi delle parti. In testa ai
+  risultati: «7 su 141 trovati dal server». Dettagli e limiti nelle
+  [FAQ](faq.md#perché-cercando-ferrari-escono-anche-ferrara-e-ferraro-forma-esatta).
 - **Riferimento normativo**: `art. 2043 c.c.`, `art. 18 legge 300/1970`, `art. 640 c.p.`.
   Il server della Corte lo normalizza nelle forme con cui le sentenze lo citano; Iudex
   conserva le normalizzazioni per 30 giorni. Si combina con le parole.

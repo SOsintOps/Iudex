@@ -383,3 +383,52 @@ def test_citazione_non_interpretabile():
     assert analizza_citazione("Trib. Milano n. 1234/2020", 2026) is None
     assert analizza_citazione("Cass. civ. n. 1234", 2026) is None  # senza anno né data
     assert analizza_citazione("", 2026) is None
+
+
+# ---------- forma esatta ----------
+
+
+def _em(testo: str) -> str:
+    return " ".join(f'<em class="hit">{p}</em>' for p in testo.split())
+
+
+def test_forma_esatta_tiene_solo_il_nome_scritto_cosi():
+    from iudex.query import filtro_esatto, frasi_esatte
+
+    assert frasi_esatte('"alessandro  ferrari" mobbing') == ["alessandro ferrari"]
+    assert frasi_esatte("alessandro ferrari") == []
+    assert filtro_esatto("alessandro ferrari") is None
+    esatto = filtro_esatto('"alessandro ferrari"')
+    # Brani reali (2026-11-03): il server li restituisce tutti per "alessandro ferrari".
+    assert not esatto([f"MOTIVI DELLA DECISIONE {_em('Alessandro Ferraro')} ricorre avverso"])
+    assert not esatto([f"nell'interesse di {_em('Alessandro Ferrara')}; rilevato che"])
+    assert not esatto(["1. Alessandra Ferrari citava in giudizio Guber Banca s.p.a"])
+    assert not esatto(["ROMITI ALESSANDRO, FERRARI MARCO, tutti rappresentati"])
+    assert not esatto(["avv. Alessandro Ferraris"])
+    assert esatto([f"la persona offesa {_em('Ferrari')} {_em('Alessandro')}"])
+    assert esatto(["contro Ferrari Alessandro, - intimato -"])
+    assert esatto(["all'avvocato FERRARI   ALESSANDRO"])
+    assert esatto(["altro brano", f"di {_em('Alessandro')} {_em('Ferrari')} &amp; c."])
+    assert not esatto([])
+
+
+def test_forma_esatta_con_piu_frasi_e_or():
+    from iudex.query import filtro_esatto
+
+    tutte = filtro_esatto('"giusta causa" "mario rossi"')
+    assert tutte(["giusta causa ... Mario Rossi"]) and not tutte(["giusta causa e basta"])
+    una = filtro_esatto('"mario rossi" OR "mario bianchi"')
+    assert una(["Mario Bianchi"]) and not una(["Maria Rossi"])
+
+
+def test_forma_esatta_chiede_entrambi_gli_ordini():
+    from iudex.query import query_testo_libero, testo_forma_esatta
+
+    t = testo_forma_esatta('"alessandro ferrari" NOT "via ferrari" -ferrara')
+    assert t == '("alessandro ferrari" OR "ferrari alessandro") NOT "via ferrari" -ferrara'
+    assert query_testo_libero(t) == (
+        '( "alessandro ferrari" OR "ferrari alessandro" ) -"via ferrari" -ferrara'
+    )
+    assert (
+        testo_forma_esatta('"giusta causa del licenziamento"') == '"giusta causa del licenziamento"'
+    )

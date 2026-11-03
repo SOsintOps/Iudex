@@ -168,6 +168,23 @@ ogni token è reso nella sintassi di Solr (`NOT x` e `-x` diventano `-x`, le par
 protette tranne il `*`) e i token sono uniti da spazi. L'evidenziazione (`hl.q`) usa i soli
 termini positivi.
 
+### Radice delle parole e forma esatta
+
+Il campo `ocr` è analizzato con una riduzione alla radice (*stemming*): la ricerca confronta le
+radici, non le parole scritte, anche dentro una frase fra virgolette. Misura del 2026-11-03:
+`"alessandro ferrari"` e `"alessandro ferrara"` restituiscono entrambe 102 provvedimenti, e i
+brani evidenziati contengono «Ferrari», «Ferrara» e «Ferraro» (la radice comune è presumibilmente
+«ferrar»; l'analizzatore esatto del server non è documentato). Un `NOT ferrara` esclude anche
+«Ferrari».
+
+La **forma esatta** di Iudex (`esatta=1`) lavora a valle del server: chiede ogni frase di due
+parole in entrambi gli ordini (`("a b" OR "b a")`), scarica tutti i risultati a pagine di 50
+(facet solo nella prima richiesta, al più 500 risultati, altrimenti 422), toglie i tag dai brani
+evidenziati (`hl.snippets=4`, `hl.fragsize=100`), e tiene i documenti i cui brani contengono le
+frasi fra virgolette con confini di parola, senza distinzione fra maiuscole e minuscole (con `OR`
+basta una frase, altrimenti servono tutte). Per `"alessandro ferrari"` la richiesta al server dà
+141 risultati, il filtro ne tiene 7.
+
 ### Riferimento normativo
 
 Vedi sopra: forma canonica chiesta al server, ogni variante come frase con distanza 8.

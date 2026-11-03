@@ -52,12 +52,14 @@ from .query import (
     SEGNALI,
     TIPI_ATTO,
     costruisci_query,
+    filtro_esatto,
     formatta_riferimenti,
     normalizza_documento,
     normalizza_facet,
     normalizza_segnali,
     parametri_dettaglio,
     parametri_ricerca,
+    testo_forma_esatta,
 )
 
 log = logging.getLogger("iudex.app")
@@ -67,6 +69,8 @@ HEADER_INTERFACCIA = "x-iudex"
 PAGINE_STATICHE = {"guida", "faq", "versioni", "software-simili", "licenza"}
 # I valori di "materia" contengono spazi e virgole: nel permalink usano un separatore diverso.
 SEPARATORI = {"materia": ";"}
+# Forma esatta: tetto ai risultati del server da scorrere (10 richieste da 50).
+MASSIMO_FORMA_ESATTA = 500
 
 
 HEADERS_HOST_VALIDI = {"127.0.0.1", "localhost", "testserver"}
@@ -254,9 +258,12 @@ def _lista(campo: str, valore: str | None) -> list[str]:
     return [v.strip() for v in (valore or "").split(sep) if v.strip()]
 
 
-def _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale=None) -> dict[str, list[str]]:
-    """Filtri della ricerca; ``segnale`` (contrasto/conformita) viaggia con loro, così finisce
-    nel permalink, nella cronologia e nel diario come ogni altro filtro."""
+def _filtri(
+    kind, tipoprov, szdec, anno, ssz, materia, segnale=None, esatta=False
+) -> dict[str, list[str]]:
+    """Filtri della ricerca; ``segnale`` (contrasto/conformita) ed ``esatta`` (forma esatta)
+    viaggiano con loro, così finiscono nel permalink, nella cronologia e nel diario come ogni
+    altro filtro."""
     grezzi = {
         "kind": kind,
         "tipoprov": tipoprov,
@@ -270,6 +277,8 @@ def _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale=None) -> dict[str
     }
     if segnale in SEGNALI:
         filtri["segnale"] = [segnale]
+    if esatta in (True, "1", "true"):
+        filtri["esatta"] = ["1"]
     return filtri
 
 
@@ -284,6 +293,8 @@ def _permalink(testo, rif, filtri, ordina, righe, pagina) -> str:
             coppie.append((campo, SEPARATORI.get(campo, ",").join(filtri[campo])))
     if filtri.get("segnale"):
         coppie.append(("segnale", filtri["segnale"][0]))
+    if filtri.get("esatta"):
+        coppie.append(("esatta", "1"))
     if ordina != "pubblicazione":
         coppie.append(("ordina", ordina))
     if righe != impostazioni.righe_predefinite:
@@ -307,6 +318,7 @@ def _da_permalink(permalink: str) -> dict:
             p.get("ssz"),
             p.get("materia"),
             p.get("segnale"),
+            p.get("esatta"),
         ),
         "ordina": p.get("ordina", "pubblicazione"),
     }
@@ -321,6 +333,8 @@ def _descrizione(testo, rif, filtri) -> str:
     for campo, valori in filtri.items():
         if campo == "segnale":
             parti.append(ETICHETTE_SEGNALI.get(valori[0], valori[0]))
+        elif campo == "esatta":
+            parti.append("forma esatta")
         else:
             parti.append(f"{campo}={','.join(valori)}")
     return " · ".join(parti) or "tutte le sentenze"
@@ -388,13 +402,30 @@ async def _esegui_ricerca(request: Request, testo, rif, filtri, ordina, pagina, 
     inizio = (pagina - 1) * righe
     rif_norm = await _riferimento_normalizzato(request, rif)
     segnale = (filtri.get("segnale") or [None])[0]
-    q, hl_q = costruisci_query(testo, rif_norm, filtri, segnale)
+    # Il sito indica l'archivio nel suffisso dell'URL quando è selezionato uno solo.
+    kind = filtri["kind"][0] if len(filtri.get("kind", [])) == 1 else None
+    esatto = filtro_esatto(testo) if filtri.get("esatta") else None
+    if filtri.get("esatta") and esatto is None:
+        # Senza parole fra virgolette la forma esatta non ha nulla da confrontare.
+        filtri = {k: v for k, v in filtri.items() if k != "esatta"}
+    testo_server = testo_forma_esatta(testo) if esatto is not None else testo
+    q, hl_q = costruisci_query(testo_server, rif_norm, filtri, segnale)
+    if esatto is not None:
+        chiave = json.dumps([q, hl_q, "esatta", ordina])
+        risposta = archivio.leggi_risposta(chiave, impostazioni.ttl_ricerche)
+        dalla_cache = risposta is not None
+        if risposta is None:
+            risposta = await _ricerca_esatta(client, q, hl_q, ordina, kind, esatto)
+            if _conserva_storico(request):
+                archivio.scrivi_risposta(chiave, risposta)
+        risposta = dict(risposta, documenti=risposta["documenti"][inizio : inizio + righe])
+        return _completa_risposta(
+            archivio, risposta, dalla_cache, testo, rif, rif_norm, filtri, ordina, pagina, righe
+        )
     chiave = json.dumps([q, hl_q, inizio, righe, ordina])
     risposta = archivio.leggi_risposta(chiave, impostazioni.ttl_ricerche)
     dalla_cache = risposta is not None
     if risposta is None:
-        # Il sito indica l'archivio nel suffisso dell'URL quando è selezionato uno solo.
-        kind = filtri["kind"][0] if len(filtri.get("kind", [])) == 1 else None
         dati = await client.cerca(parametri_ricerca(q, hl_q, inizio, righe, ordina), kind)
         evidenziazioni = dati.get("highlighting", {})
         documenti = [normalizza_documento(d, evidenziazioni) for d in dati["response"]["docs"]]
@@ -409,6 +440,56 @@ async def _esegui_ricerca(request: Request, testo, rif, filtri, ordina, pagina, 
         }
         if _conserva_storico(request):
             archivio.scrivi_risposta(chiave, risposta)
+    return _completa_risposta(
+        archivio, risposta, dalla_cache, testo, rif, rif_norm, filtri, ordina, pagina, righe
+    )
+
+
+async def _ricerca_esatta(client, q, hl_q, ordina, kind, esatto) -> dict:
+    """Forma esatta: scorre tutti i risultati del server (al più ``MASSIMO_FORMA_ESATTA``, a
+    pagine da 50, con la consueta pausa fra le richieste) e tiene quelli i cui brani
+    evidenziati contengono le parole fra virgolette scritte proprio così."""
+    per_pagina = impostazioni.righe_massime
+    dati = await client.cerca(parametri_ricerca(q, hl_q, 0, per_pagina, ordina), kind)
+    trovati_server = dati["response"]["numFound"]
+    if trovati_server > MASSIMO_FORMA_ESATTA:
+        raise HTTPException(
+            422,
+            f"La forma esatta controlla al più {MASSIMO_FORMA_ESATTA} risultati e questa "
+            f"ricerca ne ha {trovati_server}: restringila con i filtri (anno, sezione, "
+            "archivio) e riprova.",
+        )
+    facet = normalizza_facet(dati.get("facet_counts", {}).get("facet_fields", {}))
+    segnali = normalizza_segnali(dati.get("facet_counts", {}).get("facet_queries"))
+    tempo = dati.get("responseHeader", {}).get("QTime")
+    documenti: list[dict] = []
+    inizio = 0
+    while True:
+        evidenziazioni = dati.get("highlighting", {})
+        docs = dati["response"]["docs"]
+        documenti.extend(normalizza_documento(d, evidenziazioni) for d in docs)
+        inizio += per_pagina
+        if not docs or inizio >= trovati_server:
+            break
+        parametri = parametri_ricerca(q, hl_q, inizio, per_pagina, ordina, con_facet=False)
+        dati = await client.cerca(parametri, kind)
+    filtrati = [d for d in documenti if esatto(d.get("frammenti") or [])]
+    return {
+        "query": q,
+        "evidenzia": hl_q,
+        "trovati": len(filtrati),
+        "trovati_server": trovati_server,
+        "documenti": filtrati,
+        "facet": facet,
+        "segnali": segnali,
+        "tempo_solr_ms": tempo,
+    }
+
+
+def _completa_risposta(
+    archivio, risposta, dalla_cache, testo, rif, rif_norm, filtri, ordina, pagina, righe
+) -> dict:
+    inizio = (pagina - 1) * righe
     risposta = dict(risposta)
     risposta.update(
         {
@@ -448,11 +529,12 @@ async def cerca(
     ssz: str | None = None,
     materia: str | None = None,
     segnale: str | None = Query(None, pattern="^(contrasto|conformita)$"),
+    esatta: bool = False,
     ordina: str = "pubblicazione",
     pagina: int = Query(1, ge=1),
     righe: int = Query(impostazioni.righe_predefinite, ge=1, le=impostazioni.righe_massime),
 ) -> dict:
-    filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale)
+    filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale, esatta)
     risposta = await _esegui_ricerca(request, testo, rif, filtri, ordina, pagina, righe)
     if not _conserva_storico(request):
         return risposta
@@ -1286,13 +1368,14 @@ async def esporta(
     ssz: str | None = None,
     materia: str | None = None,
     segnale: str | None = Query(None, pattern="^(contrasto|conformita)$"),
+    esatta: bool = False,
     ordina: str = "pubblicazione",
     pagina: int = Query(1, ge=1),
     righe: int = Query(impostazioni.righe_predefinite, ge=1, le=impostazioni.righe_massime),
     massimo: int | None = Query(None, ge=1, le=100),
 ) -> Response:
     """Esporta la pagina corrente oppure, con ``massimo``, i primi N risultati (al più 100)."""
-    filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale)
+    filtri = _filtri(kind, tipoprov, szdec, anno, ssz, materia, segnale, esatta)
     if massimo:
         per_pagina = min(impostazioni.righe_massime, massimo)
         risposta = None

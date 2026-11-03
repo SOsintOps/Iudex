@@ -35,6 +35,7 @@
     testo: "",
     rif: "",
     filtri: {},
+    esatta: false,
     ordina: "pubblicazione",
     righe: 10,
     pagina: 1,
@@ -153,6 +154,7 @@
     CAMPI_FILTRO.forEach((c) => {
       if (stato.filtri[c] && stato.filtri[c].length) p.set(c, stato.filtri[c].join(SEPARATORI[c] || ","));
     });
+    if (stato.esatta) p.set("esatta", "1");
     if (stato.ordina !== "pubblicazione") p.set("ordina", stato.ordina);
     if (stato.righe !== 10) p.set("righe", String(stato.righe));
     const pg = pagina || stato.pagina;
@@ -173,10 +175,12 @@
       const v = p.get(c);
       if (v) stato.filtri[c] = v.split(SEPARATORI[c] || ",").filter(Boolean);
     });
+    stato.esatta = p.get("esatta") === "1";
     stato.ordina = p.get("ordina") || "pubblicazione";
     stato.righe = parseInt(p.get("righe") || "10", 10);
     stato.pagina = parseInt(p.get("pagina") || "1", 10);
     $("#testo").value = stato.testo;
+    $("#esatta").checked = stato.esatta;
     $("#rif").value = stato.rif;
     $("#ordina").value = stato.ordina;
     $("#righe").value = String(stato.righe);
@@ -199,7 +203,10 @@
     mostraScheda("risultati");
     messaggio("");
     $("#benvenuto").hidden = true;
-    $("#risultati").innerHTML = '<li class="voce"><span class="estremi">Interrogo SentenzeWeb…</span></li>';
+    const attesa = stato.esatta && /"[^"]*\S[^"]*"/.test(stato.testo)
+      ? "Interrogo SentenzeWeb e controllo la forma esatta in tutti i risultati (una richiesta ogni 50, con la consueta pausa)…"
+      : "Interrogo SentenzeWeb…";
+    $("#risultati").innerHTML = `<li class="voce"><span class="estremi">${attesa}</span></li>`;
     try {
       const dati = await api("/api/cerca?" + parametriRicerca().toString());
       stato.risposta = dati;
@@ -220,7 +227,9 @@
   function disegnaRisultati(d) {
     $("#barra-risultati").hidden = false;
     const cache = d.dalla_cache ? '<span class="cache">dalla cache locale</span>' : "";
-    $("#sommario").innerHTML = `<b>${numero(d.trovati)}</b> provvedimenti per <i>${escapa(d.descrizione)}</i>${cache}`;
+    const suServer = d.trovati_server !== undefined && d.trovati_server !== null
+      ? ` su ${numero(d.trovati_server)} trovati dal server` : "";
+    $("#sommario").innerHTML = `<b>${numero(d.trovati)}</b>${suServer} provvedimenti per <i>${escapa(d.descrizione)}</i>${cache}`;
 
     const lista = $("#risultati");
     if (!d.documenti.length) {
@@ -537,6 +546,7 @@
     const p = new URLSearchParams(permalink);
     const v = { testo: p.get("testo"), riferimenti: p.get("rif"), filtri: {} };
     CAMPI_FILTRO.forEach((c) => { const x = p.get(c); if (x) v.filtri[c] = x.split(SEPARATORI[c] || ","); });
+    if (p.get("esatta") === "1") v.filtri.esatta = ["1"];
     const ordina = p.get("ordina");
     return descriviVoce(v) + (ordina && ordina !== "pubblicazione" ? ` (per ${ordina})` : "");
   }
@@ -712,7 +722,8 @@
     if (v.riferimenti) parti.push("rif. " + v.riferimenti);
     Object.keys(v.filtri || {}).forEach((k) => parti.push(k === "segnale"
       ? v.filtri[k].map((c) => SEGNALI[c] || c).join(", ")
-      : `${TITOLI_FACET[k] || k}: ${v.filtri[k].join(", ")}`));
+      : k === "esatta" ? "forma esatta"
+        : `${TITOLI_FACET[k] || k}: ${v.filtri[k].join(", ")}`));
     return parti.join(" · ") || "tutte le sentenze";
   }
 
@@ -1125,11 +1136,13 @@
     stato.rif = $("#rif").value.trim();
     stato.ordina = $("#ordina").value;
     stato.righe = parseInt($("#righe").value, 10);
+    stato.esatta = $("#esatta").checked;
   }
 
   $("#ricerca").addEventListener("submit", (e) => { e.preventDefault(); leggiForm(); cerca(1); });
   $("#ordina").addEventListener("change", () => { leggiForm(); if (stato.risposta) cerca(1); });
   $("#righe").addEventListener("change", () => { leggiForm(); if (stato.risposta) cerca(1); });
+  $("#esatta").addEventListener("change", () => { leggiForm(); if (stato.risposta && stato.testo) cerca(1); });
 
   $("#aiuto-sintassi").addEventListener("click", (e) => {
     const s = $("#sintassi");

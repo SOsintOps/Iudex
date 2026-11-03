@@ -267,6 +267,47 @@ def test_segnali_nella_ricerca_e_nel_permalink(client):
     assert r.status_code == 422
 
 
+def test_forma_esatta_scorre_tutti_i_risultati_e_filtra(client):
+    c, mock = client
+    docs = [_doc(i) for i in range(60)]
+    nomi = {0: "Alessandro Ferrari", 7: "Ferrari Alessandro", 55: "Alessandro Ferrari"}
+    brani = {
+        d["id"]: {"ocr": [f"ricorso di <em>{nomi.get(i, 'Alessandro Ferrara')}</em>"]}
+        for i, d in enumerate(docs)
+    }
+    pagina1 = _risposta(docs[:50], trovati=60, highlighting=brani)
+    pagina2 = _risposta(docs[50:], trovati=60, highlighting=brani)
+    rotta = mock.post(URL_SOLR + "?app.query").mock(
+        side_effect=[httpx.Response(200, json=pagina1), httpx.Response(200, json=pagina2)]
+    )
+    parametri = {"testo": '"alessandro ferrari"', "esatta": "1", "righe": 2}
+    d = c.get("/api/cerca", params=parametri, headers=H).json()
+    assert rotta.call_count == 2
+    assert "facet.field" in rotta.calls[0].request.content.decode()
+    assert "facet.field" not in rotta.calls[1].request.content.decode()
+    assert d["trovati"] == 3 and d["trovati_server"] == 60
+    assert [x["id"] for x in d["documenti"]] == [docs[0]["id"], docs[7]["id"]]
+    assert d["permalink"] == "testo=%22alessandro+ferrari%22&esatta=1&righe=2"
+    assert "forma esatta" in d["descrizione"]
+    # Pagina 2: dalla cache, nessuna richiesta in più.
+    d2 = c.get("/api/cerca", params={**parametri, "pagina": 2}, headers=H).json()
+    assert [x["id"] for x in d2["documenti"]] == [docs[55]["id"]] and d2["dalla_cache"] is True
+    assert rotta.call_count == 2
+    assert c.get("/api/cronologia", headers=H).json()[0]["filtri"] == {"esatta": ["1"]}
+
+
+def test_forma_esatta_rifiuta_troppi_risultati_e_senza_virgolette_e_normale(client):
+    c, mock = client
+    rotta = mock.post(URL_SOLR + "?app.query").mock(
+        return_value=httpx.Response(200, json=_risposta([_doc(1)], trovati=501))
+    )
+    r = c.get("/api/cerca", params={"testo": '"ferrari"', "esatta": "1"}, headers=H)
+    assert r.status_code == 422 and "restringila" in r.text
+    d = c.get("/api/cerca", params={"testo": "ferrari", "esatta": "1"}, headers=H).json()
+    assert d["trovati"] == 501 and "trovati_server" not in d
+    assert "esatta" not in d["permalink"] and rotta.call_count == 2
+
+
 def test_sentenza_paragrafi_riferimenti_ed_evidenziazione(client):
     c, mock = client
     doc = _doc(5)

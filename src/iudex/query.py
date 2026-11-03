@@ -263,6 +263,82 @@ def query_evidenziazione(testo: str | None) -> str | None:
     return " ".join(termini) or None
 
 
+# ---------- forma esatta ----------
+#
+# Il motore della Corte riduce ogni parola alla radice prima di confrontarla: «Ferrari»,
+# «Ferrara» e «Ferraro» diventano la stessa parola, anche fra virgolette. Con la forma
+# esatta Iudex tiene solo i risultati i cui brani evidenziati contengono le parole fra
+# virgolette scritte proprio così (maiuscole e minuscole non contano).
+
+_TAG = re.compile(r"<[^>]+>")
+_ENTITA = {"&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&apos;": "'"}
+
+
+def frasi_esatte(testo: str | None) -> list[str]:
+    """Le frasi (o parole) positive scritte fra virgolette nel campo Parole."""
+    if not testo:
+        return []
+    return [" ".join(v.split()) for t, v in _token(testo) if t == "frase" and v.split()]
+
+
+def _usa_or(testo: str | None) -> bool:
+    return any(t == "op" and v == "OR" for t, v in _token(testo or ""))
+
+
+def _schema_frase(frase: str) -> re.Pattern[str]:
+    """La frase con confini di parola, spazi qualsiasi fra le parole e, per due parole,
+    anche l'ordine inverso con virgola facoltativa («Ferrari, Alessandro»)."""
+    parole = [re.escape(p) for p in frase.casefold().split()]
+    varianti = [r"\s+".join(parole)]
+    if len(parole) == 2:
+        varianti.append(parole[1] + r"\s*,?\s+" + parole[0])
+    return re.compile(r"(?<!\w)(?:" + "|".join(varianti) + r")(?!\w)")
+
+
+def _testo_brani(frammenti: list[str]) -> str:
+    testo = _TAG.sub("", " ".join(frammenti or []))
+    for entita, carattere in _ENTITA.items():
+        testo = testo.replace(entita, carattere)
+    return " ".join(testo.split()).casefold()
+
+
+def testo_forma_esatta(testo: str) -> str:
+    """Il testo da mandare al server con la forma esatta: ogni frase di due parole è chiesta
+    in entrambi gli ordini (``("alessandro ferrari" OR "ferrari alessandro")``), perché negli
+    atti le parti sono spesso scritte con il cognome prima del nome."""
+    pezzi = []
+    for tipo, valore in _token(testo):
+        parole = valore.split()
+        if tipo == "frase" and len(parole) == 2:
+            pezzi.append(f'("{parole[0]} {parole[1]}" OR "{parole[1]} {parole[0]}")')
+        elif tipo == "frase":
+            pezzi.append(f'"{valore}"')
+        elif tipo == "neg_frase":
+            pezzi.append(f'NOT "{valore}"')
+        elif tipo == "neg":
+            pezzi.append("-" + valore)
+        else:
+            pezzi.append(valore)
+    return " ".join(pezzi)
+
+
+def filtro_esatto(testo: str | None):
+    """Una funzione ``frammenti -> bool`` per la forma esatta, o None se nel testo non ci
+    sono frasi fra virgolette. Con ``OR`` basta una frase, altrimenti servono tutte."""
+    frasi = frasi_esatte(testo)
+    if not frasi:
+        return None
+    schemi = [_schema_frase(f) for f in frasi]
+    basta_una = _usa_or(testo)
+
+    def corrisponde(frammenti: list[str]) -> bool:
+        brani = _testo_brani(frammenti)
+        trovate = [bool(s.search(brani)) for s in schemi]
+        return any(trovate) if basta_una else all(trovate)
+
+    return corrisponde
+
+
 # ---------- riferimenti normativi ----------
 
 _GRAFFA = re.compile(r"\{([^{}]*)\}")

@@ -2,6 +2,16 @@
 
 ## Da rilasciare
 
+### Ricerca
+- **Forma esatta**: casella sotto il campo delle parole (`esatta=1` nell'API e nel permalink,
+  `forma_esatta` nel server MCP). Il motore della Corte confronta le parole per radice, quindi
+  `"ferrari"` trova anche Ferrara e Ferraro, anche fra virgolette; con la forma esatta Iudex
+  scarica tutti i risultati (50 per richiesta, con la consueta pausa, al più 500) e tiene solo
+  quelli i cui brani evidenziati contengono le parole fra virgolette scritte esattamente così.
+  Una frase di due parole è chiesta anche nell'ordine inverso (`"ferrari alessandro"`). In testa
+  ai risultati il conteggio di partenza («7 su 141 trovati dal server»). Nuova FAQ, guida e
+  promemoria della sintassi spiegano il comportamento del sito e la forma esatta.
+
 ### Documentazione
 - README più corto, con indice e sezione Approfondimenti; le sezioni lunghe sono in pagine
   dedicate: `docs/installazione.md`, `docs/normattiva.md`, `docs/consultazione-sito.md`,

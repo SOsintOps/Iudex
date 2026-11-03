@@ -14,6 +14,7 @@ La stessa pagina è nell'app, nel menu **Help → Domande frequenti**.
 * [I risultati sono gli stessi del sito?](#i-risultati-sono-gli-stessi-del-sito)
 * [Come si cerca per estremi?](#come-si-cerca-per-estremi)
 * [Come si cerca una frase o un troncamento?](#come-si-cerca-una-frase-o-un-troncamento)
+* [Perché cercando Ferrari escono anche Ferrara e Ferraro? (forma esatta)](#perché-cercando-ferrari-escono-anche-ferrara-e-ferraro-forma-esatta)
 * [Come si cerca per norma?](#come-si-cerca-per-norma)
 * [Che cos'è il filtro "materia"?](#che-cosè-il-filtro-materia)
 * [Che cosa vuol dire "dalla cache locale"?](#che-cosa-vuol-dire-dalla-cache-locale)
@@ -104,7 +105,41 @@ operatori, gli estremi accettano anche `Cass. civ.` e il tipo in fondo.
 ### Come si cerca una frase o un troncamento?
 
 Più parole = distanza massima sette termini; `"giusta causa"` = frase esatta; `licenz*` =
-troncamento; `AND`, `OR`, `NOT`.
+troncamento; `AND`, `OR`, `NOT`. Il server confronta le parole per radice: vedi la domanda
+successiva.
+
+### Perché cercando Ferrari escono anche Ferrara e Ferraro? (forma esatta)
+
+Il motore di ricerca del sito della Corte non confronta le parole così come sono scritte, ma la
+loro **radice**: prima di cercare toglie la parte finale di ogni parola, in modo che
+«licenziamento» trovi anche «licenziamenti». È un comportamento del server, non di Iudex, e vale
+anche fra virgolette. Per i nomi propri l'effetto è indesiderato: «Ferrari», «Ferrara» e
+«Ferraro» hanno la stessa radice e per il server sono la stessa parola. Misurato il 3 novembre
+2026: `"alessandro ferrari"` e `"alessandro ferrara"` restituiscono gli stessi 102
+provvedimenti, e solo pochi parlano davvero di un Alessandro Ferrari. Nessuna sintassi lo evita:
+anche `NOT ferrara` escluderebbe tutti e tre i cognomi.
+
+Per questo sotto il campo *Parole o estremi* c'è la casella **Forma esatta**. Si scrivono fra
+virgolette le parole da trovare esattamente così (per esempio `"alessandro ferrari"`) e si spunta
+la casella. Iudex allora:
+
+1. chiede al server i risultati della ricerca; per una frase di due parole la chiede in entrambi
+   gli ordini (`"alessandro ferrari"` e `"ferrari alessandro"`), perché negli atti le parti sono
+   spesso scritte con il cognome prima del nome;
+2. li scarica tutti, cinquanta per richiesta, con la consueta pausa fra una richiesta e l'altra
+   (circa 150 risultati = 3 richieste);
+3. legge il brano evidenziato di ciascun risultato, cioè il passo del testo in cui il server ha
+   trovato le parole, e tiene solo quelli in cui le parole fra virgolette compaiono scritte
+   proprio così (maiuscole e minuscole non contano; «Ferrara», «Ferraro», «Ferraris» e
+   «Alessandra» vengono scartati);
+4. mostra solo questi, con il conteggio di partenza: «7 su 141 trovati dal server».
+
+Limiti: il server restituisce al più quattro brani per provvedimento, quindi se una sentenza
+nomina sia un Alessandro Ferrara sia un Alessandro Ferrari e i brani cadono solo sul primo,
+quella sentenza sfugge (è raro). La forma esatta controlla al più 500 risultati del server: oltre,
+Iudex chiede di restringere la ricerca con i filtri (anno, sezione, archivio) invece di
+scaricarli tutti. La casella agisce solo sulle parole fra virgolette; senza virgolette la ricerca
+è quella normale. Lo stesso nome può comunque appartenere a persone diverse.
 
 ### Come si cerca per norma?
 

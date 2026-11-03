@@ -755,3 +755,11 @@ main.informativa {
   .pagina-info nav { position: static; }
   .pie { font-size: 0.8em; gap: 10px; }
 }
+
+/* Forma esatta: casella sotto il campo Parole */
+.campo label.forma-esatta {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  text-transform: none; letter-spacing: normal; font-weight: 500; font-size: 0.85rem;
+}
+.forma-esatta input { margin: 0; }
+.forma-esatta .nota-esatta { color: var(--neutral-color); font-weight: 400; }

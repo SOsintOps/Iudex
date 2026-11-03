@@ -159,12 +159,21 @@ def cerca_sentenze(
     segnale: Annotated[
         Segnale, Field(description="solo i provvedimenti che dichiarano contrasto o conformità")
     ] = "",
+    forma_esatta: Annotated[
+        bool,
+        Field(
+            description="tiene solo i risultati con le parole fra virgolette scritte proprio "
+            'così: il sito confronta per radice e "ferrari" trova anche Ferrara e Ferraro'
+        ),
+    ] = False,
     righe: Annotated[int, Field(ge=1, le=RIGHE_MASSIME)] = 10,
     pagina: Annotated[int, Field(ge=1)] = 1,
 ) -> str:
     """Cerca sentenze della Cassazione per parole, frase ("..."), troncamento (*) o estremi
     (12345/2024)."""
     parametri: dict = {"testo": testo, "righe": righe, "pagina": pagina}
+    if forma_esatta:
+        parametri["esatta"] = "1"
     for chiave, valore in (
         ("kind", archivio),
         ("anno", anno),
@@ -177,7 +186,9 @@ def cerca_sentenze(
     d = _chiama("/api/cerca", parametri)
     righe_testo = [_riga(doc) for doc in d["documenti"]]
     intestazione = (
-        f"{d['trovati']} provvedimenti per «{d['descrizione']}» "
+        f"{d['trovati']}"
+        + (f" su {d['trovati_server']}" if d.get("trovati_server") is not None else "")
+        + f" provvedimenti per «{d['descrizione']}» "
         f"(pagina {d['pagina']}, {len(righe_testo)} mostrati){_segnali(d)}"
     )
     return intestazione + "\n" + "\n".join(righe_testo)

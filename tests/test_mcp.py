@@ -101,6 +101,25 @@ async def test_cerca_sentenze_con_segnale():
 
 
 @respx.mock
+async def test_cerca_sentenze_forma_esatta():
+    rotta = respx.get(BASE + "/api/cerca").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "trovati": 7,
+                "trovati_server": 102,
+                "descrizione": '"alessandro ferrari" · forma esatta',
+                "pagina": 1,
+                "documenti": [DOC],
+            },
+        )
+    )
+    r = await _chiama("cerca_sentenze", {"testo": '"alessandro ferrari"', "forma_esatta": True})
+    assert "7 su 102 provvedimenti" in _testo(r)
+    assert dict(rotta.calls[0].request.url.params)["esatta"] == "1"
+
+
+@respx.mock
 async def test_il_token_va_nelle_chiamate(monkeypatch):
     monkeypatch.setenv("IUDEX_TOKEN", "segreto-di-prova")
     rotta = respx.get(BASE + "/api/cerca").mock(
