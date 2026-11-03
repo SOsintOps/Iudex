@@ -1,6 +1,8 @@
 # Registro delle modifiche
 
-## Da rilasciare
+## 0.10.0 — 2026-11-03
+
+Forma esatta nella ricerca; README più corto con pagine dedicate; Smart App Control.
 
 ### Ricerca
 - **Forma esatta**: casella sotto il campo delle parole (`esatta=1` nell'API e nel permalink,

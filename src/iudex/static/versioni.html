@@ -36,6 +36,7 @@
 
 <main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v0100">0.10.0 — 3 novembre 2026</a>
     <a href="#v090">0.9.0 — 30 ottobre 2026</a>
     <a href="#v081">0.8.1 — 28 ottobre 2026</a>
     <a href="#v080">0.8.0 — 28 ottobre 2026</a>
@@ -52,6 +53,18 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v0100">0.10.0 <span class="data">— 3 novembre 2026</span></h2>
+    <p>Forma esatta nella ricerca; README più corto con pagine dedicate; Smart App Control.</p>
+    <h3>Ricerca</h3>
+    <ul>
+      <li><b>Forma esatta</b>: casella sotto il campo delle parole. Il motore della Corte confronta le parole per radice, quindi <code>"ferrari"</code> trova anche Ferrara e Ferraro, anche fra virgolette; con la forma esatta Iudex scarica tutti i risultati (50 per richiesta, con la consueta pausa, al più 500) e tiene solo quelli in cui le parole fra virgolette sono scritte esattamente così. Una frase di due parole è cercata anche nell'ordine inverso (<code>"ferrari alessandro"</code>). In testa ai risultati il conteggio di partenza («7 su 141 trovati dal server»). Anche nel server MCP (<code>forma_esatta</code>). Spiegata nelle domande frequenti e nella guida.</li>
+    </ul>
+    <h3>Documentazione</h3>
+    <ul>
+      <li>README più corto, con le sezioni lunghe in pagine dedicate (installazione, Normattiva, consultazione del sito, sviluppo); esclusione dal tunnel VPN per indirizzo IP; prima domanda frequente: Iudex non è uno strumento ufficiale della Corte; linguaggio tecnico-giuridico rivisto.</li>
+      <li>Smart App Control di Windows 11 blocca l'installer e <code>Iudex.exe</code>, non ancora firmati: nuova domanda frequente con il rimedio (installazione dai sorgenti con il Python di python.org).</li>
+    </ul>
 
     <h2 id="v090">0.9.0 <span class="data">— 30 ottobre 2026</span></h2>
     <p>Testo delle norme da Normattiva, link EUR-Lex, verifica delle citazioni dal server MCP, riferimenti normativi letti correttamente.</p>
