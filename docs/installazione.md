@@ -28,11 +28,23 @@ Dalla pagina delle [release](https://github.com/SOsintOps/Iudex/releases/latest)
   possibilità di conferma, perché Smart App Control non ammette eccezioni per singoli file: in
   tal caso si usi l'installazione dai sorgenti con il Python di python.org (vedi sotto e la
   [FAQ](faq.md#windows-blocca-linstaller-o-iudex-smart-app-control)).
-- **Linux**: `Iudex-X.Y.Z-x86_64.AppImage` (da rendere eseguibile con `chmod +x`): apre la
-  finestra avvalendosi di WebKitGTK di sistema (`sudo apt install gir1.2-webkit2-4.1 python3-gi`
+- **Linux**: `Iudex-X.Y.Z-x86_64.AppImage` (da rendere eseguibile con `chmod +x`, vedi i
+  comandi qui sotto): apre la finestra avvalendosi di WebKitGTK di sistema (`sudo apt install gir1.2-webkit2-4.1 python3-gi`
   su distribuzioni Debian e Ubuntu; in caso di assenza Iudex mostra le istruzioni necessarie) e
   al primo avvio richiede il percorso per il salvataggio dei PDF; i dati vengono archiviati in
   `~/.local/share/iudex`.
+
+Comandi completi per Linux (Debian e Ubuntu; `X.Y.Z` è il numero dell'ultima versione):
+
+```bash
+sudo apt install gir1.2-webkit2-4.1 python3-gi
+wget https://github.com/SOsintOps/Iudex/releases/latest/download/Iudex-X.Y.Z-x86_64.AppImage
+chmod +x Iudex-X.Y.Z-x86_64.AppImage
+./Iudex-X.Y.Z-x86_64.AppImage
+```
+
+L'AppImage non si installa nel sistema: per disinstallare basta cancellare il file (i dati in
+`~/.local/share/iudex` restano finché non si cancella anche quella cartella).
 
 ## Dai sorgenti
 

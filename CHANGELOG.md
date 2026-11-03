@@ -1,5 +1,12 @@
 # Registro delle modifiche
 
+## Da rilasciare
+
+### Documentazione
+- README: torna la sezione **Installazione** (Windows e Linux, con i comandi per l'AppImage)
+  fra «Che cosa fa» e «Screenshot» (ex «Schermate»); forma esatta fra le funzioni;
+  `docs/installazione.md` con i comandi completi per Linux.
+
 ## 0.10.0 — 2026-11-03
 
 Forma esatta nella ricerca; README più corto con pagine dedicate; Smart App Control.

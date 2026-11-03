@@ -28,7 +28,8 @@ esportabili e trasferibili su un altro computer).
 ## Indice
 
 - [Che cosa fa](#che-cosa-fa)
-- [Schermate](#schermate)
+- [Installazione](#installazione)
+- [Screenshot](#screenshot)
 - [Approfondimenti](#approfondimenti)
 - [Progetti collegati](#progetti-collegati)
 - [Licenza](#licenza)
@@ -40,6 +41,9 @@ esportabili e trasferibili su un altro computer).
   **riferimento normativo** (`art. 18 legge 300/1970`), con la medesima sintassi e gli stessi
   risultati del portale ufficiale (con la differenza che l'operatore `NOT`, inefficace sul sito,
   qui esclude realmente i termini indesiderati).
+- **Forma esatta**: il motore della Corte confronta le parole per radice (`"ferrari"` trova
+  anche Ferrara e Ferraro); con la forma esatta Iudex mostra solo i provvedimenti in cui le
+  parole fra virgolette sono scritte esattamente così, anche con nome e cognome invertiti.
 - **Filtri** per settore/archivio (civile o penale), natura del provvedimento (sentenza,
   ordinanza, ordinanza interlocutoria, decreto), sezione (Sezioni Unite e sezioni semplici),
   anno di pubblicazione, sottosezione e **materia** (secondo la classificazione del CED),
@@ -94,7 +98,42 @@ esportabili e trasferibili su un altro computer).
   un **tema scuro** ad attivazione oraria automatica (dalle ore 19:00 alle 07:00, con fascia
   oraria personalizzabile).
 
-## Schermate
+## Installazione
+
+Il pacchetto pronto per Windows e per Linux si scarica dalla pagina delle
+[release](https://github.com/SOsintOps/Iudex/releases/latest).
+
+### Windows
+
+1. Scaricare `Iudex-X.Y.Z-setup.exe` dalla release.
+2. Avviarlo: si installa nel profilo dell'utente (`%LOCALAPPDATA%\Programs\Iudex`), senza
+   privilegi di amministratore, e chiede in quale cartella conservare i PDF.
+3. Aprire Iudex dal menu Start.
+
+L'installer non è firmato: Windows SmartScreen può chiedere conferma («Ulteriori informazioni» →
+«Esegui comunque»). Con **Smart App Control** attivo l'installer viene bloccato senza possibilità
+di conferma: in quel caso si installa dai sorgenti (vedi
+[Installazione](docs/installazione.md#dai-sorgenti)).
+
+### Linux
+
+L'AppImage non si installa: si scarica, si rende eseguibile e si avvia. Su Debian e Ubuntu:
+
+```bash
+sudo apt install gir1.2-webkit2-4.1 python3-gi
+wget https://github.com/SOsintOps/Iudex/releases/latest/download/Iudex-X.Y.Z-x86_64.AppImage
+chmod +x Iudex-X.Y.Z-x86_64.AppImage
+./Iudex-X.Y.Z-x86_64.AppImage
+```
+
+(`X.Y.Z` è il numero dell'ultima versione, indicato nella pagina della release.) Al primo
+avvio Iudex chiede in quale cartella salvare i PDF; i dati restano in `~/.local/share/iudex`.
+Per disinstallare basta cancellare il file AppImage.
+
+L'installazione dai sorgenti (Python 3.11 o successivo), le variabili d'ambiente e il server
+MCP sono descritti in [Installazione, finestra nativa e server MCP](docs/installazione.md).
+
+## Screenshot
 
 L'indicatore **già vista** contraddistingue le pronunce già esaminate; al passaggio del cursore
 indica la data dell'ultima consultazione, la ricerca da cui il provvedimento è stato aperto e
