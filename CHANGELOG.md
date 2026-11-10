@@ -2,6 +2,8 @@
 
 ## Da rilasciare
 
+## 0.10.1 — 2026-11-10
+
 ### Scheda della sentenza riusabile
 - L'impaginazione della scheda (estremi, dispositivo in evidenza, riferimenti normativi come
   etichette, testo in paragrafi con i titoli delle sezioni, navigatore delle occorrenze) sta in
