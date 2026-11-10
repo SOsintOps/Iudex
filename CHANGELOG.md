@@ -2,6 +2,12 @@
 
 ## Da rilasciare
 
+### Scheda della sentenza riusabile
+- L'impaginazione della scheda (estremi, dispositivo in evidenza, riferimenti normativi come
+  etichette, testo in paragrafi con i titoli delle sezioni, navigatore delle occorrenze) sta in
+  `static/fascicolo-comune.js`, un modulo senza stato che anche altre app locali possono
+  caricare per mostrare la sentenza nello stesso modo. Nessun cambiamento visibile in Iudex.
+
 ### Documentazione
 - README: torna la sezione **Installazione** (Windows e Linux, con i comandi per l'AppImage)
   fra «Che cosa fa» e «Screenshot» (ex «Schermate»); forma esatta fra le funzioni;

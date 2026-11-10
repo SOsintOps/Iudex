@@ -25,11 +25,7 @@
   };
   const FACET_CON_BARRE = ["szdec", "anno", "materia"];
   const MATERIE_VISIBILI = 15;
-  const INTESTAZIONI = [
-    "FATTI DI CAUSA", "RAGIONI DELLA DECISIONE", "RITENUTO IN FATTO", "CONSIDERATO IN DIRITTO",
-    "MOTIVI DELLA DECISIONE", "SVOLGIMENTO DEL PROCESSO", "FATTO E DIRITTO", "RILEVATO CHE",
-    "CONSIDERATO CHE", "RITENUTO CHE", "OSSERVA", "P.Q.M.",
-  ];
+  const { escapa, conMarcature, dataIt, inParagrafi } = window.FascicoloComune;
 
   const stato = {
     testo: "",
@@ -51,29 +47,7 @@
 
   // ---------- utilità ----------
 
-  function escapa(v) {
-    if (v === null || v === undefined) return "";
-    return String(v)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function conMarcature(testo) {
-    // Il server restituisce solo <em class="hit">: tutto il resto va neutralizzato.
-    return escapa(testo)
-      .replace(/&lt;em class=&quot;hit&quot;&gt;/g, "<em class=\"hit\">")
-      .replace(/&lt;\/em&gt;/g, "</em>");
-  }
-
   function numero(n) { return new Intl.NumberFormat("it-IT").format(n || 0); }
-
-  function dataIt(iso) {
-    if (!iso) return "";
-    const [a, m, g] = iso.split("-");
-    return `${g}/${m}/${a}`;
-  }
 
   function quando(ts) {
     if (!ts) return "";
@@ -352,19 +326,6 @@
     return html.replace(re, "<mark>$1</mark>");
   }
 
-  function inParagrafi(html) {
-    return html.split(/\n\n+/).map((p) => {
-      const pulito = p.replace(/\n/g, "<br>").trim();
-      if (!pulito) return "";
-      const nudo = pulito.replace(/<[^>]+>/g, "").trim();
-      if (INTESTAZIONI.includes(nudo)) {
-        const id = nudo === "P.Q.M." ? ' id="pqm"' : "";
-        return `<p class="intestazione${nudo === "P.Q.M." ? " pqm" : ""}"${id}>${pulito}</p>`;
-      }
-      return `<p>${pulito}</p>`;
-    }).join("");
-  }
-
   async function apriFascicolo(id, daiRisultati) {
     stato.idAperto = id;
     $$(".voce").forEach((v) => v.classList.toggle("aperta", v.dataset.id === id));
@@ -384,17 +345,8 @@
       if (daiRisultati && stato.risposta && stato.risposta.permalink) p.set("da", stato.risposta.permalink);
       const d = await api("/api/sentenza/" + encodeURIComponent(id) + (p.toString() ? "?" + p.toString() : ""));
       const doc = d.documento;
-      $("#fascicolo-estremi").innerHTML = `
-        <span class="sezione">${escapa(doc.archivio)}${doc.sezione ? " · Sez. " + escapa(doc.sezione) : ""}</span>
-        ${escapa(doc.tipo || "")} n. ${escapa(doc.numero)}/${escapa(doc.anno)}
-        <div class="meta">
-          <span>udienza ${dataIt(doc.data_decisione) || "?"}</span><span>deposito ${dataIt(doc.data_deposito) || "?"}</span>
-          ${doc.presidente ? `<span>pres. ${escapa(doc.presidente)}</span>` : ""}${doc.relatore ? `<span>rel. ${escapa(doc.relatore)}</span>` : ""}
-          ${doc.ecli ? `<span class="ecli">${escapa(doc.ecli)}</span>` : ""}
-          ${doc.materia && doc.materia.length ? `<span class="materia-voce">${escapa(doc.materia.join(", "))}</span>` : ""}
-          ${d.dalla_cache ? "<span>dalla cache locale</span>" : ""}
-        </div>
-        ${consultazioneHtml(d.consultazione)}`;
+      $("#fascicolo-estremi").innerHTML = FascicoloComune.estremiHtml(doc, [d.dalla_cache ? "<span>dalla cache locale</span>" : ""]) +
+        consultazioneHtml(d.consultazione);
       const pdf = $("#fascicolo-pdf");
       pdf.hidden = !doc.pdf;
       pdf.dataset.id = id;
@@ -407,15 +359,10 @@
       $("#esporta-sentenza-json").dataset.id = id;
 
       let corpo = "";
-      if (doc.massima) corpo += `<div class="massima">${evidenziaLocale(escapa(doc.massima)).replace(/\n/g, "<br>")}</div>`;
-      const rnc = doc.riferimenti_normativi || [];
-      if (rnc.length) {
-        corpo += '<div class="rnc"><span>Riferimenti normativi:</span>' + rnc.map((r, i) =>
-          `<span class="rif-norma"><span class="chip" role="button" tabindex="0" data-ricerca="${escapa(r.ricerca)}" title="Cerca le sentenze che citano questa norma">${escapa(r.testo)}</span>${bottoneNorma(r, i)}</span>`).join("") + '</div><div class="norme-aperte"></div>';
-      }
-      corpo += '<div class="intestazione-testo">Testo del provvedimento</div>';
+      if (doc.massima) corpo += FascicoloComune.dispositivoHtml(evidenziaLocale(escapa(doc.massima)).replace(/\n/g, "<br>"));
+      corpo += FascicoloComune.riferimentiHtml(doc.riferimenti_normativi || [], bottoneNorma);
       const html = d.testo_evidenziato ? conMarcature(d.testo_evidenziato) : evidenziaLocale(escapa(d.testo || ""));
-      corpo += `<div class="testo">${html ? inParagrafi(html) : "<p>Testo non disponibile.</p>"}</div>`;
+      corpo += FascicoloComune.testoHtml(html);
       $("#fascicolo-corpo").innerHTML = corpo;
       $("#fascicolo-corpo").scrollTop = 0;
       $("#vai-pqm").hidden = !$("#pqm");
@@ -642,29 +589,9 @@
     if (voce) voce.scrollIntoView({ block: "nearest" });
   }
 
-  function preparaHit() {
-    stato.hits = $$("#fascicolo-corpo mark, #fascicolo-corpo em.hit");
-    stato.hitCorrente = -1;
-    const ev = $("#evidenziatore");
-    if (!stato.hits.length) { ev.hidden = true; return; }
-    ev.hidden = false;
-    vaiAHit(0);
-  }
-
-  function scorriA(el) {
-    const corpo = $("#fascicolo-corpo");
-    const y = el.getBoundingClientRect().top - corpo.getBoundingClientRect().top + corpo.scrollTop;
-    corpo.scrollTop = Math.max(0, y - corpo.clientHeight / 2);
-  }
-
-  function vaiAHit(i) {
-    if (!stato.hits.length) return;
-    const n = stato.hits.length;
-    stato.hitCorrente = ((i % n) + n) % n;
-    stato.hits.forEach((m, k) => m.classList.toggle("corrente", k === stato.hitCorrente));
-    scorriA(stato.hits[stato.hitCorrente]);
-    $("#hit-pos").textContent = `${stato.hitCorrente + 1} / ${n}`;
-  }
+  // Occorrenze evidenziate nel testo (‹ 1 / 8 ›), dal modulo comune del fascicolo.
+  const occorrenze = FascicoloComune.navigatore($("#fascicolo-corpo"), $("#evidenziatore"), $("#hit-pos"));
+  function preparaHit() { occorrenze.prepara(); }
 
   function aggiornaBottonePreferito(attivo) {
     const b = $("#preferito");
@@ -1221,9 +1148,9 @@
   $("#esporta-sentenza-json").addEventListener("click", (e) => scarica(`/api/export/sentenza/${encodeURIComponent(e.currentTarget.dataset.id)}?formato=json`).catch((err) => messaggio(err.message)));
 
   $("#chiudi-fascicolo").addEventListener("click", chiudiFascicolo);
-  $("#hit-prec").addEventListener("click", () => vaiAHit(stato.hitCorrente - 1));
-  $("#hit-succ").addEventListener("click", () => vaiAHit(stato.hitCorrente + 1));
-  $("#vai-pqm").addEventListener("click", () => { const p = $("#pqm"); if (p) scorriA(p); });
+  $("#hit-prec").addEventListener("click", () => occorrenze.precedente());
+  $("#hit-succ").addEventListener("click", () => occorrenze.successiva());
+  $("#vai-pqm").addEventListener("click", () => { const p = $("#pqm"); if (p) FascicoloComune.scorriA($("#fascicolo-corpo"), p); });
   $("#carattere-meno").addEventListener("click", () => applicaCarattere((memoria("iudex.carattere") || 16) - 1));
   $("#carattere-piu").addEventListener("click", () => applicaCarattere((memoria("iudex.carattere") || 16) + 1));
 
@@ -1419,8 +1346,8 @@
       if (e.key === "Enter" && stato.rigaFuoco >= 0) { apriFascicolo(stato.risposta.documenti[stato.rigaFuoco].id, true); return; }
     }
     if (!$("#fascicolo").hidden) {
-      if (e.key === "n") vaiAHit(stato.hitCorrente + 1);
-      if (e.key === "p") vaiAHit(stato.hitCorrente - 1);
+      if (e.key === "n") occorrenze.successiva();
+      if (e.key === "p") occorrenze.precedente();
       if (e.altKey && e.key === "ArrowRight") { e.preventDefault(); apriAdiacente(1); }
       if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); apriAdiacente(-1); }
     }
