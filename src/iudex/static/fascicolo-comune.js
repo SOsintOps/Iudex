@@ -53,7 +53,7 @@
     const m = /(^|\n|\s)P\.?\s?Q\.?\s?M\.?\s*/.exec(t);
     if (!m) return "";
     let resto = t.slice(m.index + m[0].length);
-    const fine = /\n\s*(Così (è )?deciso|Cosi' deciso|Depositat[ao]|Il Consigliere|Il Presidente|DEPOSITAT)/i.exec(resto);
+    const fine = /\s(Così (è )?deciso|Cosi' deciso|Depositat[ao] in cancelleria|Il Consigliere|Il Presidente|DEPOSITAT)/i.exec(resto);
     if (fine && fine.index > 20) resto = resto.slice(0, fine.index);
     resto = resto.replace(/\s+/g, " ").trim();
     return resto.length > 1500 ? resto.slice(0, 1500) + "…" : resto;
