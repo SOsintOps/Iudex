@@ -1216,9 +1216,10 @@ async def installa_aggiornamento(request: Request) -> dict:
         raise HTTPException(502, str(exc)) from exc
     risposta = {"ok": True, "percorso": str(percorso), "versione": info["versione"]}
     if aggiornamenti.piattaforma() == "linux":
-        risposta["istruzioni"] = aggiornamenti.prepara_su_linux(
-            percorso, confezione(), os.environ.get("APPIMAGE")
-        )
+        tipo = confezione()
+        # APPIMAGE vale solo se Iudex stesso è l'AppImage (non un terminale AppImage che lo avvia).
+        in_uso = os.environ.get("APPIMAGE") if tipo == "appimage" else None
+        risposta["istruzioni"] = aggiornamenti.prepara_su_linux(percorso, tipo, in_uso)
         risposta["percorso"] = risposta["istruzioni"]["file"]
     else:
         aggiornamenti.avvia_installer(percorso)

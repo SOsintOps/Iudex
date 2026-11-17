@@ -193,3 +193,22 @@ def test_prepara_su_linux(tmp_path):
     assert istruzioni["file"] == str(accanto) and accanto.read_bytes() == b"nuova"
     assert not nuova.exists() and istruzioni["comando"] == ""
     assert str(in_uso) in istruzioni["testo"]
+
+
+def test_prepara_su_linux_cartella_non_scrivibile(tmp_path, monkeypatch):
+    import shutil
+
+    from iudex.autonoma.aggiornamenti import prepara_su_linux
+
+    nuova = tmp_path / "aggiornamenti" / "Iudex-0.11.0-x86_64.AppImage"
+    nuova.parent.mkdir()
+    nuova.write_bytes(b"nuova")
+    in_uso = tmp_path / "sola-lettura" / "Iudex-0.10.1-x86_64.AppImage"
+
+    def rifiuta(*_a, **_k):
+        raise PermissionError("sola lettura")
+
+    monkeypatch.setattr(shutil, "copyfile", rifiuta)
+    istruzioni = prepara_su_linux(nuova, "appimage", str(in_uso))
+    assert istruzioni["file"] == str(nuova) and nuova.read_bytes() == b"nuova"
+    assert not in_uso.parent.exists()

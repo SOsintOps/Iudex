@@ -51,8 +51,11 @@ a = Analysis(
 if not WINDOWS:
     from librerie_linux import filtra
 
-    a.binaries = filtra(a.binaries)
-    a.datas = filtra(a.datas)
+    # PyInstaller mette i collegamenti (SYMLINK) in datas e i file a cui puntano in binaries:
+    # si filtrano insieme, poi si rimettono nelle due liste.
+    voci = filtra(a.binaries + a.datas)
+    a.binaries = [v for v in voci if v[2] in ("BINARY", "EXTENSION")]
+    a.datas = [v for v in voci if v[2] not in ("BINARY", "EXTENSION")]
 pyz = PYZ(a.pure)
 exe = EXE(
     pyz,

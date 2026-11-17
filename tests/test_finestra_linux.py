@@ -60,6 +60,7 @@ def test_messaggi_senza_fedora_e_con_dettaglio():
 
 
 def test_finestra_impossibile_registra_avvisa_ed_esce(tmp_path, monkeypatch, caplog, capsys):
+    pytest.importorskip("webview")  # iudex.desktop esce con SystemExit se manca l'extra desktop
     desktop = pytest.importorskip("iudex.desktop")
     avvisi = []
     monkeypatch.setattr(finestra, "avviso", lambda titolo, testo: avvisi.append(testo) or True)
@@ -69,3 +70,16 @@ def test_finestra_impossibile_registra_avvisa_ed_esce(tmp_path, monkeypatch, cap
     assert "WebKitGTK" in avvisi[0] and "iudex.log" in avvisi[0]
     assert "finestra non aperta (webkit_mancante)" in caplog.text
     assert "WebKitGTK" in capsys.readouterr().err
+
+
+def test_errore_concatenato_di_pyinstaller():
+    """Nell'eseguibile l'errore del caricatore arriva come causa di quello di PyInstaller."""
+
+    def carica(_nome):
+        try:
+            raise OSError("libwebkit2gtk-4.1.so.0: cannot open shared object file")
+        except OSError as base:
+            raise OSError("Failed to load dynlib/dll 'libwebkit2gtk-4.1.so.0'") from base
+
+    esito, dettaglio = verifica_motore(eseguibile=True, ambiente=SCHERMO, carica=carica)
+    assert esito == "webkit_mancante" and "cannot open shared object" in dettaglio

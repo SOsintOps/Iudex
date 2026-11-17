@@ -187,7 +187,10 @@ def verifica_motore(
         try:
             carica(LIBRERIA_WEBKIT)
         except OSError as exc:
-            testo = str(exc)
+            # Nell'eseguibile PyInstaller sostituisce l'errore del caricatore con il suo
+            # (PyInstallerImportError): il testo vero sta nella causa.
+            causa = exc.__cause__ if isinstance(exc.__cause__, OSError) else exc
+            testo = str(causa)
             if "cannot open shared object" in testo or "No such file" in testo:
                 return "webkit_mancante", testo
             return "webkit_incompatibile", testo
@@ -196,11 +199,14 @@ def verifica_motore(
         import gi
     except ImportError as exc:
         return "gi_mancante", str(exc)
-    try:
-        gi.require_version("WebKit2", "4.1")
-    except ValueError as exc:
-        return "typelib_mancante", str(exc)
-    return None
+    errore = None
+    for versione in ("4.1", "4.0"):  # pywebview ripiega da solo su WebKit2 4.0
+        try:
+            gi.require_version("WebKit2", versione)
+            return None
+        except ValueError as exc:
+            errore = errore or exc
+    return "typelib_mancante", str(errore)
 
 
 def messaggio_motore(

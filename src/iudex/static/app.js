@@ -774,7 +774,10 @@
           box.innerHTML = `<p>Iudex ${escapa(r.versione)} scaricato. ${escapa(i.testo)}</p>${i.comando ? `<p><code id="comando-aggiornamento">${escapa(i.comando)}</code> <button type="button" id="copia-comando-aggiornamento">Copia</button></p>` : ""}`;
           box.hidden = false;
           const copia = $("#copia-comando-aggiornamento");
-          if (copia) copia.addEventListener("click", () => navigator.clipboard.writeText(i.comando).then(() => messaggio("Comando copiato."), () => messaggio("Copia non riuscita: seleziona il comando e copialo a mano.")));
+          if (copia) copia.addEventListener("click", async () => {
+            try { await navigator.clipboard.writeText(i.comando); messaggio("Comando copiato."); }
+            catch (e) { messaggio("Copia non riuscita: seleziona il comando e copialo a mano."); }
+          });
         } else {
           messaggio(`Installer di Iudex ${r.versione} avviato.`);
         }

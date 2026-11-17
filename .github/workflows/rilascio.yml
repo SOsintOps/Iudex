@@ -100,7 +100,8 @@ jobs:
         run: sh packaging/prova_avvio.sh artefatti
 
   pubblica:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Solo con il push di un tag: un avvio a mano non pubblica mai, anche se parte da un tag.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: [windows, linux, prova-linux]
     runs-on: ubuntu-latest
     steps:

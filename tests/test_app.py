@@ -1099,3 +1099,38 @@ def test_aggiornamento_su_linux_non_avvia_nulla(client, tmp_path, monkeypatch):
     monkeypatch.setattr(aggiornamenti, "piattaforma", lambda: "windows")
     r = c.post("/api/aggiornamento/installa", headers=H)
     assert "istruzioni" not in r.json() and avviati == [scaricato]
+
+
+def test_aggiornamento_appimage_accanto_a_quella_in_uso(client, tmp_path, monkeypatch):
+    c, _ = client
+    from iudex.autonoma import aggiornamenti
+
+    in_uso = tmp_path / "app" / "Iudex-0.10.1-x86_64.AppImage"
+    in_uso.parent.mkdir()
+    in_uso.write_bytes(b"vecchia")
+
+    async def scarica(_pacchetto, cartella):
+        cartella.mkdir(parents=True, exist_ok=True)
+        f = cartella / "Iudex-9.0.0-x86_64.AppImage"
+        f.write_bytes(b"nuova")
+        return f
+
+    monkeypatch.setattr(aggiornamenti, "scarica", scarica)
+    monkeypatch.setattr(aggiornamenti, "piattaforma", lambda: "linux")
+    monkeypatch.setenv("APPIMAGE", str(in_uso))
+    modulo_app.app.state.aggiornamento = {
+        "disponibile": True,
+        "versione": "9.0.0",
+        "pacchetto": {
+            "url": "https://esempio.test/Iudex-9.0.0-x86_64.AppImage",
+            "sha256": "a" * 64,
+        },
+        "chiave": "linux",
+    }
+    # Iudex dai sorgenti avviato da un terminale AppImage: APPIMAGE non è il suo file.
+    monkeypatch.setattr(modulo_app, "confezione", lambda: None)
+    r = c.post("/api/aggiornamento/installa", headers=H).json()
+    assert not r["istruzioni"]["file"].startswith(str(in_uso.parent))
+    monkeypatch.setattr(modulo_app, "confezione", lambda: "appimage")
+    r = c.post("/api/aggiornamento/installa", headers=H).json()
+    assert r["istruzioni"]["file"] == str(in_uso.parent / "Iudex-9.0.0-x86_64.AppImage")

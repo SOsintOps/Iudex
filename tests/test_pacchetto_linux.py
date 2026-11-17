@@ -67,6 +67,14 @@ def test_filtra_toglie_i_collegamenti_rotti():
     assert [v[0] for v in filtra(voci)] == ["libpython3.13.so.1.0", "libpython3.13.so"]
 
 
+def test_filtra_tiene_i_collegamenti_verso_le_librerie_di_pillow():
+    # Come nella costruzione vera: i collegamenti stanno in datas, i file in binaries.
+    binari = [("pillow.libs/libjpeg-6dc8d115.so.62.4.0", PIP + "pillow.libs/x.so", "BINARY")]
+    dati = [("libjpeg-6dc8d115.so.62.4.0", "pillow.libs/libjpeg-6dc8d115.so.62.4.0", "SYMLINK")]
+    dati += [("PIL/libjpeg.so", "../pillow.libs/libjpeg-6dc8d115.so.62.4.0", "SYMLINK")]
+    assert len(filtra(binari + dati)) == 3
+
+
 def test_dipendenze_con_alternative_senza_doppioni():
     campo = dipendenze({"libssl.so.3", "libcrypto.so.3", "libglib-2.0.so.0", "libc.so.6"})
     voci = campo.split(", ")

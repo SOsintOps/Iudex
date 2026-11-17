@@ -12,6 +12,7 @@ Solo libreria standard: lo usano ``iudex.spec``, ``controlla_pacchetto.py`` e i 
 
 from __future__ import annotations
 
+import posixpath
 from pathlib import PurePosixPath
 
 # Cartelle di sistema: ciò che viene da qui non entra nel pacchetto.
@@ -120,7 +121,7 @@ def filtra(voci: list) -> list:
     risultato = []
     for v in tenute:
         if v[2] == "SYMLINK":
-            bersaglio = (PurePosixPath(v[0]).parent / v[1]).as_posix()
+            bersaglio = posixpath.normpath((PurePosixPath(v[0]).parent / v[1]).as_posix())
             if bersaglio not in presenti:
                 continue
         risultato.append(v)

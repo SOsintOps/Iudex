@@ -140,13 +140,24 @@ def prepara_su_linux(percorso: Path, confezione: str | None, appimage: str | Non
     destinazione = percorso
     if appimage:
         accanto = Path(appimage).parent / percorso.name
-        try:
-            if accanto != percorso:
-                shutil.move(str(percorso), str(accanto))
-            destinazione = accanto
-        except OSError:
-            log.info("cartella dell'AppImage non scrivibile: il file nuovo resta in %s", percorso)
-    destinazione.chmod(0o755)
+        if accanto != percorso and accanto != Path(appimage):
+            # Copia su un nome provvisorio e poi rinomina: un errore a metà (disco pieno) non
+            # lascia un file troncato con il nome della versione nuova.
+            parziale = accanto.with_name(accanto.name + ".incomplete")
+            try:
+                shutil.copyfile(percorso, parziale)
+                os.replace(parziale, accanto)
+                percorso.unlink(missing_ok=True)
+                destinazione = accanto
+            except OSError:
+                parziale.unlink(missing_ok=True)
+                log.info(
+                    "cartella dell'AppImage non scrivibile: il file nuovo resta in %s", percorso
+                )
+    try:
+        destinazione.chmod(0o755)
+    except OSError:  # dischi senza permessi Unix (exFAT, FAT): il file resta com'è
+        log.info("permessi non cambiati su %s", destinazione)
     testo = f"Chiudi Iudex e apri il file nuovo: {destinazione}."
     if appimage and Path(appimage) != destinazione:
         testo += f" Poi puoi cancellare il file vecchio: {appimage}."
