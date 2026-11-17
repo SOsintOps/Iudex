@@ -14,6 +14,7 @@ APPDIR=build/appimage/Iudex.AppDir
 rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/lib/iudex"
 cp -r build/dist/Iudex/. "$APPDIR/usr/lib/iudex/"
+echo appimage > "$APPDIR/usr/lib/iudex/confezione"
 cp packaging/appimage/AppRun "$APPDIR/AppRun"
 chmod +x "$APPDIR/AppRun"
 cp packaging/appimage/iudex.desktop "$APPDIR/iudex.desktop"

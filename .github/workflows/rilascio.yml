@@ -1,6 +1,6 @@
 name: Rilascio
 
-# Sui tag di versione: installer per Windows (PyInstaller + Inno Setup), AppImage per Linux,
+# Sui tag di versione: installer per Windows (PyInstaller + Inno Setup), AppImage e .deb per Linux,
 # latest.json con gli sha256 per il controllo degli aggiornamenti dell'app, release pubblicata.
 # Avvio a mano (workflow_dispatch): costruisce i pacchetti per le prove, senza pubblicare;
 # l'installer per Windows solo se richiesto.
@@ -72,10 +72,14 @@ jobs:
           esac
       - name: AppImage
         run: sh packaging/costruisci_appimage.sh "$VERSIONE"
+      - name: Pacchetto .deb
+        run: sh packaging/costruisci_deb.sh "$VERSIONE"
       - uses: actions/upload-artifact@v7
         with:
           name: linux
-          path: build/installer/*.AppImage
+          path: |
+            build/installer/*.AppImage
+            build/installer/*.deb
 
   pubblica:
     if: startsWith(github.ref, 'refs/tags/v')

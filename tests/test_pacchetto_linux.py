@@ -91,3 +91,16 @@ def test_ogni_pacchetto_ha_un_nome_valido():
                 .replace("+", "")
                 .isalnum()
             )
+
+
+def test_manifesto_con_le_tre_chiavi(tmp_path):
+    from latest_json import manifesto
+
+    for nome in ("Iudex-0.11.0-setup.exe", "Iudex-0.11.0-x86_64.AppImage", "iudex_amd64.deb"):
+        (tmp_path / nome).write_bytes(nome.encode())
+    dati = manifesto("0.11.0", tmp_path, "https://esempio/download/v0.11.0/", data="2026-11-17")
+    assert dati["versione"] == "0.11.0" and dati["data"] == "2026-11-17"
+    assert dati["windows"]["url"].endswith("/Iudex-0.11.0-setup.exe")
+    assert dati["linux"]["url"].endswith("/Iudex-0.11.0-x86_64.AppImage")
+    assert dati["linux-deb"]["url"] == "https://esempio/download/v0.11.0/iudex_amd64.deb"
+    assert len(dati["linux-deb"]["sha256"]) == 64

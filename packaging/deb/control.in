@@ -1,0 +1,12 @@
+Package: iudex
+Version: @VERSIONE@
+Architecture: amd64
+Maintainer: Ramingo <28706121+SOsintOps@users.noreply.github.com>
+Section: misc
+Priority: optional
+Homepage: https://github.com/SOsintOps/Iudex
+Depends: @DIPENDENZE@
+Description: Interfaccia locale per SentenzeWeb (Corte Suprema di Cassazione)
+ Iudex interroga SentenzeWeb, la banca dati pubblica delle sentenze della
+ Corte Suprema di Cassazione, da una finestra sul computer. I dati restano
+ in ~/.local/share/iudex e non vengono toccati dalla disinstallazione.
