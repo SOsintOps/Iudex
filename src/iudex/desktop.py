@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 from . import __version__, accesso, config
+from .autonoma.ambiente import ripristina_ambiente
 from .autonoma.cartelle import applica_avvio, prepara
 from .autonoma.server import ServerInThread, log_su_file, scegli_porta
 
@@ -34,6 +35,8 @@ MESSAGGIO_WEBKIT = (
 
 
 def main(argv: list[str] | None = None) -> None:
+    # Prima che GTK parta: le variabili di GTK del pacchetto Linux vanno tolte.
+    ripristina_ambiente()
     if sys.platform.startswith("linux"):
         # Senza accelerazione grafica (macchine virtuali, alcuni driver) il renderer DMABUF di
         # WebKitGTK lascia la finestra bianca (visto su Debian 13 in una VM): lo si spegne,
