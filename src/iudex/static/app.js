@@ -759,7 +759,7 @@
          intervallo minimo fra richieste: ${s.intervallo_minimo_s} s${s.pausa_residua_s ? ` · <b>pausa chiesta dal server: ancora ${s.pausa_residua_s} s</b>` : ""} ·
          identità dichiarata oggi: <b>${escapa(s.impronta)}</b>${s.impronta_fissa ? " (fissa)" : ""}</p>
       <p>Cache locale: <b>${s.sentenze_in_cache}</b> testi di sentenze, <b>${s.risposte_in_cache}</b> risposte di ricerca · archivio: <code>${escapa(s.percorso_dati)}</code></p>
-      ${s.aggiornamento && s.aggiornamento.disponibile ? `<p class="aggiornamento">È disponibile Iudex <b>${escapa(s.aggiornamento.versione)}</b> (in uso ${escapa(s.aggiornamento.attuale)})${s.aggiornamento.note ? ": " + escapa(s.aggiornamento.note) : ""}. <button type="button" id="installa-aggiornamento">Scarica e installa</button> <span class="dettaglio">l'installer si avvia dopo il controllo dello sha256 e chiude Iudex</span></p>` : ""}
+      ${s.aggiornamento && s.aggiornamento.disponibile ? `<p class="aggiornamento">È disponibile Iudex <b>${escapa(s.aggiornamento.versione)}</b> (in uso ${escapa(s.aggiornamento.attuale)})${s.aggiornamento.note ? ": " + escapa(s.aggiornamento.note) : ""}. ${String(s.aggiornamento.chiave || "").startsWith("linux") ? `<button type="button" id="installa-aggiornamento">Scarica</button> <span class="dettaglio">Iudex controlla lo sha256 e poi ti dice come completare l'aggiornamento</span>` : `<button type="button" id="installa-aggiornamento">Scarica e installa</button> <span class="dettaglio">l'installer si avvia dopo il controllo dello sha256 e chiude Iudex</span>`}</p><div id="istruzioni-aggiornamento" hidden></div>` : ""}
       <p>Diario: <b>${numero(s.voci_diario)}</b> voci, <b>${numero(s.sentenze_consultate)}</b> sentenze consultate con il testo conservato (non vengono toccate dai pulsanti della cache) · <b>${numero(s.esecuzioni)}</b> pagine di risultati ricordate.</p>
       <p>PDF salvati: <b>${numero(s.pdf_salvati)}</b> in <code>${escapa(s.cartella_pdf)}</code></p>
       ${s.normattiva ? `<p>Normattiva: richieste in questa sessione: <b>${numero(s.normattiva.chiamate)}</b> · intervallo minimo: ${s.normattiva.intervallo_minimo_s} s${s.normattiva.pausa_residua_s ? ` · <b>pausa chiesta: ancora ${Math.ceil(s.normattiva.pausa_residua_s)} s</b>` : ""} · articoli in cache: <b>${numero(s.normattiva.norme_in_cache)}</b></p>` : ""}
@@ -767,7 +767,18 @@
     const pulsante = $("#installa-aggiornamento");
     if (pulsante) pulsante.addEventListener("click", async () => {
       pulsante.disabled = true;
-      try { const r = await api("/api/aggiornamento/installa", { method: "POST" }); messaggio(`Installer di Iudex ${r.versione} avviato.`); }
+      try {
+        const r = await api("/api/aggiornamento/installa", { method: "POST" });
+        if (r.istruzioni) {
+          const i = r.istruzioni, box = $("#istruzioni-aggiornamento");
+          box.innerHTML = `<p>Iudex ${escapa(r.versione)} scaricato. ${escapa(i.testo)}</p>${i.comando ? `<p><code id="comando-aggiornamento">${escapa(i.comando)}</code> <button type="button" id="copia-comando-aggiornamento">Copia</button></p>` : ""}`;
+          box.hidden = false;
+          const copia = $("#copia-comando-aggiornamento");
+          if (copia) copia.addEventListener("click", () => navigator.clipboard.writeText(i.comando).then(() => messaggio("Comando copiato."), () => messaggio("Copia non riuscita: seleziona il comando e copialo a mano.")));
+        } else {
+          messaggio(`Installer di Iudex ${r.versione} avviato.`);
+        }
+      }
       catch (e) { messaggio(e.message || String(e)); pulsante.disabled = false; }
     });
   }

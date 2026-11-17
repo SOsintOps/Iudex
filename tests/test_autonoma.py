@@ -154,3 +154,42 @@ async def test_aggiornamenti(tmp_path):
     respx.get("https://esempio.test/rotto.json").mock(return_value=httpx.Response(404))
     with pytest.raises(agg.ErroreAggiornamento):
         await agg.controlla("https://esempio.test/rotto.json", "0.7.0")
+
+
+@respx.mock
+async def test_aggiornamento_con_la_chiave_del_deb():
+    import httpx
+
+    from iudex.autonoma import aggiornamenti as agg
+
+    assert agg.chiave_pacchetto("deb") == "linux-deb"
+    deb = {"url": "https://esempio.test/iudex_amd64.deb", "sha256": "a" * 64}
+    respx.get("https://esempio.test/latest.json").mock(
+        return_value=httpx.Response(200, json={"versione": "9.0.0", "linux-deb": deb})
+    )
+    info = await agg.controlla("https://esempio.test/latest.json", "0.7.0", chiave="linux-deb")
+    assert info["disponibile"] and info["pacchetto"] == deb and info["chiave"] == "linux-deb"
+    senza = await agg.controlla("https://esempio.test/latest.json", "0.7.0", chiave="linux")
+    assert not senza["disponibile"]
+
+
+def test_prepara_su_linux(tmp_path):
+    from iudex.autonoma.aggiornamenti import prepara_su_linux
+
+    scaricati = tmp_path / "aggiornamenti"
+    scaricati.mkdir()
+    deb = scaricati / "iudex_amd64.deb"
+    deb.write_bytes(b"deb")
+    istruzioni = prepara_su_linux(deb, "deb")
+    assert istruzioni["modo"] == "deb" and istruzioni["comando"] == f'sudo apt install "{deb}"'
+    # AppImage: il file nuovo va accanto a quello in uso.
+    in_uso = tmp_path / "app" / "Iudex-0.10.1-x86_64.AppImage"
+    in_uso.parent.mkdir()
+    in_uso.write_bytes(b"vecchia")
+    nuova = scaricati / "Iudex-0.11.0-x86_64.AppImage"
+    nuova.write_bytes(b"nuova")
+    istruzioni = prepara_su_linux(nuova, "appimage", str(in_uso))
+    accanto = in_uso.parent / nuova.name
+    assert istruzioni["file"] == str(accanto) and accanto.read_bytes() == b"nuova"
+    assert not nuova.exists() and istruzioni["comando"] == ""
+    assert str(in_uso) in istruzioni["testo"]

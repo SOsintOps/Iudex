@@ -1067,3 +1067,35 @@ def test_sentenza_con_norma_nei_riferimenti(client):
         assert primo["norma"] == {"tipo": "LS", "numero": "300", "anno": "1970", "articolo": "18"}
     # Nessuna richiesta a Normattiva: il campo si calcola senza leggere la norma.
     assert _richieste_normattiva(mock) == 0
+
+
+def test_aggiornamento_su_linux_non_avvia_nulla(client, tmp_path, monkeypatch):
+    c, _ = client
+    from iudex.autonoma import aggiornamenti
+
+    scaricato = tmp_path / "aggiornamenti" / "iudex_amd64.deb"
+
+    async def scarica(_pacchetto, cartella):
+        cartella.mkdir(parents=True, exist_ok=True)
+        scaricato.write_bytes(b"deb")
+        return scaricato
+
+    avviati = []
+    monkeypatch.setattr(aggiornamenti, "scarica", scarica)
+    monkeypatch.setattr(aggiornamenti, "avvia_installer", avviati.append)
+    monkeypatch.setattr(aggiornamenti, "piattaforma", lambda: "linux")
+    monkeypatch.setattr(modulo_app, "confezione", lambda: "deb")
+    modulo_app.app.state.aggiornamento = {
+        "disponibile": True,
+        "versione": "9.0.0",
+        "pacchetto": {"url": "https://esempio.test/iudex_amd64.deb", "sha256": "a" * 64},
+        "chiave": "linux-deb",
+    }
+    r = c.post("/api/aggiornamento/installa", headers=H)
+    assert r.status_code == 200, r.text
+    assert r.json()["istruzioni"]["comando"] == f'sudo apt install "{scaricato}"'
+    assert avviati == []
+    # Su Windows l'installer si avvia, come prima.
+    monkeypatch.setattr(aggiornamenti, "piattaforma", lambda: "windows")
+    r = c.post("/api/aggiornamento/installa", headers=H)
+    assert "istruzioni" not in r.json() and avviati == [scaricato]

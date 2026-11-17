@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import math
+import os
 import re
 import shutil
 import tempfile
@@ -31,6 +32,7 @@ from . import __version__, accesso, export, importazione, impronte, preferenze
 from . import norme as modulo_norme
 from . import pdf as pdf_locali
 from .autonoma import aggiornamenti, backup
+from .autonoma.ambiente import confezione
 from .autonoma.cartelle import congelata
 from .autonoma.server import aggiungi_health
 from .cache import Archivio
@@ -78,7 +80,9 @@ HEADERS_HOST_VALIDI = {"127.0.0.1", "localhost", "testserver"}
 
 async def _controlla_aggiornamenti(app: FastAPI) -> None:
     try:
-        app.state.aggiornamento = await aggiornamenti.controlla(URL_AGGIORNAMENTI, __version__)
+        app.state.aggiornamento = await aggiornamenti.controlla(
+            URL_AGGIORNAMENTI, __version__, chiave=aggiornamenti.chiave_pacchetto(confezione())
+        )
         if app.state.aggiornamento["disponibile"]:
             log.info("disponibile Iudex %s", app.state.aggiornamento["versione"])
     except aggiornamenti.ErroreAggiornamento as exc:
@@ -1199,7 +1203,8 @@ async def grezzo_consultata(request: Request, id_sentenza: str) -> dict:
 
 @app.post("/api/aggiornamento/installa")
 async def installa_aggiornamento(request: Request) -> dict:
-    """Scarica l'installer della versione nuova, ne controlla lo sha256 e lo avvia."""
+    """Scarica il pacchetto della versione nuova e ne controlla lo sha256. Su Windows avvia
+    l'installer; su Linux non avvia nulla e restituisce le istruzioni (``istruzioni``)."""
     info = request.app.state.aggiornamento
     if not info or not info.get("disponibile"):
         raise HTTPException(409, "nessun aggiornamento disponibile")
@@ -1209,8 +1214,15 @@ async def installa_aggiornamento(request: Request) -> dict:
         )
     except aggiornamenti.ErroreAggiornamento as exc:
         raise HTTPException(502, str(exc)) from exc
-    aggiornamenti.avvia_installer(percorso)
-    return {"ok": True, "percorso": str(percorso), "versione": info["versione"]}
+    risposta = {"ok": True, "percorso": str(percorso), "versione": info["versione"]}
+    if aggiornamenti.piattaforma() == "linux":
+        risposta["istruzioni"] = aggiornamenti.prepara_su_linux(
+            percorso, confezione(), os.environ.get("APPIMAGE")
+        )
+        risposta["percorso"] = risposta["istruzioni"]["file"]
+    else:
+        aggiornamenti.avvia_installer(percorso)
+    return risposta
 
 
 @app.post("/api/backup")

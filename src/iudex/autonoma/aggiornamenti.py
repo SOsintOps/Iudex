@@ -7,7 +7,13 @@ aggiornamenti silenziosi. Formato di ``latest.json`` (scritto dal workflow dei r
 
     {"versione": "0.7.0", "data": "2026-10-26", "note": "…",
      "windows": {"url": "…/Iudex-0.7.0-setup.exe", "sha256": "…", "byte": 123},
-     "linux": {"url": "…/Iudex-0.7.0-x86_64.AppImage", "sha256": "…", "byte": 456}}
+     "linux": {"url": "…/Iudex-0.7.0-x86_64.AppImage", "sha256": "…", "byte": 456},
+     "linux-deb": {"url": "…/iudex_amd64.deb", "sha256": "…", "byte": 789}}
+
+Su Windows l'installer scaricato si avvia e chiude Iudex. Su Linux Iudex non si sostituisce da
+solo: il .deb chiede i permessi di amministratore e l'AppImage in uso non si può cambiare
+mentre gira. ``prepara_su_linux`` mette il file nuovo al suo posto e dice all'utente come
+completare l'aggiornamento.
 """
 
 from __future__ import annotations
@@ -16,6 +22,7 @@ import hashlib
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -38,9 +45,18 @@ def piattaforma() -> str:
     return {"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
 
 
-async def controlla(url: str, versione: str, client: httpx.AsyncClient | None = None) -> dict:
-    """``{"disponibile", "versione", "note", "data", "pacchetto"}``; ``disponibile`` è falso
-    anche quando la release non ha un pacchetto per questo sistema."""
+def chiave_pacchetto(confezione: str | None = None) -> str:
+    """La chiave di latest.json per questa installazione: ``linux-deb`` per il .deb, altrimenti
+    il sistema (``windows``, ``linux`` per l'AppImage)."""
+    return "linux-deb" if confezione == "deb" else piattaforma()
+
+
+async def controlla(
+    url: str, versione: str, client: httpx.AsyncClient | None = None, chiave: str | None = None
+) -> dict:
+    """``{"disponibile", "versione", "note", "data", "pacchetto", "chiave"}``; ``disponibile``
+    è falso anche quando la release non ha un pacchetto per questo sistema. ``chiave`` sceglie
+    il pacchetto (predefinita: il sistema)."""
     proprio = client or httpx.AsyncClient(follow_redirects=True, timeout=10)
     try:
         r = await proprio.get(url)
@@ -52,7 +68,8 @@ async def controlla(url: str, versione: str, client: httpx.AsyncClient | None = 
         if client is None:
             await proprio.aclose()
     nuova = str(dati.get("versione") or "")
-    pacchetto = dati.get(piattaforma())
+    chiave = chiave or piattaforma()
+    pacchetto = dati.get(chiave)
     return {
         "disponibile": bool(nuova)
         and bool(pacchetto)
@@ -62,6 +79,7 @@ async def controlla(url: str, versione: str, client: httpx.AsyncClient | None = 
         "note": dati.get("note") or "",
         "data": dati.get("data") or "",
         "pacchetto": pacchetto,
+        "chiave": chiave,
     }
 
 
@@ -102,3 +120,34 @@ def avvia_installer(percorso: Path) -> None:
     else:
         percorso.chmod(0o755)
         subprocess.Popen([str(percorso)], start_new_session=True)  # noqa: S603
+
+
+def prepara_su_linux(percorso: Path, confezione: str | None, appimage: str | None = None) -> dict:
+    """Su Linux: mette il file nuovo al suo posto e restituisce le istruzioni per l'utente,
+    ``{"modo", "testo", "comando", "file"}``. Non avvia nulla.
+
+    - ``.deb``: il comando ``sudo apt install`` da copiare.
+    - AppImage (``appimage`` = percorso del file in uso, variabile ``APPIMAGE``): il file nuovo
+      va accanto a quello in uso, eseguibile; se la cartella non è scrivibile resta dov'è.
+    """
+    if confezione == "deb":
+        return {
+            "modo": "deb",
+            "testo": "Chiudi Iudex, esegui il comando nel terminale, poi riapri Iudex.",
+            "comando": f'sudo apt install "{percorso}"',
+            "file": str(percorso),
+        }
+    destinazione = percorso
+    if appimage:
+        accanto = Path(appimage).parent / percorso.name
+        try:
+            if accanto != percorso:
+                shutil.move(str(percorso), str(accanto))
+            destinazione = accanto
+        except OSError:
+            log.info("cartella dell'AppImage non scrivibile: il file nuovo resta in %s", percorso)
+    destinazione.chmod(0o755)
+    testo = f"Chiudi Iudex e apri il file nuovo: {destinazione}."
+    if appimage and Path(appimage) != destinazione:
+        testo += f" Poi puoi cancellare il file vecchio: {appimage}."
+    return {"modo": "appimage", "testo": testo, "comando": "", "file": str(destinazione)}
