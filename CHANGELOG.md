@@ -2,6 +2,13 @@
 
 ## Da rilasciare
 
+### Correzione dei testi (modulo comune)
+- Modulo nuovo `iudex.correzione`: corregge con regole fisse, senza modelli, i difetti di forma dei
+  testi delle sentenze (spazi dentro le parole, sillabazione di fine riga, date incollate,
+  virgolette tipografiche, spazi doppi). Ogni unione ha una prova; lettere e cifre restano sempre
+  identiche, altrimenti il testo resta com'è. Il vocabolario lo passa chi chiama. Per ora nessun
+  cambio per chi usa Iudex: il testo mostrato resta quello della Corte.
+
 ## 0.11.0 — 2026-11-17
 
 Linux: pacchetto corretto per le distribuzioni recenti, pacchetto `.deb`, finestra di avviso.
