@@ -305,7 +305,8 @@ oppure escludi direttamente dal tunnel l'eseguibile di Iudex. I dettagli sono in
 ### Nel browser compare "Iudex si usa dalla sua finestra"
 
 È voluto. Pagine e API rispondono solo alla finestra di Iudex (e al server MCP), che hanno il
-token della cartella dei dati: aprilo dal collegamento nel menu Start o sul Desktop.
+token della cartella dei dati: aprilo dal collegamento nel menu Start o sul Desktop (su Linux
+dal menu delle applicazioni o dall'AppImage).
 
 ### "Ricerca non riuscita: richiesta non proveniente dall'interfaccia di Iudex"
 
@@ -318,8 +319,16 @@ Iudex non è aperto. Porta occupata da un altro programma: Iudex passa alla succ
 
 ### Su Linux la finestra non si apre
 
-Manca WebKitGTK; il messaggio dice il comando (Debian e Ubuntu:
-`sudo apt install gir1.2-webkit2-4.1 python3-gi`).
+Iudex mostra una finestra di avviso (e lo stesso testo sul terminale e nel registro
+`~/.local/share/iudex/log/iudex.log`) con la causa e il comando da usare. Le cause più comuni:
+
+- **manca WebKitGTK**: su Debian e Ubuntu `sudo apt install libwebkit2gtk-4.1-0`, oppure
+  installare il pacchetto `.deb`, che lo porta da solo;
+- **l'AppImage non si monta** («Cannot mount AppImage», FUSE): `sudo apt install fuse3`, oppure
+  avviarla con `--appimage-extract-and-run`. `libfuse2` non serve;
+- **col doppio clic non succede nulla**: avviare Iudex dal terminale per leggere il messaggio.
+
+Vedi anche [Primo avvio su Linux](installazione.md#primo-avvio-su-linux).
 
 ### "Errore interno di Iudex"
 

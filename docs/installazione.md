@@ -28,23 +28,48 @@ Dalla pagina delle [release](https://github.com/SOsintOps/Iudex/releases/latest)
   possibilità di conferma, perché Smart App Control non ammette eccezioni per singoli file: in
   tal caso si usi l'installazione dai sorgenti con il Python di python.org (vedi sotto e la
   [FAQ](faq.md#windows-blocca-linstaller-o-iudex-smart-app-control)).
-- **Linux**: `Iudex-X.Y.Z-x86_64.AppImage` (da rendere eseguibile con `chmod +x`, vedi i
-  comandi qui sotto): apre la finestra avvalendosi di WebKitGTK di sistema (`sudo apt install gir1.2-webkit2-4.1 python3-gi`
-  su distribuzioni Debian e Ubuntu; in caso di assenza Iudex mostra le istruzioni necessarie) e
-  al primo avvio richiede il percorso per il salvataggio dei PDF; i dati vengono archiviati in
-  `~/.local/share/iudex`.
+- **Linux, Debian e Ubuntu**: `iudex_amd64.deb`. Si installa con `apt`, che porta anche le
+  librerie necessarie (WebKitGTK compreso); Iudex compare nel menu delle applicazioni. Il file
+  non ha il numero di versione nel nome, così il comando qui sotto vale per ogni versione.
+- **Linux, altre distribuzioni**: `Iudex-X.Y.Z-x86_64.AppImage`, da rendere eseguibile e
+  avviare. Usa WebKitGTK 4.1 del sistema (su Debian e Ubuntu il pacchetto
+  `libwebkit2gtk-4.1-0`). Provata su Ubuntu 22.04, 24.04, 26.04 e Debian 13.
 
-Comandi completi per Linux (Debian e Ubuntu; `X.Y.Z` è il numero dell'ultima versione):
+In tutti e due i casi al primo avvio Iudex chiede il percorso per il salvataggio dei PDF; i dati
+vengono archiviati in `~/.local/share/iudex` e restano anche dopo la disinstallazione.
+
+Comandi per Debian e Ubuntu:
 
 ```bash
-sudo apt install gir1.2-webkit2-4.1 python3-gi
+wget https://github.com/SOsintOps/Iudex/releases/latest/download/iudex_amd64.deb
+sudo apt install ./iudex_amd64.deb
+```
+
+Disinstallazione: `sudo apt remove iudex`.
+
+Comandi per l'AppImage (`X.Y.Z` è il numero dell'ultima versione):
+
+```bash
 wget https://github.com/SOsintOps/Iudex/releases/latest/download/Iudex-X.Y.Z-x86_64.AppImage
 chmod +x Iudex-X.Y.Z-x86_64.AppImage
 ./Iudex-X.Y.Z-x86_64.AppImage
 ```
 
-L'AppImage non si installa nel sistema: per disinstallare basta cancellare il file (i dati in
-`~/.local/share/iudex` restano finché non si cancella anche quella cartella).
+L'AppImage non si installa nel sistema: per disinstallare basta cancellare il file.
+
+### Primo avvio su Linux
+
+1. **Quale file.** Su Debian e Ubuntu il `.deb`: un comando installa tutto. L'AppImage serve
+   per le altre distribuzioni.
+2. **AppImage eseguibile.** Dal gestore dei file: tasto destro sul file → Proprietà → attivare
+   «Eseguibile come programma». Dal terminale: `chmod +x Iudex-X.Y.Z-x86_64.AppImage`.
+3. **Non succede nulla.** Avviare Iudex dal terminale e leggere il messaggio. Se la finestra non
+   può aprirsi, Iudex mostra anche una finestra di avviso con la causa e il comando da usare.
+4. **Errore «FUSE»** (per esempio «Cannot mount AppImage»): l'AppImage usa FUSE per montarsi.
+   Installarlo con `sudo apt install fuse3`, oppure avviare l'AppImage senza FUSE:
+   `./Iudex-X.Y.Z-x86_64.AppImage --appimage-extract-and-run` (più lento all'avvio). La
+   libreria `libfuse2` non serve.
+5. **Registro.** Gli errori finiscono anche in `~/.local/share/iudex/log/iudex.log`.
 
 ## Dai sorgenti
 
@@ -65,10 +90,18 @@ scripts\avvia-finestra.cmd
 
 Il comando `scripts\avvia-finestra.cmd` (oppure `python -m iudex.desktop`) apre la finestra di
 Iudex; qualora un'istanza di Iudex sia già attiva, riporta in primo piano quella esistente
-anziché avviarne una seconda. Su sistemi Linux: `.venv/bin/python -m iudex.desktop`, utilizzando
-WebKitGTK e PyGObject di sistema (su Debian e Ubuntu:
-`sudo apt install gir1.2-webkit2-4.1 python3-gi`, creando l'ambiente virtuale con l'opzione
-`--system-site-packages`). Nell'esecuzione dai sorgenti i dati (cronologia delle ricerche,
+anziché avviarne una seconda. Su sistemi Linux la finestra usa WebKitGTK e PyGObject di sistema,
+e l'ambiente virtuale va creato con l'opzione `--system-site-packages`. Su Debian e Ubuntu:
+
+```bash
+sudo apt install git python3-venv python3-gi python3-gi-cairo gir1.2-webkit2-4.1 gir1.2-ayatanaappindicator3-0.1
+git clone https://github.com/SOsintOps/Iudex.git
+cd Iudex
+python3 -m venv --system-site-packages .venv
+.venv/bin/python -m pip install -e ".[desktop]"
+.venv/bin/iudex-finestra
+```
+ Nell'esecuzione dai sorgenti i dati (cronologia delle ricerche,
 diario di consultazione, esecuzioni, provvedimenti preferiti, impostazioni, cache e token)
 sono custoditi in `dati/iudex.sqlite` e nella cartella `dati/`, mentre i PDF delle pronunce sono
 salvati in `dati/pdf/` salvo diversa configurazione; le voci di cache scadute vengono rimosse
@@ -88,7 +121,11 @@ dalla scheda Cronologia. La versione installata verifica all'avvio l'eventuale d
 aggiornamenti (effettuando una singola richiesta verso GitHub per leggere il file `latest.json`
 dell'ultima release pubblicata, senza trasmettere alcun dato dell'utente) e ne dà avviso nella
 scheda Stato; il nuovo installer viene scaricato ed eseguito solo su esplicita richiesta
-dell'utente («Scarica e installa»), previa verifica dell'impronta `sha256`. La variabile
+dell'utente («Scarica e installa»), previa verifica dell'impronta `sha256`. Su Linux il pulsante
+è «Scarica»: dopo la verifica dell'impronta, con il `.deb` Iudex mostra il comando
+`sudo apt install` da copiare; con l'AppImage mette il file nuovo accanto a quello in uso e dice
+di chiudere Iudex e aprire il file nuovo. In nessuno dei due casi avvia la versione nuova da
+solo. La variabile
 d'ambiente `IUDEX_AGGIORNAMENTI=0` disattiva la verifica automatica.
 
 Variabili d'ambiente supportate:

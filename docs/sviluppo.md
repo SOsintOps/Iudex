@@ -40,7 +40,7 @@ FtM con il modello reale viene quindi saltato su Windows e gira nella CI su Linu
 | `src/iudex/autonoma/` | infrastruttura dell'applicazione autonoma: percorsi dati specifici per sistema operativo, server con endpoint `/health`, selezione della porta e monitoraggio del processo genitore, finestra con icona nell'area di notifica |
 | `src/iudex/static/` | interfaccia utente e pagine informative integrate (HTML, CSS e JavaScript privi di dipendenze esterne), caratteri tipografici locali, icone |
 | `tests/` | test automatici (eseguiti interamente senza connessione di rete) |
-| `packaging/` | configurazione per la generazione dei pacchetti distribuibili: PyInstaller, Inno Setup (Windows), AppImage (Linux), manifesto `latest.json` |
+| `packaging/` | configurazione per la generazione dei pacchetti distribuibili: PyInstaller, Inno Setup (Windows), AppImage e `.deb` (Linux, con la regola delle librerie e la prova di avvio), manifesto `latest.json` |
 | `docs/` | documentazione tecnica e manuale: analisi del sito della Corte, modalità di consultazione, integrazione Normattiva, guida all'utilizzo, domande frequenti, installazione, sviluppo, software simili, immagini |
 | `assets/logo/` | grafica vettoriale originale e script di generazione di logo, marchio, favicon e immagine di anteprima social (`docs/immagini/anteprima-social.png`) |
 | `scripts/` | script di avvio rapido per ambiente Windows |

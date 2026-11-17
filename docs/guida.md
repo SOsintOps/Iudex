@@ -7,7 +7,7 @@ e penali della Corte Suprema di Cassazione. Non duplica la banca dati: ogni rice
 server della Corte nel momento in cui la esegui. In locale restano la memoria di ciò che hai
 fatto (ricerche, sentenze uscite da ciascuna, consultazioni), i testi e i PDF aperti, le
 ricerche salvate e i preferiti. Iudex si usa dalla sua finestra (collegamento nel menu Start o
-sul Desktop; su Linux l'AppImage).
+sul Desktop; su Linux dal menu delle applicazioni o dall'AppImage).
 
 ## Il flusso di lavoro
 

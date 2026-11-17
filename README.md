@@ -117,18 +117,29 @@ di conferma: in quel caso si installa dai sorgenti (vedi
 
 ### Linux
 
-L'AppImage non si installa: si scarica, si rende eseguibile e si avvia. Su Debian e Ubuntu:
+**Debian e Ubuntu**: il pacchetto `.deb` installa Iudex con le librerie che servono e lo mette
+nel menu delle applicazioni.
 
 ```bash
-sudo apt install gir1.2-webkit2-4.1 python3-gi
+wget https://github.com/SOsintOps/Iudex/releases/latest/download/iudex_amd64.deb
+sudo apt install ./iudex_amd64.deb
+```
+
+Poi si apre Iudex dal menu. Per disinstallare: `sudo apt remove iudex`.
+
+**Altre distribuzioni**: l'AppImage non si installa, si scarica, si rende eseguibile e si
+avvia. Serve WebKitGTK 4.1 del sistema (su Debian e Ubuntu il pacchetto `libwebkit2gtk-4.1-0`).
+
+```bash
 wget https://github.com/SOsintOps/Iudex/releases/latest/download/Iudex-X.Y.Z-x86_64.AppImage
 chmod +x Iudex-X.Y.Z-x86_64.AppImage
 ./Iudex-X.Y.Z-x86_64.AppImage
 ```
 
-(`X.Y.Z` è il numero dell'ultima versione, indicato nella pagina della release.) Al primo
-avvio Iudex chiede in quale cartella salvare i PDF; i dati restano in `~/.local/share/iudex`.
-Per disinstallare basta cancellare il file AppImage.
+(`X.Y.Z` è il numero dell'ultima versione, indicato nella pagina della release.) Per
+disinstallare basta cancellare il file. Al primo avvio Iudex chiede in quale cartella salvare i
+PDF; i dati restano in `~/.local/share/iudex`, anche dopo la disinstallazione. Se Iudex non si
+apre, vedi [Primo avvio su Linux](docs/installazione.md#primo-avvio-su-linux).
 
 L'installazione dai sorgenti (Python 3.11 o successivo), le variabili d'ambiente e il server
 MCP sono descritti in [Installazione, finestra nativa e server MCP](docs/installazione.md).

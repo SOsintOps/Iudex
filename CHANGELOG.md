@@ -2,6 +2,30 @@
 
 ## Da rilasciare
 
+### Linux: Iudex si apre su ogni distribuzione recente
+- **Correzione**: l'AppImage non si apriva su Ubuntu 24.04, 26.04 e altre distribuzioni recenti
+  (col doppio clic non succedeva nulla; dal terminale diceva «richiede WebKitGTK» anche con
+  WebKitGTK installato). Il pacchetto portava con sé librerie di sistema più vecchie (GLib, GTK,
+  OpenSSL, SQLite…) che non andavano d'accordo con WebKitGTK del sistema. Ora tutte le librerie
+  di sistema vengono dal sistema; nel pacchetto restano Python, i suoi moduli e poche librerie
+  che il sistema può non avere. L'AppImage passa da circa 81 a 42 MB.
+- **Pacchetto `.deb`** per Debian e Ubuntu: `sudo apt install ./iudex_amd64.deb` installa Iudex
+  con le librerie necessarie e lo mette nel menu delle applicazioni; `sudo apt remove iudex` lo
+  toglie e lascia i dati.
+- **Finestra di avviso**: se la finestra non può aprirsi, Iudex dice la causa vera (manca
+  WebKitGTK, WebKitGTK non si carica, nessuno schermo…) e il comando da usare, in una finestra
+  di avviso oltre che sul terminale e nel registro. Nel registro anche «finestra aperta» e
+  «pagina caricata».
+- **Aggiornamento su Linux**: il pulsante è «Scarica». Dopo la verifica dello sha256, con il
+  `.deb` Iudex mostra il comando `sudo apt install` da copiare; con l'AppImage mette il file
+  nuovo accanto a quello in uso. Prima avviava la versione nuova accanto a quella aperta.
+- I programmi aperti da Iudex (lettore PDF, browser) partono con l'ambiente del sistema.
+- **Prova di avvio** a ogni rilascio: `.deb` e AppImage si aprono in contenitori Ubuntu 22.04,
+  24.04, 26.04 e Debian 13; se una prova fallisce la release non si pubblica.
+- Documentazione: sezione «Primo avvio su Linux» (quale file, AppImage eseguibile, FUSE,
+  registro) in `docs/installazione.md` e nelle FAQ; comandi completi per i sorgenti su Linux;
+  `python3-gi` non serve più per l'AppImage; tolte le indicazioni per Fedora, mai provata.
+
 ## 0.10.1 — 2026-11-10
 
 ### Scheda della sentenza riusabile

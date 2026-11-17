@@ -179,13 +179,18 @@
     <h3 id="errore-di-rete-con-la-vpn-attiva">"Errore di rete" con la VPN attiva</h3>
     <p>I server della Corte e di Normattiva non rispondono alle connessioni che arrivano dagli indirizzi di uscita delle VPN commerciali: il collegamento resta senza risposta. Non dipende da Iudex, succede anche aprendo i siti nel browser. Rimedio: con l'esclusione dal tunnel della VPN (<em>split tunneling</em>) lascia fuori gli indirizzi IP <code>81.126.56.168</code> (<code>www.italgiure.giustizia.it</code>, Corte di Cassazione), <code>147.78.212.26</code> (<code>api.normattiva.it</code>, API Open Data di Normattiva) e <code>147.78.212.12</code> (<code>www.normattiva.it</code>, sito di Normattiva per i link nel browser); dalla 0.8 per Iudex basta anche escludere il programma Iudex. I dettagli sono in <code>docs/installazione.md</code>, sezione «Da dietro una VPN».</p>
     <h3 id="nel-browser-compare-iudex-si-usa-dalla-sua-finestra">Nel browser compare "Iudex si usa dalla sua finestra"</h3>
-    <p>È voluto: pagine e API rispondono solo alla finestra di Iudex (e al server MCP), che hanno il token della cartella dei dati. Apri Iudex dal collegamento nel menu Start o sul Desktop (su Linux dall'AppImage).</p>
+    <p>È voluto: pagine e API rispondono solo alla finestra di Iudex (e al server MCP), che hanno il token della cartella dei dati. Apri Iudex dal collegamento nel menu Start o sul Desktop (su Linux dal menu delle applicazioni o dall'AppImage).</p>
     <h3 id="ricerca-non-riuscita-richiesta-non-proveniente-dallinterfaccia-di-iudex">"Ricerca non riuscita: richiesta non proveniente dall'interfaccia di Iudex"</h3>
     <p>Le API accettano solo le chiamate della finestra di Iudex. Il messaggio compare se chiami gli indirizzi <code>/api/…</code> da uno script senza l'header <code>X-Iudex: 1</code> (e senza il token).</p>
     <h3 id="la-finestra-si-apre-ma-la-ricerca-non-risponde">La finestra si apre ma la ricerca non risponde</h3>
     <p>Chiudi e riapri Iudex. Se la porta 8765 è occupata da un altro programma, Iudex passa alla successiva libera (o scegli tu la porta con la variabile <code>IUDEX_PORTA</code>); se è già aperto un altro Iudex, l'avvio apre quello.</p>
     <h3 id="su-linux-la-finestra-non-si-apre">Su Linux la finestra non si apre</h3>
-    <p>Manca WebKitGTK: il messaggio dice il comando per installarlo (Debian e Ubuntu: <code>sudo apt install gir1.2-webkit2-4.1 python3-gi</code>).</p>
+    <p>Iudex mostra una finestra di avviso (e lo stesso testo sul terminale e nel registro <code>~/.local/share/iudex/log/iudex.log</code>) con la causa e il comando da usare. Le cause più comuni:</p>
+    <ul>
+      <li><b>manca WebKitGTK</b>: su Debian e Ubuntu <code>sudo apt install libwebkit2gtk-4.1-0</code>, oppure installa il pacchetto <code>.deb</code>, che lo porta da solo;</li>
+      <li><b>l'AppImage non si monta</b> («Cannot mount AppImage», FUSE): <code>sudo apt install fuse3</code>, oppure avviala con <code>--appimage-extract-and-run</code>. <code>libfuse2</code> non serve;</li>
+      <li><b>col doppio clic non succede nulla</b>: avvia Iudex dal terminale per leggere il messaggio.</li>
+    </ul>
     <h3 id="errore-interno-di-iudex">"Errore interno di Iudex"</h3>
     <p>Un errore imprevisto nel programma (per esempio il disco pieno): la traccia completa è in <code>log/iudex.log</code> nella cartella dei dati. Apri una segnalazione con quel testo.</p>
 
