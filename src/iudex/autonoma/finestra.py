@@ -9,6 +9,9 @@ alle app che lavorano in sottofondo). Richiede l'extra ``desktop``.
 from __future__ import annotations
 
 import logging
+import os
+import shutil
+import subprocess
 import sys
 import threading
 from collections.abc import Callable
@@ -140,6 +143,9 @@ class Guscio:
             hidden=self.nascosto,
         )
         self.finestra.events.closing += self._alla_chiusura
+        # Righe di registro per l'assistenza e per la prova di avvio nella costruzione.
+        self.finestra.events.shown += lambda: log.info("finestra aperta")
+        self.finestra.events.loaded += lambda: log.info("pagina caricata")
         threading.Thread(target=self._crea_tray, name="tray", daemon=True).start()
         webview.start(icon=self._file_icona())
         # Tutte le finestre sono chiuse: si esce davvero.
@@ -148,3 +154,137 @@ class Guscio:
             self._icona_tray.stop()
         if self.all_uscita:
             self.all_uscita()
+
+
+# --- diagnosi del motore della finestra su Linux ----------------------------------------------
+
+LIBRERIA_WEBKIT = "libwebkit2gtk-4.1.so.0"
+
+
+def verifica_motore(
+    *,
+    eseguibile: bool | None = None,
+    ambiente: dict | None = None,
+    carica=None,
+) -> tuple[str, str] | None:
+    """Su Linux, perché la finestra non può partire: ``(esito, dettaglio)``, o ``None`` se va.
+
+    Esiti: ``schermo`` (nessuna sessione grafica), ``webkit_mancante`` (WebKitGTK non è
+    installato), ``webkit_incompatibile`` (installato ma non si carica), e dai sorgenti
+    ``gi_mancante`` (manca PyGObject) e ``typelib_mancante`` (manca il typelib di WebKitGTK).
+    """
+    from .cartelle import congelata
+
+    ambiente = os.environ if ambiente is None else ambiente
+    eseguibile = congelata() if eseguibile is None else eseguibile
+    if not (ambiente.get("DISPLAY") or ambiente.get("WAYLAND_DISPLAY")):
+        return "schermo", ""
+    if eseguibile:
+        if carica is None:
+            import ctypes
+
+            carica = ctypes.CDLL
+        try:
+            carica(LIBRERIA_WEBKIT)
+        except OSError as exc:
+            testo = str(exc)
+            if "cannot open shared object" in testo or "No such file" in testo:
+                return "webkit_mancante", testo
+            return "webkit_incompatibile", testo
+        return None
+    try:
+        import gi
+    except ImportError as exc:
+        return "gi_mancante", str(exc)
+    try:
+        gi.require_version("WebKit2", "4.1")
+    except ValueError as exc:
+        return "typelib_mancante", str(exc)
+    return None
+
+
+def messaggio_motore(
+    esito: str, dettaglio: str = "", *, app: str = "Iudex", eseguibile: bool | None = None
+) -> str:
+    """Il testo per l'utente per un esito di ``verifica_motore`` (o ``avvio`` per un errore
+    durante l'apertura della finestra)."""
+    from .cartelle import congelata
+
+    eseguibile = congelata() if eseguibile is None else eseguibile
+    if esito == "schermo":
+        testo = (
+            f"{app} non trova uno schermo: le variabili DISPLAY e WAYLAND_DISPLAY sono vuote.\n"
+            f"Avvia {app} dalla sessione grafica, non da una console di testo o via ssh."
+        )
+    elif esito == "webkit_mancante":
+        comando = (
+            "sudo apt install libwebkit2gtk-4.1-0"
+            if eseguibile
+            else "sudo apt install gir1.2-webkit2-4.1 python3-gi python3-gi-cairo"
+        )
+        testo = (
+            f"Manca WebKitGTK, che serve alla finestra di {app}. Installalo e riapri {app}:\n"
+            f"  {comando}"
+        )
+    elif esito == "webkit_incompatibile":
+        testo = (
+            f"WebKitGTK è installato ma non si carica con questo pacchetto di {app}.\n"
+            f"Su Debian e Ubuntu installa il pacchetto .deb di {app}; altrimenti segnala il "
+            "problema con il testo qui sotto."
+        )
+    elif esito == "gi_mancante":
+        testo = (
+            "Manca PyGObject, che serve alla finestra. Installalo e ricrea l'ambiente con i "
+            "pacchetti di sistema:\n"
+            "  sudo apt install python3-gi python3-gi-cairo gir1.2-webkit2-4.1\n"
+            "  python3 -m venv --system-site-packages .venv"
+        )
+    elif esito == "typelib_mancante":
+        testo = (
+            f"Manca la descrizione di WebKitGTK per Python. Installala e riapri {app}:\n"
+            "  sudo apt install gir1.2-webkit2-4.1"
+        )
+    else:
+        testo = f"La finestra di {app} non si è aperta."
+    return f"{testo}\n({dettaglio})" if dettaglio else testo
+
+
+def avviso(titolo: str, testo: str) -> bool:
+    """Mostra ``testo`` in una finestra di avviso (GTK, poi zenity, kdialog, xmessage).
+
+    Restituisce falso se nessuna finestra ha potuto aprirsi: il testo resta sul terminale e nel
+    registro, scritti da chi chiama.
+    """
+    try:
+        import gi
+
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk
+
+        if Gtk.init_check()[0]:
+            dialogo = Gtk.MessageDialog(
+                message_type=Gtk.MessageType.ERROR,
+                buttons=Gtk.ButtonsType.CLOSE,
+                text=titolo,
+            )
+            dialogo.format_secondary_text(testo)
+            for figlio in dialogo.get_message_area().get_children():
+                if isinstance(figlio, Gtk.Label):
+                    figlio.set_selectable(True)
+            dialogo.run()
+            dialogo.destroy()
+            return True
+    except Exception:  # noqa: BLE001 - GTK assente o non avviabile: si prova altro
+        log.debug("avviso GTK non riuscito", exc_info=True)
+    for comando in (
+        ["zenity", "--error", "--title", titolo, "--text", testo],
+        ["kdialog", "--title", titolo, "--error", testo],
+        ["xmessage", "-center", f"{titolo}\n\n{testo}"],
+    ):
+        if shutil.which(comando[0]):
+            try:
+                subprocess.run(comando, check=False, timeout=600)
+                return True
+            except (OSError, subprocess.SubprocessError):
+                continue
+    return False

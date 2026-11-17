@@ -26,12 +26,20 @@ try:
 except ImportError as exc:  # pragma: no cover - dipende dall'extra installato
     raise SystemExit("Installa l'extra desktop: pip install -e .[desktop]") from exc
 
-# Su Linux la finestra usa WebKitGTK del sistema: se manca, il messaggio dice come averlo.
-MESSAGGIO_WEBKIT = (
-    "La finestra di Iudex richiede WebKitGTK. Installalo e riapri Iudex:\n"
-    "  Debian e Ubuntu: sudo apt install gir1.2-webkit2-4.1 python3-gi\n"
-    "  Fedora: sudo dnf install webkit2gtk4.1"
-)
+log = logging.getLogger("iudex.desktop")
+
+
+def finestra_impossibile(esito: str, dettaglio: str, cartella_dati: Path) -> None:
+    """La finestra non può aprirsi (Linux): lo dice nel registro, sul terminale e in una
+    finestra di avviso (così si vede anche con il doppio clic), poi esce con codice 1."""
+    from .autonoma.finestra import avviso, messaggio_motore
+
+    testo = messaggio_motore(esito, dettaglio)
+    registro = cartella_dati / "log" / "iudex.log"
+    log.error("finestra non aperta (%s): %s", esito, testo.replace("\n", " "))
+    print(f"{testo}\nRegistro: {registro}", file=sys.stderr)
+    avviso("Iudex non si è aperto", f"{testo}\n\nRegistro: {registro}")
+    raise SystemExit(1)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -53,7 +61,10 @@ def main(argv: list[str] | None = None) -> None:
     prepara(impostazioni.cartella_dati)
     log_su_file(impostazioni.cartella_dati, "iudex")
 
-    from .autonoma.finestra import Guscio
+    from .autonoma.finestra import Guscio, verifica_motore
+
+    if sys.platform.startswith("linux") and (problema := verifica_motore()):
+        finestra_impossibile(*problema, impostazioni.cartella_dati)
 
     porta, gia_attivo = scegli_porta(impostazioni.host, impostazioni.porta, "iudex")
     server = None
@@ -78,11 +89,14 @@ def main(argv: list[str] | None = None) -> None:
     )
     try:
         guscio.avvia()
-    except Exception as exc:  # pywebview senza motore grafico (Linux senza WebKitGTK)
+    except Exception as exc:  # pywebview non riesce ad aprire la finestra
         if server:
             server.ferma()
         if sys.platform.startswith("linux"):
-            raise SystemExit(f"{MESSAGGIO_WEBKIT}\n({exc})") from exc
+            log.exception("errore all'apertura della finestra")
+            finestra_impossibile(
+                "avvio", f"{type(exc).__name__}: {exc}", impostazioni.cartella_dati
+            )
         raise
 
 
