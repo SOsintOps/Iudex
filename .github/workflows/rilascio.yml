@@ -81,9 +81,27 @@ jobs:
             build/installer/*.AppImage
             build/installer/*.deb
 
+  # Prova di avvio dei pacchetti appena costruiti: se fallisce, la release non si pubblica.
+  prova-linux:
+    needs: linux
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        immagine: ["ubuntu:22.04", "ubuntu:24.04", "ubuntu:26.04", "debian:13"]
+    container: ${{ matrix.immagine }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux
+          path: artefatti
+      - name: Avvio di .deb e AppImage
+        run: sh packaging/prova_avvio.sh artefatti
+
   pubblica:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [windows, linux]
+    needs: [windows, linux, prova-linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
