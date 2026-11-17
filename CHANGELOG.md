@@ -2,6 +2,10 @@
 
 ## Da rilasciare
 
+## 0.11.0 — 2026-11-17
+
+Linux: pacchetto corretto per le distribuzioni recenti, pacchetto `.deb`, finestra di avviso.
+
 ### Linux: Iudex si apre su ogni distribuzione recente
 - **Correzione**: l'AppImage non si apriva su Ubuntu 24.04, 26.04 e altre distribuzioni recenti
   (col doppio clic non succedeva nulla; dal terminale diceva «richiede WebKitGTK» anche con

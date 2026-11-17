@@ -36,6 +36,7 @@
 
 <main class="informativa"><div class="pagina-info">
   <nav aria-label="Indice">
+    <a href="#v0110">0.11.0 — 17 novembre 2026</a>
     <a href="#v0101">0.10.1 — 10 novembre 2026</a>
     <a href="#v0100">0.10.0 — 3 novembre 2026</a>
     <a href="#v090">0.9.0 — 30 ottobre 2026</a>
@@ -54,6 +55,22 @@
   <article class="documento">
     <h1>Versioni di Iudex</h1>
     <p>La stessa storia è nel file <code>CHANGELOG.md</code> del repository; questa pagina la riporta per chi usa l'app. La versione in esecuzione è indicata nella scheda <em>Stato</em>.</p>
+
+    <h2 id="v0110">0.11.0 <span class="data">— 17 novembre 2026</span></h2>
+    <p>Linux: pacchetto corretto per le distribuzioni recenti, pacchetto <code>.deb</code>, finestra di avviso.</p>
+    <h3>Linux: Iudex si apre su ogni distribuzione recente</h3>
+    <ul>
+      <li><b>Correzione</b>: l'AppImage non si apriva su Ubuntu 24.04, 26.04 e altre distribuzioni recenti (col doppio clic non succedeva nulla; dal terminale diceva «richiede WebKitGTK» anche con WebKitGTK installato). Il pacchetto portava con sé librerie di sistema più vecchie che non andavano d'accordo con WebKitGTK del sistema. Ora tutte le librerie di sistema vengono dal sistema; l'AppImage passa da circa 81 a 42 MB.</li>
+      <li><b>Pacchetto .deb</b> per Debian e Ubuntu: <code>sudo apt install ./iudex_amd64.deb</code> installa Iudex con le librerie necessarie e lo mette nel menu delle applicazioni; <code>sudo apt remove iudex</code> lo toglie e lascia i dati.</li>
+      <li><b>Finestra di avviso</b>: se la finestra non può aprirsi, Iudex dice la causa vera (manca WebKitGTK, WebKitGTK non si carica, nessuno schermo…) e il comando da usare, in una finestra di avviso oltre che sul terminale e nel registro.</li>
+      <li><b>Aggiornamento su Linux</b>: il pulsante è «Scarica». Dopo la verifica dello sha256, con il .deb Iudex mostra il comando <code>sudo apt install</code> da copiare; con l'AppImage mette il file nuovo accanto a quello in uso.</li>
+      <li>I programmi aperti da Iudex (lettore PDF, browser) partono con l'ambiente del sistema.</li>
+      <li><b>Prova di avvio</b> a ogni rilascio: .deb e AppImage si aprono in contenitori Ubuntu 22.04, 24.04, 26.04 e Debian 13; se una prova fallisce la release non si pubblica.</li>
+    </ul>
+    <h3>Documentazione</h3>
+    <ul>
+      <li>Sezione «Primo avvio su Linux» (quale file, AppImage eseguibile, FUSE, registro) nella guida all'installazione e nelle FAQ; comandi completi per i sorgenti su Linux; tolte le indicazioni per Fedora, mai provata.</li>
+    </ul>
 
     <h2 id="v0101">0.10.1 <span class="data">— 10 novembre 2026</span></h2>
     <p>Scheda della sentenza riusabile; installazione di nuovo nel README.</p>

@@ -62,7 +62,7 @@ token del file `token` nella cartella dei dati.
 | `src/iudex/static/` | interfaccia (HTML, CSS, JavaScript senza dipendenze), pagine di aiuto, font, icone |
 | `src/iudex/certs/` | certificato intermedio per la catena TLS del server della Corte |
 | `tests/` | test automatici |
-| `packaging/` | installer: PyInstaller, Inno Setup (Windows), AppImage (Linux), `latest.json` |
+| `packaging/` | installer: PyInstaller, Inno Setup (Windows), AppImage e `.deb` (Linux, regola delle librerie e prova di avvio), `latest.json` |
 | `docs/` | analisi del sito, consultazione del sito, Normattiva, installazione, sviluppo, domande frequenti, guida, software simili, immagini del README |
 | `assets/logo/` | logo originale e script che generano logo, marchio, favicon e anteprima social (`docs/immagini/anteprima-social.png`) |
 | `scripts/` | avviatori per Windows |
